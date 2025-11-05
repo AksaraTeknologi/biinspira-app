@@ -19,22 +19,13 @@ class DatabaseSeeder extends Seeder
         Role::create(['name' => 'user']);
 
         User::factory()->create([
-            'name' => 'Vieta',
-            'email' => 'vieta@gmail.com',
-            'phone' => '085649796210',
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'phone' => '081234567890',
             'password' => bcrypt('admin'),
             'email_verified_at' => now(),
         ])->assignRole('admin');
 
-        User::factory()->create([
-            'name' => 'Ratih',
-            'email' => 'ratih@gmail.com',
-            'phone' => '082234442534',
-            'password' => bcrypt('admin'),
-            'email_verified_at' => now(),
-        ])->assignRole('admin');
-
-        $this->call(ProductSeeder::class);
-        $this->call(AgentSeeder::class);
+        $this->call(MasterSeeder::class);
     }
 }
