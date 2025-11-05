@@ -19,7 +19,7 @@ export default function AuthCardLayout({
                         <CardHeader className="px-10 pt-8 pb-0 text-center">
                             <Link href={route('home')} className="flex items-center gap-2 self-center font-medium">
                                 <div className="flex h-12 w-12 items-center justify-center">
-                                    <img src="/assets/images/logo.webp" alt="Logo Serena Cookies" />
+                                    <img src="/assets/images/logo.webp" alt="Logo" />
                                 </div>
                             </Link>
                             <CardTitle className="text-xl">{title}</CardTitle>

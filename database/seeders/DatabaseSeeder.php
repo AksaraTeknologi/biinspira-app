@@ -21,7 +21,6 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
-            'phone' => '081234567890',
             'password' => bcrypt('admin'),
             'email_verified_at' => now(),
         ])->assignRole('admin');
