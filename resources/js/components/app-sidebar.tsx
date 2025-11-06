@@ -9,19 +9,19 @@ import AppLogo from './app-logo';
 const allNavItems: (NavItem & { roles: string[] })[] = [
     {
         title: 'Beranda',
-        href: '/admin/dashboard',
+        href: route("dashboard"),
         icon: LayoutGrid,
         roles: ['admin'],
     },
     {
         title: 'Event',
-        href: '/admin/event',
+        href: route("admin.events.index"),
         icon: PartyPopper,
         roles: ['admin'],
     },
     {
         title: 'Platfom',
-        href: '/admin/platform',
+        href: route("admin.platforms.index"),
         icon: MessageSquareQuote,
         roles: ['admin'],
     },
@@ -33,7 +33,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
     },
     {
         title: 'User',
-        href: '/admin/user',
+        href: route("admin.users.index"),
         icon: CircleUserRound,
         roles: ['admin'],
     },
