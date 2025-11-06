@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { BookCheck, CircleUserRound, LayoutGrid, MessageSquareQuote, PartyPopper } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const allNavItems: (NavItem & { roles: string[] })[] = [
@@ -16,9 +16,28 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
     {
         title: 'Event',
         href: '/admin/event',
-        icon: LayoutGrid,
+        icon: PartyPopper,
         roles: ['admin'],
     },
+    {
+        title: 'Platfom',
+        href: '/admin/platform',
+        icon: MessageSquareQuote,
+        roles: ['admin'],
+    },
+    {
+        title: 'Hasil',
+        href: '/admin/hasil',
+        icon: BookCheck,
+        roles: ['admin'],
+    },
+    {
+        title: 'User',
+        href: '/admin/user',
+        icon: CircleUserRound,
+        roles: ['admin'],
+    },
+
 ];
 
 export function AppSidebar() {

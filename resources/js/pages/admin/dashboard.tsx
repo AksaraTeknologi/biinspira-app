@@ -60,12 +60,12 @@ export default function Dashboard({dashboard_item, stats, chartData = []}: Dashb
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Dashboard" />
+      <Head title={dashboard_item} />
 
       <div className="flex flex-col gap-6 p-4 md:p-6">
         <div>
           <h1 className="text-2xl font-semibold">Selamat Datang Admin</h1>
-          <p className="text-sm text-muted-foreground">Selamat datang di dashboard</p>
+          <p className="text-sm text-muted-foreground">Selamat datang di {dashboard_item}</p>
         </div>
 
         {/* === Stats Cards === */}
