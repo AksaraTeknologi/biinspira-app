@@ -3,13 +3,13 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookCheck, CircleUserRound, LayoutGrid, MessageSquareQuote, PartyPopper } from 'lucide-react';
+import { BookCheck, CircleUserRound, FilePlus2, LayoutGrid, MessageSquareQuote, PartyPopper } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const allNavItems: (NavItem & { roles: string[] })[] = [
     {
         title: 'Beranda',
-        href: route("dashboard"),
+        href: route("admin.dashboard"),
         icon: LayoutGrid,
         roles: ['admin'],
     },
@@ -36,6 +36,20 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         href: route("admin.users.index"),
         icon: CircleUserRound,
         roles: ['admin'],
+    },
+
+     // role: user
+    {
+        title: 'Beranda',
+        href: route("user.dashboard"),
+        icon: LayoutGrid,
+        roles: ['user'],
+    },
+    {
+        title: 'Form Iklan',
+        href: route("user.adsForm"),
+        icon: FilePlus2,
+        roles: ['user'],
     },
 
 ];

@@ -10,10 +10,12 @@ export default function Home({ home_item }: HomeProps) {
         <UserLayout>
             <Head title="Biinspira Monitoring App" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-                <div>
+            <div className="mt-20 flex flex-1 flex-col items-center">
+                <div className="w-full max-w-7xl px-4 md:px-6 flex flex-col gap-6">
                     <h1 className="text-2xl font-semibold">Home</h1>
-                    <p className="text-sm text-muted-foreground">Selamat datang di halaman utama</p>
+                    <p className="text-sm text-muted-foreground">
+                        Selamat datang di halaman utama
+                    </p>
                 </div>
             </div>
         </UserLayout>

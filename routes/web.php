@@ -5,6 +5,7 @@ use App\Http\Controllers\MasterEventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterPlatformController;
+use App\Http\Controllers\UserPagesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -35,7 +36,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::post('/users/update/{id}', 'update')->name('admin.users.update');
         Route::delete('/users/destroy/{id}', 'destroy')->name('admin.users.destroy');
     });
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+});
+
+Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
+    Route::redirect('/', 'user/dashboard')->name('home');
+    Route::get('dashboard', [UserPagesController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('form_iklan', [UserPagesController::class, 'adsForm'])->name('adsForm');
 });
 
 require __DIR__ . '/settings.php';

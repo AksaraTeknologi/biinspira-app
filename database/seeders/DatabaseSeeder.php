@@ -25,6 +25,13 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ])->assignRole('admin');
 
+        User::factory()->create([
+            'name' => 'biinspira',
+            'email' => 'user@gmail.com',
+            'password' => bcrypt('user'),
+            'email_verified_at' => now(),
+        ])->assignRole('user');
+
         $this->call(MasterSeeder::class);
     }
 }
