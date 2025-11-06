@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('ad_plan_platforms', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('ad_plan_id')->constrained('ad_plans')->cascadeOnDelete();
-            $table->foreignUuid('platform_id')->constrained('master_platforms')->cascadeOnDelete();
-            $table->foreignUuid('goals_id')->constrained('master_ad_goals')->cascadeOnDelete();
+            $table->foreignId('platform_id')->constrained('master_platforms')->cascadeOnDelete();
+            $table->foreignId('goals_id')->constrained('master_ad_goals')->cascadeOnDelete();
             $table->date('start_date');
             $table->date('end_date');
             $table->integer('audience_target');

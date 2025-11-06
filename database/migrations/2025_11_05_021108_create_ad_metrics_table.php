@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('ad_metrics', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('ad_result_platform_id')->constrained('ad_results_platform')->cascadeOnDelete();
+            $table->foreignUuid('ad_result_platform_id')->constrained('ad_result_platforms')->cascadeOnDelete();
             $table->integer('reach');
             $table->integer('impressions');
             $table->integer('cost_per_result');

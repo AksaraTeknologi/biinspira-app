@@ -13,6 +13,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         icon: LayoutGrid,
         roles: ['admin'],
     },
+    {
+        title: 'Event',
+        href: '/admin/event',
+        icon: LayoutGrid,
+        roles: ['admin'],
+    },
 ];
 
 export function AppSidebar() {

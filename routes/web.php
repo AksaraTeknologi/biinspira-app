@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
-    Route::redirect('/', 'admin/dashboard');
+    Route::redirect('/', 'admin/dashboard')->name('admin.home');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 

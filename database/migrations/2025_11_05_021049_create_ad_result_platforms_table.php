@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ad_result_platforms', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('ad_result_id')->constrained('ad_results')->cascadeOnDelete();
-            $table->foreignUuid('platform_id')->constrained('master_platforms')->cascadeOnDelete();
+            $table->foreignId('platform_id')->constrained('master_platforms')->cascadeOnDelete();
             $table->integer('result')->nullable(); // tergantung goalnya apa
             $table->decimal('total_cost', 10, 2);
             $table->timestamps();
