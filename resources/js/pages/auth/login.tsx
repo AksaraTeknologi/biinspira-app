@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react'; // Import Eye and EyeOff icons
+import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,14 @@ interface LoginProps {
     canResetPassword: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
         password: '',
         remember: false,
     });
+
+    const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -34,7 +36,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Masuk ke akun Anda" description="Masukkan detail Anda di bawah ini untuk masuk ke akun Anda">
+        <AuthLayout title="Selamat Datang" description="Masukkan Email dan Password untuk masuk ke akun Anda">
             <Head title="Log in" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
@@ -51,6 +53,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="Masukkan email"
+                            className="border-secondary-foreground focus-visible:border-secondary-foreground focus-visible:ring-[1.5px] focus-visible:ring-secondary-foreground"
                         />
                         <InputError message={errors.email} />
                     </div>
@@ -64,16 +67,30 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 </TextLink>
                             )} */}
                         </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                required
+                                tabIndex={2}
+                                autoComplete="current-password"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Password"
+                                className="border-secondary-foreground focus-visible:border-secondary-foreground focus-visible:ring-[1.5px] focus-visible:ring-secondary-foreground"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-5 w-5 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-5 w-5 text-muted-foreground" />
+                                )}
+                            </button>
+                        </div>
                         <InputError message={errors.password} />
                     </div>
 
