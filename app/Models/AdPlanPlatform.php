@@ -25,7 +25,7 @@ class AdPlanPlatform extends Model
 
     public function platform()
     {
-        return $this->belongsTo(MasterPlatform::class, 'platform_id');
+    return $this->belongsTo(MasterPlatform::class, 'platform_id');
     }
 
     public function goal()

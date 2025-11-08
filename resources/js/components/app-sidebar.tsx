@@ -20,6 +20,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin'],
     },
     {
+        title: 'Marketing',
+        href: route("admin.marketing.index"),
+        icon: PartyPopper,
+        roles: ['admin'],
+    },
+    {
         title: 'Platfom',
         href: route("admin.platforms.index"),
         icon: MessageSquareQuote,

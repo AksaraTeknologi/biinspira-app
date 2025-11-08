@@ -6,6 +6,9 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterPlatformController;
 use App\Http\Controllers\UserPagesController;
+use App\Http\Controllers\AdPlanPlatformController;
+use App\Models\AdPlan;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -36,6 +39,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::post('/users/update/{id}', 'update')->name('admin.users.update');
         Route::delete('/users/destroy/{id}', 'destroy')->name('admin.users.destroy');
     });
+    Route::controller(AdPlanPlatformController::class)->group(function () {
+        Route::get('/marketing', 'index')->name('admin.marketing.index');
+        Route::get('/marketing/create', 'create')->name('admin.marketing.create');
+        Route::post('/marketing/store', 'store')->name('admin.marketing.store');
+        Route::get("/marketing/edit/{id}","edit")->name("admin.marketing.edit");
+    });
     Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 });
 
@@ -44,6 +53,9 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::get('dashboard', [UserPagesController::class, 'dashboard'])->name('dashboard');
 
     Route::get('form_iklan', [UserPagesController::class, 'adsForm'])->name('adsForm');
+});
+Route::get("/tabs-marketing", function () {
+    return Inertia::render("admin/form-page-marketing");
 });
 
 require __DIR__ . '/settings.php';
