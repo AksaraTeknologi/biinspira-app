@@ -195,7 +195,21 @@ export default function MarketingEdit() {
                     </PopoverTrigger>
 
                     <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
-                        <Calendar mode="range" numberOfMonths={2} selected={range} onSelect={handleDateChange} />
+                        <Calendar
+                            mode="range"
+                            numberOfMonths={2}
+                            selected={range}
+                            onSelect={handleDateChange}
+                            className={cn(
+                                'rounded-xl p-2 text-sm',
+                                '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                                '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                                '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
+                                '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+                            )}
+                        />
                     </PopoverContent>
                 </Popover>
 
@@ -288,41 +302,40 @@ export default function MarketingEdit() {
                         <CardContent>
                             <div className="space-y-8">
                                 {/* === EVENT === */}
-<div>
-  <Label>Nama Event</Label>
-  <Select
-    value={data.event_id ? String(data.event_id) : ''}
-    onValueChange={(val) => setData('event_id', Number(val))}
-  >
-    <SelectTrigger className="w-full">
-      <SelectValue placeholder="Pilih nama event" />
-    </SelectTrigger>
+                                <div>
+                                    <Label>Nama Event</Label>
+                                    <Select
+                                        value={data.event_id ? String(data.event_id) : ''}
+                                        onValueChange={(val) => setData('event_id', Number(val))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Pilih nama event" />
+                                        </SelectTrigger>
 
-    <SelectContent>
-      {events && events.length > 0 ? (
-        events.map((event: any) => (
-          <SelectItem key={event.id} value={String(event.id)}>
-            <div className="flex w-full items-center justify-between">
-              <span>{event.name}</span>
-              {event.date && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  ({format(parseISO(event.date), 'dd MMM yyyy')})
-                </span>
-              )}
-            </div>
-          </SelectItem>
-        ))
-      ) : (
-        <SelectItem value="none" disabled>
-          Tidak ada event tersedia
-        </SelectItem>
-      )}
-    </SelectContent>
-  </Select>
+                                        <SelectContent>
+                                            {events && events.length > 0 ? (
+                                                events.map((event: any) => (
+                                                    <SelectItem key={event.id} value={String(event.id)}>
+                                                        <div className="flex w-full items-center justify-between">
+                                                            <span>{event.name}</span>
+                                                            {event.date && (
+                                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                                    ({format(parseISO(event.date), 'dd MMM yyyy')})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <SelectItem value="none" disabled>
+                                                    Tidak ada event tersedia
+                                                </SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
 
-  {errors.event_id && <p className="mt-1 text-sm text-red-500">{errors.event_id}</p>}
-</div>
-
+                                    {errors.event_id && <p className="mt-1 text-sm text-red-500">{errors.event_id}</p>}
+                                </div>
 
                                 {/* === PLATFORM TABS === */}
                                 <Tabs value={tab} onValueChange={handleTabChange}>
@@ -338,11 +351,7 @@ export default function MarketingEdit() {
                                 </Tabs>
 
                                 <div className="flex justify-end pt-4">
-                                    <Button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-600 text-white hover:bg-blue-700"
-                                    >
+                                    <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
                                         {processing ? 'Menyimpan...' : 'Perbarui Data'}
                                     </Button>
                                 </div>

@@ -80,6 +80,19 @@ export default function Marketing() {
             cell: ({ row }) => row.original.plan?.event?.name || '-',
         },
         {
+            header: 'Tanggal Berakhir',
+            accessorKey: 'end_date',
+            cell: ({ row }) => {
+                const date = new Date(row.original.end_date);
+                const formatted = date.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                });
+                return <div className="font-medium">{formatted}</div>;
+            },
+        },
+        {
             header: 'Batch',
             accessorKey: 'plan.event.batch',
             cell: ({ row }) => row.original.plan?.event?.batch || '-',
