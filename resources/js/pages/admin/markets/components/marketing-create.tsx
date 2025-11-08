@@ -1,330 +1,355 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export default function PerencanaanIklan() {
-    const { props } = usePage();
-    const { events, goals } = props as {
-        events: any[];
-        goals: any[];
-    };
+  const { props } = usePage();
+  const { events, goals } = props as {
+    events: { id: number; name: string; date?: string; description?: string }[];
+    goals: { id: number; name: string }[];
+  };
 
-    // State tambahan
-    const [tab, setTab] = useState('boost');
-    const [typeAudiens, setTypeAudiens] = useState<string | null>(null);
-    const [detailAudiens, setDetailAudiens] = useState<string>('');
-    const [targetType, setTargetType] = useState('targeted');
-    const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [tab, setTab] = useState('boost');
+  const [typeAudiens, setTypeAudiens] = useState<string | null>(null);
+  const [detailAudiens, setDetailAudiens] = useState('');
+  const [targetType, setTargetType] = useState('targeted');
+  const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
 
-    // Form utama
-    const { data, setData, post, processing } = useForm({
-        ad_plan_id: '',
-        platform_id: '1', // default platform pertama (Boost Post)
-        goals_id: '',
-        start_date: '',
-        end_date: '',
-        daily_budget: '',
-        audience_target: '',
-        audience_type: 'targeted',
-        age_targeted: '',
-        location_targeted: '',
-        type_audience_targeted: '',
-        name_audience_targeted: '',
-        age_broad: '',
-        location_broad: '',
-        name_event: '',
-    });
+  const { data, setData, post, processing, errors } = useForm({
+    event_id: '', // ✅ tambahkan event_id
+    platform_id: '1',
+    goals_id: '',
+    start_date: '',
+    end_date: '',
+    daily_budget: '',
+    audience_target: '',
+    audience_type: 'targeted',
+    age_targeted: '',
+    location_targeted: '',
+    type_audience_targeted: '',
+    name_audience_targeted: '',
+    age_broad: '',
+    location_broad: '',
+  });
 
-    // mapping tab ke platform_id
-    const platformMap: Record<string, string> = {
-        boost: '1',
-        meta: '2',
-        business: '3',
-    };
+  const platformMap: Record<string, string> = {
+    boost: '1',
+    meta: '2',
+    business: '3',
+  };
 
-    const handleTabChange = (val: string) => {
-        setTab(val);
-        setData('platform_id', platformMap[val]);
-    };
+  const handleTabChange = (val: string) => {
+    setTab(val);
+    setData('platform_id', platformMap[val]);
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.table(data); // debugging
-        post(route('admin.marketing.store'));
-    };
+  const handleDateChange = (rangeValue: { from?: Date; to?: Date } | undefined) => {
+    setRange(rangeValue || {});
+    if (rangeValue?.from) setData('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
+    if (rangeValue?.to) setData('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
+  };
 
-    const breadcrumbs = [
-        { title: 'Marketing', href: route('admin.marketing.index') },
-        { title: 'Perencanaan Iklan', href: route('admin.marketing.create') },
-    ];
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post(route('admin.marketing.store'));
+  };
 
-    const renderTargetingFields = () => {
-        const showTargetting = targetType === 'targeted' || targetType === 'combined';
-        const showBroad = targetType === 'broad' || targetType === 'combined';
+  const breadcrumbs = [
+    { title: 'Marketing', href: route('admin.marketing.index') },
+    { title: 'Perencanaan Iklan', href: route('admin.marketing.create') },
+  ];
 
-        return (
-            <div className="mt-4 space-y-4 border-t pt-4">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    {showTargetting && (
-                        <div className="space-y-3">
-                            <Label>Umur (Targetting)</Label>
-                            <Input
-                                type="number"
-                                placeholder="Masukkan umur target"
-                                min={0}
-                                value={data.age_targeted}
-                                onChange={(e) => setData('age_targeted', e.target.value)}
-                            />
-
-                            <Label>Lokasi</Label>
-                            <Input
-                                placeholder="Masukkan lokasi audiens"
-                                value={data.location_targeted}
-                                onChange={(e) => setData('location_targeted', e.target.value)}
-                            />
-
-                            <Label>Type Audiens</Label>
-                            <Select
-                                value={typeAudiens ?? ''}
-                                onValueChange={(val) => {
-                                    setTypeAudiens(val);
-                                    setData('type_audience_targeted', val);
-                                }}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih type audiens" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Industri">Industri</SelectItem>
-                                    <SelectItem value="Pekerjaan">Pekerjaan</SelectItem>
-                                    <SelectItem value="Bidang Studi">Bidang Studi</SelectItem>
-                                    <SelectItem value="Tingkat Pendidikan">Tingkat Pendidikan</SelectItem>
-                                    <SelectItem value="Minat">Minat</SelectItem>
-                                    <SelectItem value="Lain - Lain">Lain - Lain</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {typeAudiens && (
-                                <div className="mt-3">
-                                    <Label>Detail Audiens ({typeAudiens})</Label>
-                                    <Input
-                                        placeholder={`Masukkan detail untuk ${typeAudiens}`}
-                                        value={detailAudiens}
-                                        onChange={(e) => {
-                                            setDetailAudiens(e.target.value);
-                                            setData('name_audience_targeted', e.target.value);
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {showBroad && (
-                        <div className="space-y-3">
-                            <Label>Umur (Broad)</Label>
-                            <Input
-                                type="number"
-                                placeholder="Masukkan umur target broad"
-                                min={0}
-                                value={data.age_broad}
-                                onChange={(e) => setData('age_broad', e.target.value)}
-                            />
-
-                            <Label>Lokasi</Label>
-                            <Input
-                                placeholder="Masukkan lokasi broad"
-                                value={data.location_broad}
-                                onChange={(e) => setData('location_broad', e.target.value)}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    const renderFormContent = () => (
-        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
-            {/* Kiri */}
-            <div className="space-y-4">
-                <div>
-                    <Label>Tanggal Mulai Iklan</Label>
-                    <div className="relative">
-                        <Input
-                            type="date"
-                            value={data.start_date}
-                            onChange={(e) => setData('start_date', e.target.value)}
-                            className="w-full"
-                        />
-                        <CalendarIcon className="absolute top-2.5 right-3 h-4 w-4 text-gray-400" />
-                    </div>
-                </div>
-
-                <div>
-                    <Label>Tujuan Iklan</Label>
-                    <Select
-                        value={data.goals_id || ''}
-                        onValueChange={(val) => setData('goals_id', val)}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Pilih tujuan iklan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {goals?.map((goal) => (
-                                <SelectItem key={goal.id} value={String(goal.id)}>
-                                    {goal.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div>
-                    <Label>Target Iklan</Label>
-                    <Select
-                        value={targetType}
-                        onValueChange={(val) => {
-                            setTargetType(val);
-                            setData('audience_type', val);
-                        }}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Pilih jenis target iklan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="targeted">Targetting Audiens</SelectItem>
-                            <SelectItem value="broad">Broad</SelectItem>
-                            <SelectItem value="combined">Combined</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            {/* Kanan */}
-            <div className="space-y-4">
-                <div>
-                    <Label>Tanggal Selesai Iklan</Label>
-                    <div className="relative">
-                        <Input
-                            type="date"
-                            value={data.end_date}
-                            onChange={(e) => setData('end_date', e.target.value)}
-                            className="w-full"
-                        />
-                        <CalendarIcon className="absolute top-2.5 right-3 h-4 w-4 text-gray-400" />
-                    </div>
-                </div>
-
-                <div>
-                    <Label>Budget Harian</Label>
-                    <Input
-                        type="number"
-                        placeholder="Rp. 0"
-                        min={0}
-                        value={data.daily_budget}
-                        onChange={(e) => setData('daily_budget', e.target.value)}
-                    />
-                </div>
-
-                <div>
-                    <Label>Target Audiens</Label>
-                    <Input
-                        type="number"
-                        placeholder="Masukkan jumlah target audiens"
-                        min={0}
-                        value={data.audience_target}
-                        onChange={(e) => setData('audience_target', e.target.value)}
-                    />
-                </div>
-            </div>
-
-            <div className="col-span-2">{renderTargetingFields()}</div>
-        </div>
-    );
+  const renderTargetingFields = () => {
+    const showTargeting = targetType === 'targeted' || targetType === 'combined';
+    const showBroad = targetType === 'broad' || targetType === 'combined';
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
-                <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
+      <div className="mt-6 space-y-4 border-t pt-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          {showTargeting && (
+            <div className="space-y-4">
+              <div>
+                <Label>Umur (Targeted)</Label>
+                <Input
+                  type="number"
+                  placeholder="Masukkan umur target"
+                  min={0}
+                  value={data.age_targeted}
+                  onChange={(e) => setData('age_targeted', e.target.value)}
+                />
+              </div>
 
-                <form onSubmit={handleSubmit}>
-                    <Card className="w-full">
-                        <CardHeader>
-                            <CardTitle>Perencanaan Iklan</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-6">
-                                {/* Nama Event */}
-                                <div>
-                                    <Label>Nama Event</Label>
-                                    <Select
-                                        value={selectedEvent ?? ''}
-                                        onValueChange={(val) => {
-                                            setSelectedEvent(val);
-                                            setData('name_event', val);
-                                        }}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Pilih nama event" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {events?.map((event) => (
-                                                <SelectItem key={event.id} value={event.name}>
-                                                    {event.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+              <div>
+                <Label>Lokasi</Label>
+                <Input
+                  placeholder="Masukkan lokasi audiens"
+                  value={data.location_targeted}
+                  onChange={(e) => setData('location_targeted', e.target.value)}
+                />
+              </div>
 
-                                    <div className="mt-2">
-                                        <Input
-                                            placeholder="Atau tulis nama event baru"
-                                            value={data.name_event}
-                                            onChange={(e) => {
-                                                setSelectedEvent(null);
-                                                setData('name_event', e.target.value);
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+              <div>
+                <Label>Jenis Audiens</Label>
+                <Select
+                  value={typeAudiens ?? ''}
+                  onValueChange={(val) => {
+                    setTypeAudiens(val);
+                    setData('type_audience_targeted', val);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis audiens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                                {/* Tabs */}
-                                <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="boost">Boost Post</TabsTrigger>
-                                        <TabsTrigger value="meta">Meta Ads</TabsTrigger>
-                                        <TabsTrigger value="business">Business Suite</TabsTrigger>
-                                    </TabsList>
-
-                                    <TabsContent value="boost">{renderFormContent()}</TabsContent>
-                                    <TabsContent value="meta">{renderFormContent()}</TabsContent>
-                                    <TabsContent value="business">{renderFormContent()}</TabsContent>
-                                </Tabs>
-
-                                <div className="flex justify-end pt-6">
-                                    <Button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-600 text-white hover:bg-blue-700"
-                                    >
-                                        {processing ? 'Menyimpan...' : 'Simpan Draft'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </form>
+              {typeAudiens && (
+                <div>
+                  <Label>Detail Audiens ({typeAudiens})</Label>
+                  <Input
+                    placeholder={`Masukkan detail untuk ${typeAudiens}`}
+                    value={detailAudiens}
+                    onChange={(e) => {
+                      setDetailAudiens(e.target.value);
+                      setData('name_audience_targeted', e.target.value);
+                    }}
+                  />
+                </div>
+              )}
             </div>
-        </AppLayout>
+          )}
+
+          {showBroad && (
+            <div className="space-y-4">
+              <div>
+                <Label>Umur (Broad)</Label>
+                <Input
+                  type="number"
+                  placeholder="Masukkan umur broad"
+                  min={0}
+                  value={data.age_broad}
+                  onChange={(e) => setData('age_broad', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label>Lokasi Broad</Label>
+                <Input
+                  placeholder="Masukkan lokasi broad"
+                  value={data.location_broad}
+                  onChange={(e) => setData('location_broad', e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     );
+  };
+
+  const renderFormContent = () => (
+    <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
+      {/* Periode Iklan */}
+      <div className="space-y-3">
+        <Label>Periode Iklan</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full justify-start rounded-lg border-zinc-300 text-left font-normal shadow-sm transition-all duration-200 hover:border-blue-400',
+                !range?.from && 'text-muted-foreground',
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+              {range?.from && range?.to
+                ? `${format(range.from, 'dd MMM yyyy')} - ${format(range.to, 'dd MMM yyyy')}`
+                : 'Pilih tanggal mulai dan selesai'}
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
+            <Calendar
+              mode="range"
+              numberOfMonths={2}
+              selected={range}
+              onSelect={handleDateChange}
+              className={cn(
+                'rounded-xl p-2 text-sm',
+                '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
+                '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+              )}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Hasil tanggal */}
+        <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+          <div className="flex flex-col rounded-md border bg-muted/30 p-2">
+            <span className="text-xs text-muted-foreground">Tanggal Mulai</span>
+            <span>{data.start_date || '—'}</span>
+          </div>
+          <div className="flex flex-col rounded-md border bg-muted/30 p-2">
+            <span className="text-xs text-muted-foreground">Tanggal Selesai</span>
+            <span>{data.end_date || '—'}</span>
+          </div>
+        </div>
+
+        {/* Tujuan Iklan */}
+        <div className="mt-4">
+          <Label>Tujuan Iklan</Label>
+          <Select value={data.goals_id} onValueChange={(val) => setData('goals_id', val)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Pilih tujuan iklan" />
+            </SelectTrigger>
+            <SelectContent>
+              {goals?.map((goal) => (
+                <SelectItem key={goal.id} value={String(goal.id)}>
+                  {goal.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Jenis Target Audiens */}
+        <div className="mt-4">
+          <Label>Jenis Target Audiens</Label>
+          <Select
+            value={targetType}
+            onValueChange={(val) => {
+              setTargetType(val);
+              setData('audience_type', val);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Pilih jenis audiens" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="targeted">Targeted</SelectItem>
+              <SelectItem value="broad">Broad</SelectItem>
+              <SelectItem value="combined">Combined</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Budget */}
+      <div className="space-y-4">
+        <div>
+          <Label>Budget Harian</Label>
+          <Input
+            type="number"
+            placeholder="Rp. 0"
+            min={0}
+            value={data.daily_budget}
+            onChange={(e) => setData('daily_budget', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Target Audiens (jumlah)</Label>
+          <Input
+            type="number"
+            placeholder="Masukkan jumlah target audiens"
+            min={0}
+            value={data.audience_target}
+            onChange={(e) => setData('audience_target', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="col-span-2">{renderTargetingFields()}</div>
+    </div>
+  );
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+        <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
+
+        <form onSubmit={handleSubmit}>
+          <Card className="w-full border-zinc-200 shadow-md">
+            <CardHeader>
+              <CardTitle>Perencanaan Iklan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-8">
+                {/* === EVENT === */}
+                <div>
+                  <Label>Nama Event</Label>
+                  <Select
+                    value={data.event_id}
+                    onValueChange={(val) => setData('event_id', val)} // ✅ Kirim id, bukan nama
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Pilih nama event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {events?.map((event) => (
+                        <SelectItem key={event.id} value={String(event.id)}>
+                          {event.name}
+                          {event.date && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              ({event.date})
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.event_id && (
+                    <p className="text-sm text-red-500 mt-1">{errors.event_id}</p>
+                  )}
+                </div>
+
+                {/* === PLATFORM TABS === */}
+                <Tabs value={tab} onValueChange={handleTabChange}>
+                  <TabsList className="mb-4 grid w-full grid-cols-3">
+                    <TabsTrigger value="boost">Boost Post</TabsTrigger>
+                    <TabsTrigger value="meta">Meta Ads</TabsTrigger>
+                    <TabsTrigger value="business">Business Suite</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="boost">{renderFormContent()}</TabsContent>
+                  <TabsContent value="meta">{renderFormContent()}</TabsContent>
+                  <TabsContent value="business">{renderFormContent()}</TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end pt-4">
+                  <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
+                    {processing ? 'Menyimpan...' : 'Simpan Draft'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </form>
+      </div>
+    </AppLayout>
+  );
 }
