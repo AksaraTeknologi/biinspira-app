@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { ArrowRight, CalendarIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function MarketingEdit() {
@@ -30,6 +30,7 @@ export default function MarketingEdit() {
 
     const { data, setData, post, processing, errors } = useForm({
         event_id: adPlanPlatform.plan?.event_id || '',
+        ad_plan_id: adPlanPlatform.plan,
         platform_id: adPlanPlatform.platform_id || '',
         goals_id: adPlanPlatform.goals_id || '',
         start_date: adPlanPlatform.start_date || '',
@@ -350,9 +351,26 @@ export default function MarketingEdit() {
                                     <TabsContent value="business">{renderFormContent()}</TabsContent>
                                 </Tabs>
 
-                                <div className="flex justify-end pt-4">
+                                <div className="flex justify-end gap-3 pt-4">
                                     <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
                                         {processing ? 'Menyimpan...' : 'Perbarui Data'}
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                        onClick={
+                                            () =>
+                                            (window.location.href = route('admin.marketing.result', {
+                                                id_event: data.event_id,
+                                                id_platform: data.platform_id,
+                                                id_ad_plan: data.ad_plan_id,
+                                            }))
+                                        }
+                                    >
+                                        Selanjutnya
+                                        <ArrowRight />
                                     </Button>
                                 </div>
                             </div>

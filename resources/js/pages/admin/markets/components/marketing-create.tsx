@@ -29,7 +29,7 @@ export default function PerencanaanIklan() {
   const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
 
   const { data, setData, post, processing, errors } = useForm({
-    event_id: '', // ✅ tambahkan event_id
+    event_id: '',
     platform_id: '1',
     goals_id: '',
     start_date: '',

@@ -146,7 +146,7 @@ export default function Marketing() {
                             <Pencil />
                         </Link>
                     </Button>
-                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="platforms" />
+                    <DeleteButton id={row.original.id} routeTable="marketing" />
                 </div>
             ),
             enableSorting: false,

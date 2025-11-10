@@ -66,7 +66,7 @@ class AdPlanPlatformController extends Controller
             'ad_plan_id' => $adPlan->id,
         ]));
         return redirect()
-            ->route('admin.marketing.index')
+            ->route('admin.marketing.result')
             ->with('success', 'Perencanaan iklan berhasil disimpan!');
     }
     public function edit($id)
@@ -74,7 +74,7 @@ class AdPlanPlatformController extends Controller
         $events = MasterEvent::all();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
-        $adPlanPlatform = AdPlanPlatform::with(["plan.event", "platform", "goal"])->findOrFail($id);
+        $adPlanPlatform = AdPlanPlatform::with(["plan.event", "platform", "goal","plan"])->findOrFail($id);
         return Inertia::render('admin/markets/components/marketing-edit', [
             'events' => $events,
             'goals' => $goals,
