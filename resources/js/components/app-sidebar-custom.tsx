@@ -81,7 +81,7 @@ export function AppSidebar() {
                     <SidebarHeader>
                         <SidebarMenu>
                             <SidebarMenuItem className='flex flex-row justify-between items-center'>
-                                <SidebarMenuButton size="lg" className={`${isCollapsed ? 'hidden' : 'block'}`} asChild>
+                                <SidebarMenuButton size="lg" className={`${isCollapsed ? 'hidden' : 'flex'}`} asChild>
                                     <Link href="/dashboard" prefetch>
                                         <AppLogo />
                                     </Link>
@@ -104,8 +104,12 @@ export function AppSidebar() {
                     </SidebarContent>
 
                     {/* Admin Section */}
-                    <SidebarFooter className={`absolute bottom-2 px-2 ${isCollapsed ? " left-3 right-3" : " left-0 right-0"}`}>
-                        <NavUser />
+                    <SidebarFooter className="absolute left-0 right-0 bottom-2 px-2">
+                        <div className="flex w-full">
+                            <div className={isCollapsed ? 'mx-auto' : ''}>
+                                <NavUser />
+                            </div>
+                        </div>
                     </SidebarFooter>
                 </div>
             </div>
