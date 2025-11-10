@@ -63,14 +63,6 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         icon: FilePlus2,
         roles: ['user'],
     },
-
-    // user - form
-    // {
-    //     title: 'Isi Form Hasil Iklan',
-    //     href: route("user.adResult.index"),
-    //     icon: FilePlus2,
-    //     roles: ['user'],
-    // },
 ];
 
 export function AppSidebar() {

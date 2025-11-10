@@ -1,23 +1,113 @@
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { useState, useEffect } from "react";
+import { Link, usePage } from "@inertiajs/react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import type { NavItem } from "@/types";
 
-export function NavMain({ items = [] }: { items: NavItem[] }) {
+interface NavMainProps {
+    items: (NavItem & { children?: NavItem[] })[];
+    className?: string;
+    subClassName?: string;
+}
+
+export function NavMain({ items = [], className, subClassName }: NavMainProps) {
     const page = usePage();
+    const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+    const toggleSubmenu = (index: number) => {
+        setOpenIndex(openIndex === index ? null : index);
+    };
+
+    // Buka otomatis submenu jika route cocok
+    useEffect(() => {
+        items.forEach((item, index) => {
+            if (item.children?.some((child) => page.url.startsWith(child.href))) {
+                setOpenIndex(index);
+            }
+        });
+    }, [page.url]);
+
     return (
         <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Marketing</SidebarGroupLabel>
-            <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={page.url.startsWith(item.href)} tooltip={{ children: item.title }}>
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
+            <SidebarGroupLabel>Menu</SidebarGroupLabel>
+            <SidebarMenu className={`bg-gray-100 rounded-lg ${className}`}>
+                {items.map((item, index) => {
+                    const isActive = page.url.startsWith(item.href);
+                    const hasChildren = item.children && item.children.length > 0;
+                    const isOpen = openIndex === index;
+                    const Icon = item.icon;
+
+                    return (
+                        <div key={item.title} className={`p-2 ${isOpen ? "bg-blue-500 rounded-lg" : ""}`}>
+                            <SidebarMenuItem>
+                                {hasChildren ? (
+                                    // 🔸 Menu utama tanpa Link, hanya toggle submenu
+                                    <SidebarMenuButton
+                                        type="button"
+                                        onClick={() => toggleSubmenu(index)}
+                                        tooltip={{ children: item.title }}
+                                        className={`flex justify-between items-center ${isOpen ? "bg-white rounded-md" : ""}`}
+                                    >
+                                        <div className="flex items-center gap-x-2">
+                                            {Icon && <Icon className="w-4 h-4" />}
+                                            <span>{item.title}</span>
+                                        </div>
+                                        <span className="ml-auto">
+                                            {isOpen ? (
+                                                <ChevronDown size={16} />
+                                            ) : (
+                                                <ChevronRight size={16} />
+                                            )}
+                                        </span>
+                                    </SidebarMenuButton>
+                                ) : (
+                                    // 🔹 Menu tanpa anak tetap punya link
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={isActive}
+                                        tooltip={{ children: item.title }}
+                                    >
+                                        <Link href={item.href} prefetch>
+                                            {Icon && <Icon className="w-4 h-4" />}
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                )}
+                            </SidebarMenuItem>
+
+                            {/* 🔻 Submenu (dengan animasi buka/tutup) */}
+                            {hasChildren && (
+                                <div
+                                    className={`mt-1 flex flex-col gap-1 overflow-hidden transition-all duration-300 
+                                        ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                                        } ${subClassName ?? ""}`}
+                                >
+                                    {(item.children ?? []).map((child) => (
+                                        <SidebarMenuItem key={child.title}>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={page.url.startsWith(child.href)}
+                                                tooltip={{ children: child.title }}
+                                                className="pl-6 text-sm text-white"
+                                            >
+                                                <Link href={child.href} prefetch>
+                                                    {child.icon && <child.icon className="w-4 h-4" />}
+                                                    <span>{child.title}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </SidebarMenu>
         </SidebarGroup>
     );
