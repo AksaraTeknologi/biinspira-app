@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { defineStepper } from "@stepperize/react";
-import axios from "axios";
 
 // Import form tiap step
 import FormPlan from "./form-plan";
@@ -228,12 +227,10 @@ export default function Stepper({ events, platforms, goals }: StepperProps) {
         mode: "onTouched",
         resolver: zodResolver(stepper.current.schema),
     });
-    console.log(form.formState.errors);
 
     const currentIndex = utils.getIndex(stepper.current.id);
 
     const onSubmit = async (values: any) => {
-        console.log(values);
         try {
             const routeName = route(
                 stepper.current.id === "plan"
@@ -243,9 +240,8 @@ export default function Stepper({ events, platforms, goals }: StepperProps) {
                         : "user.eval.store"
             );
 
-            await axios.post(routeName, values);
+            router.post(routeName, values);
 
-            console.log(`✅ Data ${stepper.current.id} tersimpan`);
             if (!stepper.isLast) stepper.next();
             else stepper.reset();
 

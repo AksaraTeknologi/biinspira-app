@@ -106,7 +106,7 @@ export function AppSidebar() {
                     {/* Admin Section */}
                     <SidebarFooter className="absolute left-0 right-0 bottom-2 px-2">
                         <div className="flex w-full">
-                            <div className={isCollapsed ? 'mx-auto' : ''}>
+                            <div className={isCollapsed ? 'mx-auto' : 'w-full'}>
                                 <NavUser />
                             </div>
                         </div>

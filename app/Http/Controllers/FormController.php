@@ -53,6 +53,8 @@ class FormController extends Controller
      */
     public function AdPlanStore(Request $request)
     {
+        dd($request->all());
+
         return response()->json([
             'message' => 'Ad plan platform berhasil disimpan',
         ]);
@@ -63,6 +65,8 @@ class FormController extends Controller
      */
     public function AdResultStore(Request $request)
     {
+        dd($request->all());
+
         return response()->json([
             'message' => 'REsult Iklan berhasil disimpan!',
         ]);
@@ -72,6 +76,8 @@ class FormController extends Controller
      */
     public function AdEvalStore(Request $request)
     {
+        dd($request->all());
+
         return response()->json([
             'message' => 'Evaluasi Iklan berhasil disimpan!',
         ]);

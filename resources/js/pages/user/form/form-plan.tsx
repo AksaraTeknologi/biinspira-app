@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
 
 interface Props {
     form: any;
@@ -30,12 +29,11 @@ export default function FormPlan({
 
     // watch ad_plan_id
     const selectedEvent = useWatch({ control, name: "ad_plan_id" }) || "";
+    const selectedGoal = useWatch({ control, name: "goals_id" }) || "";
     const targetType = useWatch({ control, name: "audience_type" }) || "targeted";
     const typeAudiens = useWatch({ control, name: "type_audience_targeted" });
-
-    // const [targetType, setTargetType] = useState('targeted');
-    // const [typeAudiens, setTypeAudiens] = useState<string | null>(null);
-    // const [detailAudiens, setDetailAudiens] = useState('');
+    const startDate = useWatch({ control, name: "start_date" });
+    const endDate = useWatch({ control, name: "end_date" });
 
     const showTargeting = targetType === 'targeted' || targetType === 'combined';
     const showBroad = targetType === 'broad' || targetType === 'combined';
@@ -119,152 +117,162 @@ export default function FormPlan({
                         {errors?.end_date && (
                             <p className="text-red-500 text-sm">{errors.end_date.message}</p>
                         )}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                    <div>
-                        <Label>Tujuan Iklan</Label>
-                        <Select
-                            onValueChange={(val) => setValue("goals_id", val)}
-                            defaultValue=""
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Pilih tujuan iklan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {goals?.map((goal) => (
-                                    <SelectItem key={goal.id} value={String(goal.id)}>
-                                        {goal.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <input type="hidden" {...register("goals_id")} />
-                        {errors?.goals_id && (
-                            <p className="text-red-500 text-sm">{errors.goals_id.message}</p>
-                        )}
+                        <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex flex-col rounded-md border bg-muted/30 p-2">
+                                <span className="text-xs text-muted-foreground">Tanggal Mulai</span>
+                                <span>{range.from ? format(range.from, 'dd MMM yyyy') : startDate ? format(new Date(startDate), 'dd MMM yyyy') : '—'}</span>
+                            </div>
+                            <div className="flex flex-col rounded-md border bg-muted/30 p-2">
+                                <span className="text-xs text-muted-foreground">Tanggal Selesai</span>
+                                <span>{range.to ? format(range.to, 'dd MMM yyyy') : endDate ? format(new Date(endDate), 'dd MMM yyyy') : '—'}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <Label>Budget Harian</Label>
-                        <Input
-                            type="number"
-                            {...register("daily_budget")}
-                            placeholder="Rp. 0"
-                            min={0}
-                        />
-                        {errors?.daily_budget && (
-                            <p className="text-red-500 text-sm">{errors.daily_budget.message}</p>
-                        )}
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                        <div>
+                            <Label>Tujuan Iklan</Label>
+                            <Select
+                                value={String(selectedGoal || "")}
+                                onValueChange={(val) => setValue("goals_id", val)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Pilih tujuan iklan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {goals?.map((goal) => (
+                                        <SelectItem key={goal.id} value={String(goal.id)}>
+                                            {goal.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <input type="hidden" {...register("goals_id")} />
+                            {errors?.goals_id && (
+                                <p className="text-red-500 text-sm">{errors.goals_id.message}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <Label>Budget Harian</Label>
+                            <Input
+                                type="number"
+                                {...register("daily_budget")}
+                                placeholder="Rp. 0"
+                                min={0}
+                            />
+                            {errors?.daily_budget && (
+                                <p className="text-red-500 text-sm">{errors.daily_budget.message}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label>Target Audiens (jumlah)</Label>
+                            <Input
+                                type="number"
+                                {...register("audience_target")}
+                                placeholder="Masukkan jumlah target audiens"
+                                min={0}
+                            />
+                            {errors?.audience_target && (
+                                <p className="text-red-500 text-sm">{errors.audience_target.message}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label>Jenis Target Audiens</Label>
+                            <Select
+                                value={targetType}
+                                onValueChange={(val) => setValue("audience_type", val)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Pilih jenis audiens" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="targeted">Targeted</SelectItem>
+                                    <SelectItem value="broad">Broad</SelectItem>
+                                    <SelectItem value="combined">Combined</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <input type="hidden" {...register("audience_type")} />
+                        </div>
                     </div>
-                    <div>
-                        <Label>Target Audiens (jumlah)</Label>
-                        <Input
-                            type="number"
-                            {...register("audience_target")}
-                            placeholder="Masukkan jumlah target audiens"
-                            min={0}
-                        />
-                        {errors?.audience_target && (
-                            <p className="text-red-500 text-sm">{errors.audience_target.message}</p>
-                        )}
-                    </div>
-                    <div>
-                        <Label>Jenis Target Audiens</Label>
-                        <Select
-                            value={targetType}
-                            onValueChange={(val) => setValue("audience_type", val)}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Pilih jenis audiens" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="targeted">Targeted</SelectItem>
-                                <SelectItem value="broad">Broad</SelectItem>
-                                <SelectItem value="combined">Combined</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <input type="hidden" {...register("audience_type")} />
-                    </div>
-                </div>
 
-                {/* bagian ketiga */}
-                <div className="mt-6 space-y-4 border-t pt-4">
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                        {showTargeting && (
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Umur (Targeted)</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Masukkan umur target"
-                                        min={0}
-                                        {...register("age_targeted")}
-                                    />
-                                </div>
-
-                                <div>
-                                    <Label>Lokasi</Label>
-                                    <Input
-                                        placeholder="Masukkan lokasi audiens"
-                                        {...register("location_targeted")}
-                                    />
-                                </div>
-
-                                <div>
-                                    <Label>Jenis Audiens</Label>
-                                    <Select
-                                        value={typeAudiens ?? ''}
-                                        onValueChange={(val) => setValue("type_audience_targeted", val)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih jenis audiens" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map((item) => (
-                                                <SelectItem key={item} value={item}>
-                                                    {item}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <input type="hidden" {...register("type_audience_targeted")} />
-                                </div>
-
-                                {typeAudiens && (
+                    {/* bagian ketiga */}
+                    <div className="mt-2 space-y-4 border-t pt-4">
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                            {showTargeting && (
+                                <div className="space-y-4">
                                     <div>
-                                        <Label>Detail Audiens ({typeAudiens})</Label>
+                                        <Label>Umur (Targeted)</Label>
                                         <Input
-                                            placeholder={`Masukkan detail untuk ${typeAudiens}`}
-                                            {...register("name_audience_targeted")}
+                                            type="number"
+                                            placeholder="Masukkan umur target"
+                                            min={0}
+                                            {...register("age_targeted")}
                                         />
                                     </div>
-                                )}
-                            </div>
-                        )}
 
-                        {showBroad && (
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Umur (Broad)</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Masukkan umur broad"
-                                        min={0}
-                                        {...register("age_broad")}
-                                    />
-                                </div>
+                                    <div>
+                                        <Label>Lokasi</Label>
+                                        <Input
+                                            placeholder="Masukkan lokasi audiens"
+                                            {...register("location_targeted")}
+                                        />
+                                    </div>
 
-                                <div>
-                                    <Label>Lokasi Broad</Label>
-                                    <Input
-                                        placeholder="Masukkan lokasi broad"
-                                        {...register("location_broad")}
-                                    />
+                                    <div>
+                                        <Label>Jenis Audiens</Label>
+                                        <Select
+                                            value={typeAudiens ?? ''}
+                                            onValueChange={(val) => setValue("type_audience_targeted", val)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih jenis audiens" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map((item) => (
+                                                    <SelectItem key={item} value={item}>
+                                                        {item}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <input type="hidden" {...register("type_audience_targeted")} />
+                                    </div>
+
+                                    {typeAudiens && (
+                                        <div>
+                                            <Label>Detail Audiens ({typeAudiens})</Label>
+                                            <Input
+                                                placeholder={`Masukkan detail untuk ${typeAudiens}`}
+                                                {...register("name_audience_targeted")}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
+
+                            {showBroad && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label>Umur (Broad)</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Masukkan umur broad"
+                                            min={0}
+                                            {...register("age_broad")}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>Lokasi Broad</Label>
+                                        <Input
+                                            placeholder="Masukkan lokasi broad"
+                                            {...register("location_broad")}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div >
                     </div >
                 </div >
             </div >
