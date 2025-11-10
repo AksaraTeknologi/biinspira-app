@@ -44,11 +44,17 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin'],
     },
 
-     // role: user
+    // role: user
     {
         title: 'Beranda',
         href: route("user.dashboard"),
         icon: LayoutGrid,
+        roles: ['user'],
+    },
+    {
+        title: 'Marketing',
+        href: route("user.marketing"),
+        icon: MessageSquareQuote,
         roles: ['user'],
     },
     {
@@ -58,6 +64,13 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['user'],
     },
 
+    // user - form
+    // {
+    //     title: 'Isi Form Hasil Iklan',
+    //     href: route("user.adResult.index"),
+    //     icon: FilePlus2,
+    //     roles: ['user'],
+    // },
 ];
 
 export function AppSidebar() {

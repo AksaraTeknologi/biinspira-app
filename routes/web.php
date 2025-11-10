@@ -7,8 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterPlatformController;
 use App\Http\Controllers\UserPagesController;
 use App\Http\Controllers\AdPlanPlatformController;
-use App\Models\AdPlan;
-use Inertia\Inertia;
+use App\Http\Controllers\AdResultPlatformController;
+use App\Http\Controllers\FormController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -43,8 +43,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::get('/marketing', 'index')->name('admin.marketing.index');
         Route::get('/marketing/create', 'create')->name('admin.marketing.create');
         Route::post('/marketing/store', 'store')->name('admin.marketing.store');
-        Route::get("/marketing/edit/{id}","edit")->name("admin.marketing.edit");
-        Route::post("/marketing/update/{id}","update")->name("admin.marketing.update");
+        Route::get("/marketing/edit/{id}", "edit")->name("admin.marketing.edit");
+        Route::post("/marketing/update/{id}", "update")->name("admin.marketing.update");
+    });
+    Route::controller(AdResultPlatformController::class)->group(function () {
+        Route::get("/marketing/result/{id_event}/{id_platform}", "resultForm")->name("admin.marketing.result");
     });
     Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 });
@@ -53,7 +56,16 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('dashboard', [UserPagesController::class, 'dashboard'])->name('dashboard');
 
-    Route::get('form_iklan', [UserPagesController::class, 'adsForm'])->name('adsForm');
+    Route::get('marketing', [UserPagesController::class, 'marketing'])->name('marketing');
+
+    Route::get('form_iklan', [FormController::class, 'planForm'])->name('adsForm');
+    Route::post('plan_form', [FormController::class, 'AdPlanStore'])->name('plan.store');
+    Route::post('result_form', [FormController::class, 'AdResultStore'])->name('result.store');
+    Route::post('eval_form', [FormController::class, 'AdEvalStore'])->name('eval.store');
+
+    // form
+    // Route::get('ad-results', [FormController::class, 'index'])->name('adResult.index');
+    // Route::post('ad-results', [FormController::class, 'store'])->name('adResult.store');
 });
 
 require __DIR__ . '/settings.php';

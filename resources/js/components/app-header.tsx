@@ -174,9 +174,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <Button variant="secondary" asChild>
                                     <Link href={route('login')}>Masuk</Link>
                                 </Button>
-                                <Button variant="default" asChild className="hidden md:inline-flex">
+                                {/* <Button variant="default" asChild className="hidden md:inline-flex">
                                     <Link href={route('register')}>Daftar Sekarang</Link>
-                                </Button>
+                                </Button> */}
                             </>
                         )}
                     </div>
