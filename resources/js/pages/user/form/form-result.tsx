@@ -54,7 +54,7 @@ export default function FormResult({ form, events = [], platforms = [] }: Props)
                 </div>
             </div>
 
-            <div className="border p-4 rounded-md mt-4 flex flex-col gap-4">
+            <div className="border p-4 rounded-md mt-4 flex flex-col">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <Label>Hasil Iklan (Platform Iklan Website)</Label>
@@ -73,7 +73,7 @@ export default function FormResult({ form, events = [], platforms = [] }: Props)
                         />
                     </div>
                 </div>
-                <Label>Metriks Iklan</Label>
+                <Label className="text-lg font-semibold mt-4">Metriks Iklan</Label>
                 <div className="grid grid-cols-2 gap-4">
 
                     <div>
@@ -86,6 +86,15 @@ export default function FormResult({ form, events = [], platforms = [] }: Props)
                         />
                     </div>
                     <div>
+                        <Label>Impression</Label>
+                        <Input
+                            type="number"
+                            placeholder="impression"
+                            {...register("metrics.impression")}
+                            onChange={(e) => setValue(`metrics.impression`, e.target.value)}
+                        />
+                    </div>
+                    <div>
                         <Label>Biaya / Hasil (CPR)</Label>
                         <Input
                             type="number"
@@ -95,12 +104,75 @@ export default function FormResult({ form, events = [], platforms = [] }: Props)
                         />
                     </div>
                     <div>
-                        <Label>Impression</Label>
+                        <Label>Clicks</Label>
                         <Input
                             type="number"
-                            placeholder="impression"
-                            {...register("metrics.impression")}
-                            onChange={(e) => setValue(`metrics.impression`, e.target.value)}
+                            placeholder="clicks"
+                            {...register("metrics.clicks")}
+                            onChange={(e) => setValue(`metrics.clicks`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Likes</Label>
+                        <Input
+                            type="number"
+                            placeholder="likes"
+                            {...register("metrics.likes")}
+                            onChange={(e) => setValue(`metrics.likes`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Saves</Label>
+                        <Input
+                            type="number"
+                            placeholder="saves"
+                            {...register("metrics.saves")}
+                            onChange={(e) => setValue(`metrics.saves`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Shared</Label>
+                        <Input
+                            type="number"
+                            placeholder="shared"
+                            {...register("metrics.shared")}
+                            onChange={(e) => setValue(`metrics.shared`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Profile Visits</Label>
+                        <Input
+                            type="number"
+                            placeholder="profile_visits"
+                            {...register("metrics.profile_visits")}
+                            onChange={(e) => setValue(`metrics.profile_visits`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Follows</Label>
+                        <Input
+                            type="number"
+                            placeholder="follows"
+                            {...register("metrics.follows")}
+                            onChange={(e) => setValue(`metrics.follows`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>Direct Message</Label>
+                        <Input
+                            type="number"
+                            placeholder="direct_messages"
+                            {...register("metrics.direct_messages")}
+                            onChange={(e) => setValue(`metrics.direct_messages`, e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label>External Link Clicks</Label>
+                        <Input
+                            type="number"
+                            placeholder="external_link_clicks"
+                            {...register("metrics.external_link_clicks")}
+                            onChange={(e) => setValue(`metrics.external_link_clicks`, e.target.value)}
                         />
                     </div>
                     <div>

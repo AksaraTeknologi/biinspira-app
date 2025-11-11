@@ -26,12 +26,20 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
 
     // Buka otomatis submenu jika route cocok
     useEffect(() => {
-        items.forEach((item, index) => {
-            if (item.children?.some((child) => page.url.startsWith(child.href))) {
-                setOpenIndex(index);
-            }
-        });
-    }, [page.url]);
+        const currentUrl = (page.url ?? "").replace(/\/+$/, "");
+        const matchIndex = items.findIndex((item) =>
+            item.children?.some((child) => {
+                const childHref = (child.href ?? "")
+                    .replace(window.location.origin, "")
+                    .replace(/\/+$/, "");
+                return childHref && currentUrl.startsWith(childHref);
+            })
+        );
+
+        if (matchIndex !== -1) {
+            setOpenIndex(matchIndex);
+        }
+    }, [page.url, items]);
 
     return (
         <SidebarGroup className="px-2 py-0">
@@ -41,6 +49,22 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                     const isActive = page.url.startsWith(item.href);
                     const hasChildren = item.children && item.children.length > 0;
                     const isOpen = openIndex === index;
+                    const isHere = (() => {
+                        const currentUrl = page.url.replace(/\/+$/, "");
+                        const itemHref = item.href?.replace(window.location.origin, "").replace(/\/+$/, "");
+
+                        if (item.children && item.children.length > 0) {
+                            return item.children.some((child) =>
+                                currentUrl.startsWith(child.href.replace(window.location.origin, ""))
+                            );
+                        }
+
+                        const hrefMatch = currentUrl === itemHref || currentUrl.startsWith(itemHref);
+                        const routeNameMatch =
+                            page.props?.routeName?.toLowerCase?.() === item.title.toLowerCase?.();
+
+                        return hrefMatch || routeNameMatch;
+                    })();
                     const Icon = item.icon;
 
                     return (
@@ -52,7 +76,7 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                         type="button"
                                         onClick={() => toggleSubmenu(index)}
                                         tooltip={{ children: item.title }}
-                                        className={`flex justify-between items-center ${isOpen ? "bg-white rounded-md" : ""}`}
+                                        className={`flex justify-between items-center hover:bg-blue-200 ${isOpen ? "bg-white rounded-md" : ""}`}
                                     >
                                         <div className="flex items-center gap-x-2">
                                             {Icon && <Icon className="w-4 h-4" />}
@@ -72,6 +96,7 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                         asChild
                                         isActive={isActive}
                                         tooltip={{ children: item.title }}
+                                        className={`hover:bg-blue-200 ${isHere ? "bg-blue-500 text-white" : ""} `}
                                     >
                                         <Link href={item.href} prefetch>
                                             {Icon && <Icon className="w-4 h-4" />}
@@ -88,27 +113,38 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                         ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                                         } ${subClassName ?? ""}`}
                                 >
-                                    {(item.children ?? []).map((child) => (
-                                        <SidebarMenuItem key={child.title}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={page.url.startsWith(child.href)}
-                                                tooltip={{ children: child.title }}
-                                                className="pl-6 text-sm text-white"
-                                            >
-                                                <Link href={child.href} prefetch>
-                                                    {child.icon && <child.icon className="w-4 h-4" />}
-                                                    <span>{child.title}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
+                                    {(item.children ?? []).map((child) => {
+                                        const currentUrl = page.url.replace(/\/+$/, "");
+                                        const childHref = child.href?.replace(window.location.origin, "").replace(/\/+$/, "");
+                                        const isChildHere =
+                                            currentUrl === childHref || currentUrl.startsWith(childHref);
+                                        return (
+                                            <SidebarMenuItem key={child.title}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={page.url.startsWith(child.href)}
+                                                    tooltip={{ children: child.title }}
+                                                    className={`pl-6 text-sm text-white ${isChildHere
+                                                            ? "bg-blue-100 text-black"
+                                                            : "hover:bg-blue-100 text-gray-700"
+                                                        }`}
+                                                >
+                                                    <Link href={child.href} prefetch>
+                                                        {child.icon && <child.icon className="w-4 h-4" />}
+                                                        <span>{child.title}</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        );
+                                    })}
                                 </div>
-                            )}
+                            )
+                            }
                         </div>
+
                     );
                 })}
             </SidebarMenu>
-        </SidebarGroup>
+        </SidebarGroup >
     );
 }

@@ -12,6 +12,7 @@ import { defineStepper } from "@stepperize/react";
 import FormPlan from "./form-plan";
 import FormResult from "./form-result";
 import FormEval from "./form-eval";
+import { profile } from "console";
 
 // ======= SCHEMA =======
 const metricSchema = z.object({
@@ -110,6 +111,13 @@ export const resultSchema = z.object({
             })
             .optional(),
 
+        impression: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Impression harus bernilai positif",
+            })
+            .optional(),
+
         cost_per_result: z
             .union([z.number(), z.string()])
             .refine((val) => val === "" || Number(val) >= 0, {
@@ -117,10 +125,59 @@ export const resultSchema = z.object({
             })
             .optional(),
 
-        impression: z
+        clicks: z
             .union([z.number(), z.string()])
             .refine((val) => val === "" || Number(val) >= 0, {
-                message: "Impression harus bernilai positif",
+                message: "Clicks harus bernilai positif",
+            })
+            .optional(),
+
+        likes: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Likes harus bernilai positif",
+            })
+            .optional(),
+
+        saves: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Saves harus bernilai positif",
+            })
+            .optional(),
+
+        shared: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Shared harus bernilai positif",
+            })
+            .optional(),
+
+        profile_visits: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Profile visits harus bernilai positif",
+            })
+            .optional(),
+
+        follows: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Follows harus bernilai positif",
+            })
+            .optional(),
+
+        direct_messages: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "Direct messages harus bernilai positif",
+            })
+            .optional(),
+
+        external_link_clicks: z
+            .union([z.number(), z.string()])
+            .refine((val) => val === "" || Number(val) >= 0, {
+                message: "External link clicks harus bernilai positif",
             })
             .optional(),
 
@@ -197,15 +254,6 @@ export const evalSchema = z.object({
             })
         )
         .optional(),
-
-    // metrics umum (jika digunakan di luar platforms)
-    metrics: z
-        .object({
-            ad_result_desc: z
-                .string()
-                .optional(),
-        })
-        .optional(),
 });
 
 // ======= DEFINE STEPPER =======
@@ -244,6 +292,7 @@ export default function Stepper({ events, platforms, goals }: StepperProps) {
 
             if (!stepper.isLast) stepper.next();
             else stepper.reset();
+            // else router.get(route("user.adsForm"));
 
         } catch (error) {
             console.error("❌ Error submit:", error);
@@ -254,7 +303,7 @@ export default function Stepper({ events, platforms, goals }: StepperProps) {
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6 p-6 border rounded-lg"
+                className="bg-white space-y-6 p-6 border rounded-lg"
             >
                 {/* Header */}
                 <div className="flex justify-between">

@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookCheck, CircleUserRound, FilePlus2, LayoutGrid, MessageSquareQuote, PartyPopper } from 'lucide-react';
+import { BookCheck, CircleUserRound, LayoutGrid, MessageSquareQuote, PartyPopper } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const allNavItems: (NavItem & { roles: string[] })[] = [
@@ -55,12 +55,6 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Marketing',
         href: route("user.marketing"),
         icon: MessageSquareQuote,
-        roles: ['user'],
-    },
-    {
-        title: 'Form Iklan',
-        href: route("user.adsForm"),
-        icon: FilePlus2,
         roles: ['user'],
     },
 ];

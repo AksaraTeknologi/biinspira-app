@@ -17,20 +17,6 @@ export default function FormEval({ form, events = [], platforms = [] }: Props) {
     const selectedEvent = useWatch({ control, name: "ad_plan_id" }) || "";
     const selectedEventBefore = useWatch({ control, name: "ad_plan_id_before" }) || "";
 
-    // watch platforms array coming from react-hook-form
-    const watchedPlatforms =
-        useWatch({
-            control,
-            name: "platforms",
-        }) || [
-            {
-                platform_id: "",
-                result: "",
-                total_cost: "",
-                metrics: { reach: "", impressions: "", cost_per_result: "" },
-            },
-        ];
-
     return (
         <>
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
@@ -88,7 +74,7 @@ export default function FormEval({ form, events = [], platforms = [] }: Props) {
                 <div className="flex flex-col gap-y-4">
                     <div>
                         <Label>Checkout Event Sekarang</Label>
-                        <Input 
+                        <Input
                             type="text"
                             {...register("current_checkout")}
                         />
@@ -140,11 +126,17 @@ export default function FormEval({ form, events = [], platforms = [] }: Props) {
             <div className="flex flex-col gap-y-1">
                 <Label>Strategi Iklan</Label>
                 <Textarea
+                    type="text"
                     placeholder="Strategi yang akan digunakan dalam iklan selanjutnya"
                     {...register("next_ad_strategy")}
-                    onChange={(e) => setValue(`metrics.ad_result_desc`, e.target.value)}
                     className="border-1 border-gray-200 rounded-md p-2"
                 />
+                {errors?.next_ad_strategy ? (
+                    <p className="text-red-500 text-sm">{errors.next_ad_strategy.message}</p>
+                ) : ((form.getValues("next_ad_strategy") || "").length > 0 &&
+                    (form.getValues("next_ad_strategy") || "").length < 10) ? (
+                    <p className="text-red-500 text-sm">Input harus minimal 10 karakter</p>
+                ) : null}
             </div>
         </>
     );

@@ -3,10 +3,9 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarTrigger, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookCheck, CalendarSearch, CircleUserRound, FilePlus2, LaptopMinimal, LayoutGrid, List, MessageSquareQuote, PartyPopper, Target } from 'lucide-react';
+import { BookCheck, CalendarSearch, CircleUserRound, LaptopMinimal, LayoutGrid, List, MessageSquareQuote, PartyPopper, Target } from 'lucide-react';
 import AppLogo from './app-logo';
-import React, { useState } from 'react';
-
+import { useSidebar } from "@/components/app-sidebar-context";
 
 const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
     {
@@ -54,29 +53,18 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
         icon: MessageSquareQuote,
         roles: ['user'],
     },
-    {
-        title: 'Form Iklan',
-        href: route("user.adsForm"),
-        icon: FilePlus2,
-        roles: ['user'],
-    },
 ];
 
 export function AppSidebar() {
+    const { isCollapsed, toggleSidebar } = useSidebar();
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
-
     const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    const toggleSidebar = () => {
-        setIsCollapsed(!isCollapsed);
-    };
 
     return (
         <Sidebar collapsible="icon" variant="inset">
             <div className="w-full relative z-0">
-                <div className={`absolute z-10 mt-0.5 ml-2 h-[95vh] bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-300 ${isCollapsed ? 'w-18' : 'w-60'}`}>
+                <div className={`absolute z-10 mt-2 lg:mt-0.5 ml-2 h-[95vh] bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-300 ${isCollapsed ? 'w-18' : 'w-60'}`}>
                     {/* Header */}
                     <SidebarHeader>
                         <SidebarMenu>
