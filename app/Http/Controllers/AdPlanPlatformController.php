@@ -66,7 +66,7 @@ class AdPlanPlatformController extends Controller
             'ad_plan_id' => $adPlan->id,
         ]));
         return redirect()
-            ->route('admin.marketing.result')
+            ->route('admin.marketing.result',["id_event" => $data["event_id"],"id_platform"=> $data["platform_id"],"id_ad_plan"=> $adPlan->id])
             ->with('success', 'Perencanaan iklan berhasil disimpan!');
     }
     public function edit($id)

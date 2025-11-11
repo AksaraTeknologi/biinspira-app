@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 
 export default function HasilIklanCreate() {
   const { props } = usePage();
-  const { events, platforms, selectedPlatform, adPlan} : any = props;
+  const { events, platforms, selectedPlatform, adPlan, adResultData }: any = props;
 
   const event = events || {};
   const platformList = Array.isArray(platforms) ? platforms : [];
@@ -27,9 +27,10 @@ export default function HasilIklanCreate() {
 
   const [tab, setTab] = useState(getPlatformKey(selectedPlatform?.name || ''));
   const { data, setData, post, processing } = useForm({
+    ad_result_id: adResultData?.adResult?.id || '',
     event_id: event?.id || '',
     platform_id: selectedPlatform?.id || '',
-    ad_plan_id: adPlan.id || "",
+    ad_plan_id: adPlan.id || '',
     total_cost: '',
     reach: '',
     impressions: '',
@@ -47,12 +48,57 @@ export default function HasilIklanCreate() {
     external_link_clicks: '',
   });
 
+  const hiddenFieldsByPlatform: Record<string, string[]> = {
+    boost: ['result_ads'],
+    business: ['result_ads'],
+    meta: [
+      'clicks',
+      'likes',
+      'saves',
+      'shares',
+      'profile_visits',
+      'folows',
+      'direct_messages',
+      'external_link_clicks',
+    ],
+  };
+
+  const isHidden = (field: string) => hiddenFieldsByPlatform[tab]?.includes(field);
+
+  // Set platform_id saat tab berubah
   useEffect(() => {
-    const selected = platformList.find(
-      (p) => getPlatformKey(p.name) === tab
-    );
+    const selected = platformList.find((p) => getPlatformKey(p.name) === tab);
     if (selected) setData('platform_id', selected.id);
   }, [tab]);
+
+  // **Tambahan: jika ada data hasil iklan, set form value**
+  useEffect(() => {
+    if (adResultData) {
+      const { adResult, adResultPlatform, adMetric } = adResultData;
+      if (adResult) {
+        setData('checkout_count', adResult.checkout_count || '');
+        setData('revenue', adResult.revenue || '');
+      }
+      if (adResultPlatform) {
+        setData('total_cost', adResultPlatform.total_cost || '');
+        setData('result_ads', adResultPlatform.result || '');
+      }
+      if (adMetric) {
+        setData('reach', adMetric.reach || '');
+        setData('impressions', adMetric.impressions || '');
+        setData('cost_per_result', adMetric.cost_per_result || '');
+        setData('clicks', adMetric.clicks || '');
+        setData('likes', adMetric.likes || '');
+        setData('saves', adMetric.saves || '');
+        setData('shares', adMetric.shares || '');
+        setData('profile_visits', adMetric.profile_visits || '');
+        setData('folows', adMetric.folows || '');
+        setData('direct_messages', adMetric.direct_messages || '');
+        setData('external_link_clicks', adMetric.external_link_clicks || '');
+        setData('result_ads', adMetric.result_ads || adResultPlatform.result || '');
+      }
+    }
+  }, [adResultData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -64,16 +110,17 @@ export default function HasilIklanCreate() {
       {/* === Bagian Utama === */}
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Hasil Iklan (Platform Iklan)</Label>
-            <Input
-              type="number"
-              placeholder="Rp. 0"
-              value={data.result_ads}
-              onChange={(e) => setData('result_ads', e.target.value)}
-            />
-          </div>
-
+          {!isHidden('result_ads') && (
+            <div>
+              <Label>Hasil Iklan (Platform Iklan)</Label>
+              <Input
+                type="number"
+                placeholder="Rp. 0"
+                value={data.result_ads}
+                onChange={(e) => setData('result_ads', e.target.value)}
+              />
+            </div>
+          )}
           <div>
             <Label>Total Biaya Iklan</Label>
             <Input
@@ -84,7 +131,6 @@ export default function HasilIklanCreate() {
             />
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Reach</Label>
@@ -95,7 +141,6 @@ export default function HasilIklanCreate() {
               onChange={(e) => setData('reach', e.target.value)}
             />
           </div>
-
           <div>
             <Label>Biaya / Hasil (CPR)</Label>
             <Input
@@ -105,7 +150,6 @@ export default function HasilIklanCreate() {
               onChange={(e) => setData('cost_per_result', e.target.value)}
             />
           </div>
-
           <div className="md:col-span-2">
             <Label>Impression</Label>
             <Input
@@ -122,85 +166,106 @@ export default function HasilIklanCreate() {
       <div className="border-t pt-6 mt-6">
         <h3 className="text-lg font-semibold mb-4">Data Metrics Tambahan</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Clicks</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah klik"
-              value={data.clicks}
-              onChange={(e) => setData('clicks', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Likes</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah suka"
-              value={data.likes}
-              onChange={(e) => setData('likes', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Saves</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah disimpan"
-              value={data.saves}
-              onChange={(e) => setData('saves', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Shares</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah dibagikan"
-              value={data.shares}
-              onChange={(e) => setData('shares', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Profile Visits</Label>
-            <Input
-              type="number"
-              placeholder="Kunjungan profil"
-              value={data.profile_visits}
-              onChange={(e) => setData('profile_visits', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Follows</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah pengikut"
-              value={data.folows}
-              onChange={(e) => setData('folows', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Direct Messages</Label>
-            <Input
-              type="number"
-              placeholder="Pesan langsung"
-              value={data.direct_messages}
-              onChange={(e) => setData('direct_messages', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>External Link Clicks</Label>
-            <Input
-              type="number"
-              placeholder="Jumlah tautan Link"
-              value={data.external_link_clicks}
-              onChange={(e) => setData('external_link_clicks', e.target.value)}
-            />
-          </div>
+          {!isHidden('clicks') && (
+            <div>
+              <Label>Clicks</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah klik"
+                value={data.clicks}
+                onChange={(e) => setData('clicks', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('likes') && (
+            <div>
+              <Label>Likes</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah suka"
+                value={data.likes}
+                onChange={(e) => setData('likes', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('saves') && (
+            <div>
+              <Label>Saves</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah disimpan"
+                value={data.saves}
+                onChange={(e) => setData('saves', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('shares') && (
+            <div>
+              <Label>Shares</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah dibagikan"
+                value={data.shares}
+                onChange={(e) => setData('shares', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('profile_visits') && (
+            <div>
+              <Label>Profile Visits</Label>
+              <Input
+                type="number"
+                placeholder="Kunjungan profil"
+                value={data.profile_visits}
+                onChange={(e) => setData('profile_visits', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('folows') && (
+            <div>
+              <Label>Follows</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah pengikut"
+                value={data.folows}
+                onChange={(e) => setData('folows', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('direct_messages') && (
+            <div>
+              <Label>Direct Messages</Label>
+              <Input
+                type="number"
+                placeholder="Pesan langsung"
+                value={data.direct_messages}
+                onChange={(e) => setData('direct_messages', e.target.value)}
+              />
+            </div>
+          )}
+          {!isHidden('external_link_clicks') && (
+            <div>
+              <Label>External Link Clicks</Label>
+              <Input
+                type="number"
+                placeholder="Jumlah tautan Link"
+                value={data.external_link_clicks}
+                onChange={(e) => setData('external_link_clicks', e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 
+  const breadcrumbs = [
+    { title: 'Marketing', href: route('admin.marketing.index') },
+    { title: 'Hasil Iklan', href: '' },
+  ];
+
   return (
-    <AppLayout breadcrumbs={[{ title: 'Marketing', href: route('admin.marketing.index') }]}>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
         <h2 className="text-2xl font-semibold">Hasil Iklan</h2>
 
@@ -228,7 +293,6 @@ export default function HasilIklanCreate() {
                     onChange={(e) => setData('revenue', e.target.value)}
                   />
                 </div>
-
                 <div>
                   <Label>Jumlah Checkout</Label>
                   <Input

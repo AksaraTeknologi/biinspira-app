@@ -41,9 +41,9 @@ export default function DeleteButton({ id, name, routeTable }: DeleteButtonProps
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus Karier?</AlertDialogTitle>
+          <AlertDialogTitle>Hapus ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Apakah Anda yakin ingin menghapus karier{' '}
+            Apakah Anda yakin ingin menghapus {' '}
             <span className="font-semibold text-gray-900">{name ?? 'ini'}</span>?<br />
             Tindakan ini tidak dapat dibatalkan.
           </AlertDialogDescription>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdEvaluationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterEventController;
 use App\Http\Controllers\HomeController;
@@ -45,14 +46,18 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::post('/marketing/store', 'store')->name('admin.marketing.store');
         Route::get("/marketing/edit/{id}", "edit")->name("admin.marketing.edit");
         Route::post("/marketing/update/{id}", "update")->name("admin.marketing.update");
-        Route::delete("/marketing/delete/{id}", "destroy")->name("admin.marketing.destroy");
+        Route::delete("/marketing/delete/{id}","destroy")->name("admin.marketing.destroy");
     });
     Route::controller(AdResultPlatformController::class)->group(function () {
         Route::get("/marketing/result/{id_event}/{id_platform}/{id_ad_plan}", "resultForm")->name("admin.marketing.result");
-        Route::post("/marketing/result/store", "store")->name("admin.marketing.result.store");
+        Route::post("/marketing/result/store","storeOrUpdate")->name("admin.marketing.result.store");
+    });
+    Route::controller(AdEvaluationController::class)->group(function() {
+        Route::get("/marketing/evaluation/{id}","evaluationForm")->name("admin.marketing.evaluation");
+        Route::post("/marketing/evaluation/store","storeOrUpdate")->name("admin.marketing.evaluation.storeOrUpdate");
     });
     Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/marketing/dashboard', [DashboardController::class, 'marketing'])->name('admin.marketing.dashboard');
+    Route::get('/marketing/dashboard',[DashboardController::class,"marketing"])->name("admin.marketing.dashboard");
 });
 
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
