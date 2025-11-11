@@ -1,60 +1,58 @@
-import React from "react";
 import {
-    BarChart,
     Bar,
     ResponsiveContainer,
     XAxis,
     Tooltip,
     Line,
-    LineChart,
     CartesianGrid,
     YAxis,
     ComposedChart,
-    LabelList,
 } from "recharts";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ArrowUpRight } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
-const rawData = [
-    { name: "JAN", pengeluaran: 60, pendapatan: 80 },
-    { name: "FEB", pengeluaran: 90, pendapatan: 60 },
-    { name: "MAR", pengeluaran: 70, pendapatan: 110 },
-    { name: "APR", pengeluaran: 100, pendapatan: 120 },
-    { name: "MEI", pengeluaran: 100, pendapatan: 50 },
-    { name: "JUN", pengeluaran: 50, pendapatan: 95 },
-    { name: "JUL", pengeluaran: 85, pendapatan: 110 },
-    { name: "AGU", pengeluaran: 90, pendapatan: 120 },
-];
-
-// transformasi data agar jadi dua segmen per bar
-const data = rawData.map((d) => ({
-    name: d.name,
-    pengeluaran: d.pengeluaran,
-    pendapatan: d.pendapatan,
-    akumulasi: d.pengeluaran + d.pendapatan
-}));
+interface RawData {
+    name: string;
+    pengeluaran: number;
+    pendapatan: number;
+}
 
 interface GrafikPendapatanProps {
     className?: string;
+    RawData: RawData[];
 }
 
-export default function GrafikPendapatan({ className }: GrafikPendapatanProps) {
+export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
+    const data = RawData.map((d) => ({
+        name: d.name,
+        pengeluaran: d.pengeluaran,
+        pendapatan: d.pendapatan,
+        akumulasi: d.pengeluaran + d.pendapatan
+    }));
+
     return (
-        <Card className={`px-6 py-4 rounded-2xl shadow-sm ${className}`}>
-            <CardContent className="p-0">
+        <Card className={`${className}`}>
+            <CardHeader>
                 <div className="flex flex-row justify-between items-center">
                     <div className="flex flex-col">
                         <h2>Data Keuangan Marketing</h2>
                         <p className="text-sm font-extralight text-gray-400">Analisis pengeluaran dan pemasukan data iklan</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <select defaultValue="bulanan" className="px-3 py-2 bg-white border rounded-md text-sm">
-                            <option value="bulanan">Bulanan</option>
-                            <option value="mingguan">Mingguan</option>
-                        </select>
+                        <Select defaultValue="bulanan">
+                            <SelectTrigger className="w-fit">
+                                <SelectValue className="mr-2" placeholder="Pilih Bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bulanan">Bulanan</SelectItem>
+                                <SelectItem value="mingguan">Mingguan</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
+            </CardHeader>
+            <CardContent>
                 <div className="grid grid-cols-3">
                     <div className="col-span-1 h-full flex flex-col py-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -82,7 +80,7 @@ export default function GrafikPendapatan({ className }: GrafikPendapatanProps) {
                     </div>
 
                     <div className="col-span-2 flex flex-col h-full">
-                        <div className="h-64 mt-auto">
+                        <div className="h-55 mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={data}>
                                     <defs>

@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import TableCustom from "@/components/table-custom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Marketing', href: '#' }];
 
@@ -26,13 +26,24 @@ export default function marketing({ title_pages, ad_plans }: MarketingProps) {
         { header: 'Nama Iklan', accessor: 'ad_name' },
         { header: 'Platform', accessor: 'platform' },
         { header: 'Status', accessor: 'status' },
+        { header: 'Aksi', accessor: 'actions' },
     ]
     const tableData = ad_plans.map((plan) => ({
         event_date: plan.event.event_date,
         ad_name: plan.event.name,
         platform: plan.event.platform,
         status: plan.status,
-    }))
+        actions: (
+            <div className="flex justify-center gap-2">
+                <Button variant="ghost" size="icon">
+                    <Pencil className="w-4 h-4 text-blue-600" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                </Button>
+            </div>
+        ),
+    }));
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={title_pages} />
@@ -57,6 +68,8 @@ export default function marketing({ title_pages, ad_plans }: MarketingProps) {
                 <TableCustom
                     columns={tableColoms}
                     data={tableData}
+                    className="max-h-[64vh] w-full table-fixed"
+                    body="max-h-[64vh] w-full overflow-y-auto"
                 />
             </div>
         </AppLayout>

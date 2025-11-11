@@ -20,7 +20,7 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
         icon: PartyPopper,
         roles: ['admin'],
         children: [
-            { title: 'Dashboard', href: "#", icon: LayoutGrid },
+            { title: 'Dashboard', href: route("admin.marketing.dashboard"), icon: LayoutGrid },
             { title: 'Daftar Iklan', href: route("admin.marketing.index"), icon: List },
             { title: 'Target Iklan', href: "#", icon: Target },
             { title: 'Event', href: route("admin.events.index"), icon: CalendarSearch },

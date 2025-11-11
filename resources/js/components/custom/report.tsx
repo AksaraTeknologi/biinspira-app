@@ -3,7 +3,6 @@ import { StickyNote } from "lucide-react";
 import React from "react";
 
 const containerStyle: React.CSSProperties = {
-    width: 340,
     padding: "20px 10px 20px 15px",
     borderRadius: 16,
     color: "#ffffff",

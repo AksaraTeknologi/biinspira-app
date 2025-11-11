@@ -104,7 +104,7 @@ export default function Dashboard({ dashboard_item, stats, chartData = [] }: Das
                 <div className='flex flex-row justify-between'>
                     <div>
                         <p className="text-sm font-extralight">Selamat Datang</p>
-                        <h1 className="text-2xl font-semibold">Biinspira</h1>
+                        <h1 className="text-2xl font-semibold">Admin</h1>
                     </div>
                     {/* tanggal */}
                     <div>
@@ -120,13 +120,13 @@ export default function Dashboard({ dashboard_item, stats, chartData = [] }: Das
                             className=''
                             RawData={rawData}
                         />
-                        {/* <FinancialDataTable
+                        <FinancialDataTable
                             tableColoms={tableColoms}
                             tableData={tableData}
-                        /> */}
+                        />
                     </div>
                     <div className="col-span-3 md:col-span-2 flex flex-col gap-y-5">
-                        {/* <Events /> */}
+                        <Events />
                         <ReportCard />
                     </div>
                 </div>

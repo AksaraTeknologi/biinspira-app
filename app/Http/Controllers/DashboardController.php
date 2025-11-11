@@ -60,4 +60,16 @@ class DashboardController extends Controller
         //     'products_by_variant' => $products_by_variant,
         // ]);
     }
+    public function marketing()
+    {
+        $stats = [
+            "totalUser" => User::count(),
+            "totalEvent" => MasterEvent::count(),
+            "totalIklan" => AdPlan::count(),
+        ];
+        return Inertia::render('admin/dashboard_new', [
+            'stats' => $stats,
+            'dashboard_item' => 'Dashboard',
+        ]);
+    }
 }
