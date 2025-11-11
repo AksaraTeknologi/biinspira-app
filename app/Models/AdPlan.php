@@ -27,9 +27,9 @@ class AdPlan extends Model
         return $this->hasMany(AdPlanPlatform::class, 'ad_plan_id');
     }
 
-    public function resultPlatforms()
+    public function results()
     {
-        return $this->hasMany(AdResultPlatform::class, 'ad_plan_id');
+        return $this->hasMany(AdResult::class, 'ad_plan_id');
     }
 
     public function evaluations()

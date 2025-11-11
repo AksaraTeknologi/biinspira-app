@@ -33,6 +33,7 @@ interface User {
 }
 
 interface Plan {
+    id: string;
     event: Event;
     status: string;
     user: User;
@@ -146,7 +147,7 @@ export default function Marketing() {
                             <Pencil />
                         </Link>
                     </Button>
-                    <DeleteButton id={row.original.id} routeTable="marketing" />
+                    <DeleteButton id={row.original.plan.id} routeTable="marketing" name={row.original.plan?.event?.name}/>
                 </div>
             ),
             enableSorting: false,

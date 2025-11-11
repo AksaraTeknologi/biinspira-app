@@ -22,8 +22,8 @@ class MasterSeeder extends Seeder
         MasterAdGoal::create(['id' => 2, 'name' => 'Kunjungan Profil Instagram',]);
         MasterAdGoal::create(['id' => 3, 'name' => 'Kunjungan Website/Linktree',]);
 
-        MasterEvent::create([ 'id' => 1, 'name' => 'Checkout', 'batch' => 'B00', 'end_date' => now()->addMonths(6)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
-        MasterEvent::create([ 'id' => 2, 'name' => 'Registration', 'batch' => 'B01', 'end_date' => now()->addMonths(6)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
-        MasterEvent::create([ 'id' => 3, 'name' => 'Payment', 'batch' => 'B02', 'end_date' => now()->addMonths(6)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
+        MasterEvent::create([ 'id' => 1, 'name' => 'Laravel Bootcamp', 'batch' => '1', 'end_date' => now()->addMonths(1)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
+        MasterEvent::create([ 'id' => 2, 'name' => 'Website Design Figma to Code', 'batch' => '1', 'end_date' => now()->addMonths(1)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
+        MasterEvent::create([ 'id' => 3, 'name' => 'Blender Bootcamp', 'batch' => '1', 'end_date' => now()->addMonths(1)->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(), ]);
     }
 }

@@ -27,6 +27,7 @@ export default function MarketingEdit() {
         from: adPlanPlatform.start_date ? parseISO(adPlanPlatform.start_date) : undefined,
         to: adPlanPlatform.end_date ? parseISO(adPlanPlatform.end_date) : undefined,
     });
+    const [isButtonActive, setIsButtonActive] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
         event_id: adPlanPlatform.plan?.event_id || '',
@@ -45,8 +46,18 @@ export default function MarketingEdit() {
         age_broad: adPlanPlatform.age_broad || '',
         location_broad: adPlanPlatform.location_broad || '',
     });
+    useEffect(() => {
+        if (!data.end_date) {
+            setIsButtonActive(false);
+            return;
+        }
 
-    // Tentukan tab aktif berdasarkan platform_id
+        const now = new Date();
+        const end = new Date(data.end_date);
+
+        // Tombol aktif jika hari ini >= end_date
+        setIsButtonActive(now >= end);
+    }, [data.end_date]);
     useEffect(() => {
         const platformMap: Record<string, string> = {
             '1': 'boost',
@@ -359,9 +370,12 @@ export default function MarketingEdit() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                                        onClick={
-                                            () =>
+                                        disabled={!isButtonActive || processing}
+                                        className={cn(
+                                            'bg-blue-600 text-white hover:bg-blue-700',
+                                            (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
+                                        )}
+                                        onClick={() =>
                                             (window.location.href = route('admin.marketing.result', {
                                                 id_event: data.event_id,
                                                 id_platform: data.platform_id,

@@ -65,8 +65,9 @@ class AdPlanPlatformController extends Controller
         AdPlanPlatform::create(array_merge($data, [
             'ad_plan_id' => $adPlan->id,
         ]));
+        // ? Apakah perlu dari form 1 langsung ke form 2 tanpa button non-aktif jika tanggal end_date tidak di pakai ?
         return redirect()
-            ->route('admin.marketing.result',["id_event" => $data["event_id"],"id_platform"=> $data["platform_id"],"id_ad_plan"=> $adPlan->id])
+            ->route('admin.marketing.result', ["id_event" => $data["event_id"], "id_platform" => $data["platform_id"], "id_ad_plan" => $adPlan->id])
             ->with('success', 'Perencanaan iklan berhasil disimpan!');
     }
     public function edit($id)
@@ -74,7 +75,7 @@ class AdPlanPlatformController extends Controller
         $events = MasterEvent::all();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
-        $adPlanPlatform = AdPlanPlatform::with(["plan.event", "platform", "goal","plan"])->findOrFail($id);
+        $adPlanPlatform = AdPlanPlatform::with(["plan.event", "platform", "goal", "plan"])->findOrFail($id);
         return Inertia::render('admin/markets/components/marketing-edit', [
             'events' => $events,
             'goals' => $goals,
@@ -115,8 +116,25 @@ class AdPlanPlatformController extends Controller
 
     public function destroy($id)
     {
-        $adPlanPlatform = AdPlanPlatform::findOrFail($id);
-        $adPlanPlatform->delete();
-        return redirect()->route('admin.marketing.index');
+        $adPlan = AdPlan::with([
+        'user',
+        'event',
+        'planPlatforms',
+        'results.resultPlatforms',
+        'evaluations',
+    ])->findOrFail($id);
+    if ($adPlan->results->isNotEmpty()) {
+        foreach ($adPlan->results as $result) {
+            $result->resultPlatforms()->delete(); // hapus platform
+        }
+        $adPlan->results()->delete(); // hapus hasil iklan
+    }
+    if ($adPlan->evaluations->isNotEmpty()) {
+        $adPlan->evaluations()->delete();
+    }
+    $adPlan->delete();
+    return redirect()
+        ->route('admin.marketing.index')
+        ->with('success', 'Data Form 1–3 berhasil dihapus.');
     }
 }
