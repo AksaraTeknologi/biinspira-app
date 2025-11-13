@@ -49,7 +49,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::delete("/marketing/delete/{id}","destroy")->name("admin.marketing.destroy");
     });
     Route::controller(AdResultPlatformController::class)->group(function () {
-        Route::get("/marketing/result/{id_event}/{id_platform}/{id_ad_plan}", "resultForm")->name("admin.marketing.result");
+        Route::get("/marketing/result/{id_event}/{id_ad_plan}", "resultForm")->name("admin.marketing.result");
         Route::post("/marketing/result/store","storeOrUpdate")->name("admin.marketing.result.store");
     });
     Route::controller(AdEvaluationController::class)->group(function() {
@@ -71,6 +71,22 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::post('result_form', [FormController::class, 'AdResultStore'])->name('result.store');
     Route::post('eval_form', [FormController::class, 'AdEvalStore'])->name('eval.store');
 
+    Route::controller(AdPlanPlatformController::class)->group(function () {
+        Route::get('/marketing/list', 'index')->name('marketing.index');
+        Route::get('/marketing/create', 'create')->name('marketing.create');
+        Route::post('/marketing/store', 'store')->name('marketing.store');
+        Route::get("/marketing/edit/{id}", "edit")->name("marketing.edit");
+        Route::post("/marketing/update/{id}", "update")->name("marketing.update");
+        Route::delete("/marketing/delete/{id}","destroy")->name("marketing.destroy");
+    });
+    Route::controller(AdResultPlatformController::class)->group(function () {
+        Route::get("/marketing/result/{id_event}/{id_ad_plan}", "resultForm")->name("marketing.result");
+        Route::post("/marketing/result/store","storeOrUpdate")->name("marketing.result.store");
+    });
+    Route::controller(AdEvaluationController::class)->group(function() {
+        Route::get("/marketing/evaluation/{id}","evaluationForm")->name("marketing.evaluation");
+        Route::post("/marketing/evaluation/store","storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
+    });
     // form
     // Route::get('ad-results', [FormController::class, 'index'])->name('adResult.index');
     // Route::post('ad-results', [FormController::class, 'store'])->name('adResult.store');

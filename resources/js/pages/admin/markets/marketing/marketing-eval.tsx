@@ -11,6 +11,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 
 export default function MarketingEval() {
     const { props }: any = usePage();
+    const { isAdmin } = props;
     const { currentPlan, previousPlan, adResult, previousAdResult, adEvaluation } = props;
 
     const currentCheckout = adResult?.checkout_count || 0;
@@ -31,7 +32,9 @@ export default function MarketingEval() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('admin.marketing.evaluation.storeOrUpdate'));
+        const submitRoute = isAdmin ? route('admin.marketing.evaluation.storeOrUpdate') : route('user.marketing.evaluation.storeOrUpdate')
+        console.log(isAdmin);
+        post(submitRoute);
     };
 
     const breadcrumbs = [

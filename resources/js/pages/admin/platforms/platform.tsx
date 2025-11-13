@@ -129,7 +129,7 @@ export default function PlatformPage() {
             placeholder="Cari platform..."
             value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="max-w-sm"
+            className="max-w-sm bg-white"
           />
           <div className="ml-auto">
             <DropdownMenu>
@@ -160,7 +160,7 @@ export default function PlatformPage() {
         </div>
 
         {/* 📋 Table */}
-        <div className="overflow-hidden rounded-md border">
+        <div className="overflow-hidden rounded-md border bg-white">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

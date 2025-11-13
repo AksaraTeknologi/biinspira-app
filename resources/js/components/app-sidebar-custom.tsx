@@ -49,7 +49,7 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
     },
     {
         title: 'Marketing',
-        href: route("user.marketing"),
+        href: route("user.marketing.index"),
         icon: MessageSquareQuote,
         roles: ['user'],
     },
