@@ -6,8 +6,10 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { Pencil } from 'lucide-react';
+import { Pencil, CalendarIcon } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -16,14 +18,17 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const schema = z.object({
   name: z.string().min(2, 'Nama event minimal 2 karakter'),
   batch: z.string().min(1, 'Batch wajib diisi'),
-  end_date: z.string().min(1, 'Tanggal wajib diisi')
-  .refine(val => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
+  end_date: z
+    .string()
+    .min(1, 'Tanggal wajib diisi')
+    .refine(val => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -42,13 +47,15 @@ interface EditEventModalProps {
 export function EditEventModal({ event, onSuccess }: EditEventModalProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const formattedDate = event.end_date ? new Date(event.end_date).toISOString().split('T')[0] : '';
+  const initialDate = event.end_date ? new Date(event.end_date) : undefined;
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: event.name,
       batch: event.batch,
-      end_date: formattedDate,
+      end_date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
     },
   });
 
@@ -73,12 +80,12 @@ export function EditEventModal({ event, onSuccess }: EditEventModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Pencil className="h-4 w-4" />
+        <Pencil className="h-4 w-4 cursor-pointer" />
       </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Event Baru</DialogTitle>
+          <DialogTitle>Edit Event</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -91,7 +98,12 @@ export function EditEventModal({ event, onSuccess }: EditEventModalProps) {
                 <FormItem>
                   <FormLabel>Nama Event</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama event" {...field} />
+                    <input
+                      type="text"
+                      placeholder="Masukkan nama event"
+                      {...field}
+                      className="input w-full"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,7 +118,12 @@ export function EditEventModal({ event, onSuccess }: EditEventModalProps) {
                 <FormItem>
                   <FormLabel>Batch</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} />
+                    <input
+                      type="text"
+                      placeholder="Masukkan batch event (contoh: 1, 2, 3)"
+                      {...field}
+                      className="input w-full"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,9 +137,32 @@ export function EditEventModal({ event, onSuccess }: EditEventModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tanggal Berakhir</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-start">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Pilih tanggal berakhir'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" side="bottom" sideOffset={4} forceMount className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate ?? null}
+                        onSelect={(date) => {
+                          setSelectedDate(date ?? undefined);
+                          field.onChange(date ? format(date, 'yyyy-MM-dd') : '');
+                        }}
+                        className={cn(
+                          'rounded-xl p-2 text-sm pointer-events-auto',
+                          '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                          '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                          '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                          '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                          '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700'
+                        )}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

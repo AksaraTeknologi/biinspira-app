@@ -110,18 +110,24 @@ class AdPlanPlatformController extends Controller
                 $validated
             );
         }
-
+        $mode = $request->input('mode', 'next');
         $isAdmin = auth()->user()->hasRole('admin');
 
-        return redirect()
-            ->route(
-                $isAdmin ? 'admin.marketing.result' : 'user.marketing.result',
-                [
-                    'id_event'    => $event->id,
-                    'id_ad_plan'  => $adPlan->id,
-                ]
-            )
-            ->with('success', 'Semua perencanaan iklan berhasil disimpan!');
+        if ($mode === 'draft') {
+            return redirect()
+                ->route($isAdmin ? 'admin.marketing.index' : 'user.marketing.index')
+                ->with('success', 'Draft berhasil disimpan!');
+        } else {
+            return redirect()
+                ->route(
+                    $isAdmin ? 'admin.marketing.result' : 'user.marketing.result',
+                    [
+                        'id_event'   => $event->id,
+                        'id_ad_plan' => $adPlan->id,
+                    ]
+                )
+                ->with('success', 'Semua perencanaan iklan berhasil disimpan!');
+        }
     }
 
     public function edit($id)

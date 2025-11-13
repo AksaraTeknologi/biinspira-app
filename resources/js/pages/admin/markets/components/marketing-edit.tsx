@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
-import { ArrowRight, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function MarketingEdit() {
@@ -356,30 +356,40 @@ export default function MarketingEdit() {
                                     ))}
                                 </Tabs>
 
-                                <div className="flex justify-end gap-3 pt-4">
-                                    <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
-                                        {processing ? 'Menyimpan...' : 'Perbarui Data'}
-                                    </Button>
+                                <div className="flex justify-between gap-3 pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        disabled={!isButtonActive || processing}
-                                        className={cn(
-                                            'bg-blue-600 text-white hover:bg-blue-700',
-                                            (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
-                                        )}
-                                        onClick={() => {
-                                            console.log(isAdmin);
-                                            const routeName = isAdmin ? 'admin.marketing.result' : 'user.marketing.result';
-                                            window.location.href = route(routeName, {
-                                                id_event: data.event_id,
-                                                id_ad_plan: data.ad_plan_id,
-                                            });
-                                        }}
+                                        className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                                        onClick={() => window.history.back()}
                                     >
-                                        Selanjutnya
-                                        <ArrowRight />
+                                        <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
+                                    <div>
+                                        <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
+                                            {processing ? 'Menyimpan...' : 'Perbarui Data'}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={!isButtonActive || processing}
+                                            className={cn(
+                                                'bg-blue-600 text-white hover:bg-blue-700 ml-2',
+                                                (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
+                                            )}
+                                            onClick={() => {
+                                                console.log(isAdmin);
+                                                const routeName = isAdmin ? 'admin.marketing.result' : 'user.marketing.result';
+                                                window.location.href = route(routeName, {
+                                                    id_event: data.event_id,
+                                                    id_ad_plan: data.ad_plan_id,
+                                                });
+                                            }}
+                                        >
+                                            Selanjutnya
+                                            <ArrowRight />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

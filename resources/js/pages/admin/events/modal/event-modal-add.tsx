@@ -1,147 +1,164 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+import { CalendarIcon, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { z } from 'zod';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const schema = z.object({
-  name: z.string().min(2, 'Nama event minimal 2 karakter'),
-  batch: z.string().min(1, 'Batch wajib diisi'),
-  end_date: z.string().min(1, 'Tanggal wajib diisi')
-    .refine(val => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
+    name: z.string().min(2, 'Nama event minimal 2 karakter'),
+    batch: z.string().min(1, 'Batch wajib diisi'),
+    end_date: z
+        .string()
+        .min(1, 'Tanggal wajib diisi')
+        .refine((val) => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface AddEventModalProps {
-  onSuccess?: () => void;
+    onSuccess?: () => void;
 }
 
 export function AddEventModal({ onSuccess }: AddEventModalProps) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: '',
-      batch: '',
-      end_date: '',
-    },
-  });
-
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
-
-    router.post(route('admin.events.store'), data, {
-      onSuccess: () => {
-        toast.success('Event berhasil ditambahkan');
-        setOpen(false);
-        form.reset();
-        setIsLoading(false);
-        onSuccess?.();
-      },
-      onError: (errors) => {
-        toast.error(errors.name || 'Gagal menambahkan event');
-        setIsLoading(false);
-      },
+    const form = useForm<FormData>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            name: '',
+            batch: '',
+            end_date: '',
+        },
     });
-  };
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          className="gap-2 bg-primary hover:bg-blue-700 
-              dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Event
-        </Button>
-      </DialogTrigger>
+    const onSubmit = async (data: FormData) => {
+        setIsLoading(true);
+        router.post(route('admin.events.store'), data, {
+            onSuccess: () => {
+                toast.success('Event berhasil ditambahkan');
+                setOpen(false);
+                form.reset();
+                setSelectedDate(undefined);
+                setIsLoading(false);
+                onSuccess?.();
+            },
+            onError: (errors) => {
+                toast.error(errors.name || 'Gagal menambahkan event');
+                setIsLoading(false);
+            },
+        });
+    };
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Tambah Event Baru</DialogTitle>
-        </DialogHeader>
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button className="gap-2 bg-primary hover:bg-blue-700 dark:border dark:border-primary dark:bg-background dark:hover:bg-blue-900">
+                    <Plus className="h-4 w-4" />
+                    Tambah Event
+                </Button>
+            </DialogTrigger>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            {/* Nama Event */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama Event</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Masukkan nama event" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Tambah Event Baru</DialogTitle>
+                </DialogHeader>
 
-            {/* Batch */}
-            <FormField
-              control={form.control}
-              name="batch"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Batch</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">
+                        {/* Nama Event */}
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nama Event</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Masukkan nama event" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-            {/* Tanggal Berakhir */}
-            <FormField
-              control={form.control}
-              name="end_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tanggal Berakhir</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        {/* Batch */}
+                        <FormField
+                            control={form.control}
+                            name="batch"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Batch</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                {isLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
+                        {/* Tanggal Berakhir */}
+                        <FormField
+                            control={form.control}
+                            name="end_date"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tanggal Berakhir</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button type="button" variant="outline" className="w-full justify-start">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Pilih tanggal berakhir'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent align="start" side="bottom" sideOffset={4} forceMount className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={selectedDate ?? null}
+                                                onSelect={(date) => {
+                                                    setSelectedDate(date ?? undefined);
+                                                    field.onChange(date ? format(date, 'yyyy-MM-dd') : '');
+                                                }}
+                                                className={cn(
+                                                    'pointer-events-auto rounded-xl p-2 text-sm',
+                                                    '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                                                    '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                                                    '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                    '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+                                                )}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="flex justify-end gap-3 pt-4">
+                            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button type="submit" disabled={isLoading} className="bg-blue-600 text-white hover:bg-blue-700">
+                                {isLoading ? 'Menyimpan...' : 'Simpan'}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
 }

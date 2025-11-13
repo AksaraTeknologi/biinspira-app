@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { ArrowLeft, CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -62,7 +62,7 @@ export default function PerencanaanIklan() {
         if (rangeValue?.to) handleInputChange('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
         const filteredData = Object.entries(formState)
@@ -101,10 +101,14 @@ export default function PerencanaanIklan() {
         console.log('Data akhir yang dikirim:', filteredData);
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
-        router.post(route(routeName), filteredData, {
-            onSuccess: () => toast.success('Data berhasil disimpan!'),
-            onError: () => toast.error('Gagal menyimpan data.'),
-        });
+        router.post(
+            route(routeName),
+            { ...filteredData, mode },
+            {
+                onSuccess: () => toast.success('Data berhasil disimpan!'),
+                onError: () => toast.error('Gagal menyimpan data.'),
+            },
+        );
     };
 
     const renderTargetingFields = (platformData: any) => {
@@ -353,10 +357,33 @@ export default function PerencanaanIklan() {
                                     <TabsContent value="business">{renderFormContent()}</TabsContent>
                                 </Tabs>
 
-                                <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
-                                        {processing ? 'Menyimpan...' : 'Simpan Draft'}
+                                <div className="flex justify-between pt-4">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                                        onClick={() => window.history.back()}
+                                    >
+                                        <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            disabled={processing}
+                                            className="bg-gray-500 text-white hover:bg-gray-600"
+                                            onClick={(e) => handleSubmit(e, 'draft')}
+                                        >
+                                            {processing ? 'Menyimpan...' : 'Simpan Draft'}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            disabled={processing}
+                                            className="bg-blue-600 text-white hover:bg-blue-700"
+                                            onClick={(e) => handleSubmit(e, 'next')}
+                                        >
+                                            {processing ? 'Menyimpan...' : 'Selanjutnya'}
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
