@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, usePage } from "@inertiajs/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {
@@ -19,6 +19,7 @@ interface NavMainProps {
 export function NavMain({ items = [], className, subClassName }: NavMainProps) {
     const page = usePage();
     const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const isFirstRender = useRef(true);
 
     const toggleSubmenu = (index: number) => {
         setOpenIndex(openIndex === index ? null : index);
@@ -36,7 +37,14 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
             })
         );
 
-        if (matchIndex !== -1) {
+        if (isFirstRender.current) {
+            if (matchIndex !== -1) setOpenIndex(matchIndex);
+            isFirstRender.current = false;
+            return;
+        }
+
+        // perubahan URL biasa tidak memicu tutup-buka lagi
+        if (matchIndex !== -1 && openIndex !== matchIndex) {
             setOpenIndex(matchIndex);
         }
     }, [page.url, items]);
@@ -60,8 +68,9 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                         }
 
                         const hrefMatch = currentUrl === itemHref || currentUrl.startsWith(itemHref);
-                        const routeNameMatch =
-                            page.props?.routeName?.toLowerCase?.() === item.title.toLowerCase?.();
+                        const routeName = typeof page.props?.routeName === "string" ? page.props.routeName.toLowerCase() : undefined;
+                        const itemTitle = typeof item.title === "string" ? item.title.toLowerCase() : undefined;
+                        const routeNameMatch = routeName !== undefined && itemTitle !== undefined && routeName === itemTitle;
 
                         return hrefMatch || routeNameMatch;
                     })();
@@ -80,9 +89,9 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                     >
                                         <div className="flex items-center gap-x-2">
                                             {Icon && <Icon className="w-4 h-4" />}
-                                            <span>{item.title}</span>
+                                            <span className="hidden md:block">{item.title}</span>
                                         </div>
-                                        <span className="ml-auto">
+                                        <span className="hidden md:block ml-auto">
                                             {isOpen ? (
                                                 <ChevronDown size={16} />
                                             ) : (
@@ -100,7 +109,7 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                     >
                                         <Link href={item.href} prefetch>
                                             {Icon && <Icon className="w-4 h-4" />}
-                                            <span>{item.title}</span>
+                                            <span className="hidden md:block">{item.title}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 )}
@@ -124,14 +133,14 @@ export function NavMain({ items = [], className, subClassName }: NavMainProps) {
                                                     asChild
                                                     isActive={page.url.startsWith(child.href)}
                                                     tooltip={{ children: child.title }}
-                                                    className={`pl-6 text-sm text-white ${isChildHere
-                                                            ? "bg-blue-100 text-black"
-                                                            : "hover:bg-blue-100 text-gray-700"
+                                                    className={`md:pl-6 text-sm text-white ${isChildHere
+                                                        ? "bg-blue-100 text-black"
+                                                        : "hover:bg-blue-100 text-white"
                                                         }`}
                                                 >
                                                     <Link href={child.href} prefetch>
                                                         {child.icon && <child.icon className="w-4 h-4" />}
-                                                        <span>{child.title}</span>
+                                                        <span className="hidden md:block">{child.title}</span>
                                                     </Link>
                                                 </SidebarMenuButton>
                                             </SidebarMenuItem>

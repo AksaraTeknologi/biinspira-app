@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { StickyNote } from "lucide-react";
 import React from "react";
+import { Card } from "../ui/card";
+import { Link } from "@inertiajs/react";
 
 const containerStyle: React.CSSProperties = {
     padding: "20px 10px 20px 15px",
@@ -20,7 +22,7 @@ const containerStyle: React.CSSProperties = {
 export default function ReportCard() {
 
     return (
-        <div
+        <Card
             role="article"
             className="h-[30vh]"
             style={{
@@ -33,15 +35,17 @@ export default function ReportCard() {
         >
             <div className="grid grid-cols-12 h-full">
                 <div className="col-start-7 col-span-6 flex flex-col">
-                    <Button variant="outline" className="w-fit ml-auto text-[12px]">
-                        Laporkan Iklan Anda
-                        <StickyNote />
-                    </Button>
+                    <Link href={route('admin.marketing.create')} className="ml-auto">
+                        <Button variant="outline" className="w-fit text-[12px]">
+                            <span className="hidden sm:block">Laporkan Iklan Anda</span>
+                            <StickyNote />
+                        </Button>
+                    </Link>
                     <div className="mt-auto text-[10px] text-[#FFFFFFBF] text-justify">
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                     </div>
                 </div>
             </div>
-        </div >
+        </Card >
     );
 }

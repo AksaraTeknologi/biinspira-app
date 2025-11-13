@@ -1,18 +1,79 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+// 🧩 Hook: deteksi mode mobile
+function useIsMobile() {
+    const [isMobile, setIsMobile] = useState<boolean>(
+        typeof window !== "undefined" ? window.innerWidth <= 768 : false
+    );
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    return isMobile;
+}
 
 interface SidebarContextType {
     isCollapsed: boolean;
     toggleSidebar: () => void;
+    isMobile: boolean;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const toggleSidebar = () => setIsCollapsed(prev => !prev);
+    const isMobile = useIsMobile();
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+    const [prevCollapsedBeforeMobile, setPrevCollapsedBeforeMobile] = useState<boolean>(false);
+
+    // 🔹 Saat mount (desktop), ambil dari localStorage
+    useEffect(() => {
+        if (!isMobile) {
+            const stored = localStorage.getItem("sidebarCollapsed");
+            if (stored !== null) {
+                setIsCollapsed(stored === "true");
+                setPrevCollapsedBeforeMobile(stored === "true");
+            }
+        }
+    }, [isMobile]);
+
+    // 🔹 Simpan ke localStorage hanya jika bukan mobile
+    useEffect(() => {
+        if (!isMobile) {
+            localStorage.setItem("sidebarCollapsed", isCollapsed.toString());
+        }
+    }, [isCollapsed, isMobile]);
+
+    // 🔹 Perubahan mode
+    useEffect(() => {
+        if (isMobile) {
+            // Simpan keadaan terakhir sebelum mobile
+            setPrevCollapsedBeforeMobile(isCollapsed);
+            // Paksa collapse saat mobile
+            setIsCollapsed(true);
+        } else {
+            // Saat kembali ke desktop → kembalikan ke keadaan sebelumnya
+            setIsCollapsed(prevCollapsedBeforeMobile);
+        }
+    }, [isMobile]);
+
+    const toggleSidebar = () => {
+        // Toggle hanya boleh dilakukan di desktop
+        if (!isMobile) {
+            setIsCollapsed((prev) => {
+                const newVal = !prev;
+                localStorage.setItem("sidebarCollapsed", newVal.toString());
+                return newVal;
+            });
+        }
+    };
 
     return (
-        <SidebarContext.Provider value={{ isCollapsed, toggleSidebar }}>
+        <SidebarContext.Provider value={{ isCollapsed, toggleSidebar, isMobile }}>
             {children}
         </SidebarContext.Provider>
     );

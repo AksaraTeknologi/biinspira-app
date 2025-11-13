@@ -12,6 +12,9 @@ class MasterAdGoalController extends Controller
     public function index()
     {
         $masterAdGoals = MasterAdGoal::all();
+
+        // dd($masterAdGoals);
+
         return Inertia::render('admin/adgoals/adgoal', [
             'masterAdGoals' => $masterAdGoals,
             'dashboard_item' => 'Master Ad Goal',

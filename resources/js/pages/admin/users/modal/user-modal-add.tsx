@@ -63,7 +63,9 @@ export function AddUserModal({ onSuccess }: AddUserModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+        <Button className="gap-2 bg-primary hover:bg-blue-700 
+              dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+        >
           <Plus className="h-4 w-4" />
           Tambah User
         </Button>

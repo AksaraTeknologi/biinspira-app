@@ -23,12 +23,12 @@ export default function TableCustom({
     body = "",
 }: TableMarketingProps) {
 
-    const tabHeade = () => {
+    const tabHeader = () => {
         return (
             <TableHeader>
-                <TableRow className="bg-blue-100">
+                <TableRow className="bg-border">
                     {columns.map((col) => (
-                        <TableHead key={col.accessor} className={`text-center ${col.className}`}>
+                        <TableHead key={col.accessor} className={`text-start ${col.className}`}>
                             {col.header}
                         </TableHead>
                     ))}
@@ -42,18 +42,18 @@ export default function TableCustom({
             <TableBody className={body}>
                 {data.length > 0 ? (
                     data.map((row, idx) => (
-                        <TableRow key={idx} className="text-center">
+                        <TableRow key={idx} className="bg-input text-start">
                             {columns.map((col) => (
                                 <TableCell key={col.accessor} className="py-1">
                                     {col.accessor === "status" ? (
                                         <Button
                                             variant="secondary"
-                                            className={`text-white px-4 py-1 rounded-full 
+                                            className={`text-white px-4 py-1 rounded-full w-full
                                                     ${(row.status === "draft" || row.status === "Business Suite")
-                                                    ? "bg-blue-500"
+                                                    ? "bg-chart-1"
                                                     : (row.status === "Boost Post")
-                                                        ? "bg-red-500"
-                                                        : "bg-green-500"
+                                                        ? "bg-chart-3"
+                                                        : "bg-chart-2"
                                                 }`}
                                         >
                                             {row.status}
@@ -77,10 +77,10 @@ export default function TableCustom({
     }
 
     return (
-        <div className={`relative rounded-lg border bg-white shadow-sm overflow-hidden ${className}`}>
+        <div className={`relative rounded-lg border dark:border-muted-foreground shadow-sm overflow-hidden ${className}`}>
             <div className={body} style={{ scrollbarWidth:"none" }}>
                 <Table className="border-0">
-                    {tabHeade()}
+                    {tabHeader()}
                     {tabBody()}
                 </Table>
             </div>

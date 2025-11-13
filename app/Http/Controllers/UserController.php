@@ -6,12 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::all();
+        $users = User::where('name', '!=', 'admin')->get();
         return Inertia::render('admin/users/user', [
             'dashboard_item' => 'User',
             'users' => $users

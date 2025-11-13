@@ -65,14 +65,17 @@ export default function Marketing() {
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold">Daftar Iklan</h1>
-                    <Button onClick={handleAddAd} className="bg-blue-600 hover:bg-blue-700">
+                    <Button
+                        onClick={handleAddAd}
+                        className="gap-2 bg-primary hover:bg-blue-700 dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+                    >
                         + Tambah Iklan
                     </Button>
                 </div>
 
-                <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+                <div className="overflow-hidden rounded-lg border shadow-sm">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className='bg-border'>
                             <TableRow>
                                 <TableHead>Event</TableHead>
                                 <TableHead>Batch</TableHead>
@@ -85,7 +88,7 @@ export default function Marketing() {
                                 <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className='bg-input'>
                             {adPlans.length > 0 ? (
                                 adPlans.map((plan) => {
                                     const platforms = plan.plan_platforms.map((p) => p.platform?.name).join(', ');
@@ -96,10 +99,10 @@ export default function Marketing() {
                                                 p.audience_type === 'targeted'
                                                     ? 'Targetting Audiens'
                                                     : p.audience_type === 'broad'
-                                                      ? 'Broad'
-                                                      : p.audience_type === 'combined'
-                                                        ? 'Combined'
-                                                        : '-',
+                                                        ? 'Broad'
+                                                        : p.audience_type === 'combined'
+                                                            ? 'Combined'
+                                                            : '-',
                                             ),
                                         ),
                                     ].join(', ');
@@ -116,13 +119,12 @@ export default function Marketing() {
                                             <TableCell>{plan.user?.name || '-'}</TableCell>
                                             <TableCell>
                                                 <span
-                                                    className={`rounded px-2 py-1 text-xs font-medium ${
-                                                        plan.status === 'active'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : plan.status === 'draft'
-                                                              ? 'bg-yellow-100 text-yellow-700'
-                                                              : 'bg-gray-100 text-gray-700'
-                                                    }`}
+                                                    className={`rounded px-2 py-1 text-xs font-medium ${plan.status === 'active'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : plan.status === 'draft'
+                                                            ? 'bg-yellow-100 text-yellow-700'
+                                                            : 'bg-gray-100 text-gray-700'
+                                                        }`}
                                                 >
                                                     {plan.status || '-'}
                                                 </span>

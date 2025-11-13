@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 
 import {
   Dialog,
@@ -15,44 +15,62 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+// ✅ Validasi form
 const schema = z.object({
-  name: z.string().min(2, 'Nama event minimal 2 karakter'),
+  name: z.string().min(2, 'Nama Ad Goal minimal 2 karakter'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-interface AddPlatformModalProps {
+type MasterAdGoalType = {
+  id: number;
+  name: string;
+};
+
+interface EditMasterAdGoalsModalProps {
+  masterAdGoals: MasterAdGoalType;
   onSuccess?: () => void;
 }
 
-export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
+export function EditMasterAdGoalsModal({
+  masterAdGoals,
+  onSuccess,
+}: EditMasterAdGoalsModalProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
+      name: masterAdGoals.name,
     },
   });
 
+  // ✅ Gunakan PUT (karena di controller kamu pakai update)
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
 
-    router.post(route('admin.events.store'), data, {
+    router.post(route('admin.adgoals.update', masterAdGoals.id), data, {
       onSuccess: () => {
-        toast.success('Platform berhasil ditambahkan');
+        toast.success('Ad Goal berhasil diperbarui');
         setOpen(false);
-        form.reset();
         setIsLoading(false);
         onSuccess?.();
+        form.reset(data);
       },
-      onError: (errors) => {
-        toast.error(errors.name || 'Gagal menambahkan platform');
+      onError: (errors: Record<string, string>) => {
+        toast.error(errors.name || 'Gagal memperbarui Ad Goal');
         setIsLoading(false);
       },
     });
@@ -61,30 +79,32 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary hover:bg-blue-700 
-              dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-muted"
+          title="Edit Ad Goal"
         >
-          <Plus className="h-4 w-4" />
-          Tambah Platform
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Tambah Platfom Baru</DialogTitle>
+          <DialogTitle>Edit Nama Target</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            {/* Nama Platform */}
+            {/* Input Nama Ad Goal */}
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Platform</FormLabel>
+                  <FormLabel>Nama Target</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama platform" {...field} />
+                    <Input placeholder="Masukkan nama Ad Goal" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,7 +112,11 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
             />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Batal
               </Button>
               <Button

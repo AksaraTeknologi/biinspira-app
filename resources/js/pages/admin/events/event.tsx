@@ -148,7 +148,7 @@ export default function EventPage() {
             placeholder="Cari event..."
             value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="max-w-sm bg-white"
+            className="max-w-sm bg-input"
           />
           <div className="ml-auto">
             <DropdownMenu>
@@ -179,9 +179,9 @@ export default function EventPage() {
         </div>
 
         {/* 📋 Table */}
-        <div className="overflow-hidden rounded-md border bg-white">
+        <div className="overflow-hidden rounded-md border shadow-sm">
           <Table>
-            <TableHeader>
+            <TableHeader className='bg-border'>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -198,7 +198,7 @@ export default function EventPage() {
               ))}
             </TableHeader>
 
-            <TableBody>
+            <TableBody className='bg-input'>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow

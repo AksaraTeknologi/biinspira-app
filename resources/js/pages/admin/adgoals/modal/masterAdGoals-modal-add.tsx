@@ -15,21 +15,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+// 🧩 Validasi form
 const schema = z.object({
-  name: z.string().min(2, 'Nama event minimal 2 karakter'),
+  name: z.string().min(2, 'Nama minimal 2 karakter'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-interface AddPlatformModalProps {
+interface AddMasterAdGoalsProps {
   onSuccess?: () => void;
 }
 
-export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
+export function AddMasterAdGoalsModal({ onSuccess }: AddMasterAdGoalsProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,50 +49,55 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
   });
 
   const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    router.post(route('admin.events.store'), data, {
-      onSuccess: () => {
-        toast.success('Platform berhasil ditambahkan');
-        setOpen(false);
-        form.reset();
-        setIsLoading(false);
-        onSuccess?.();
-      },
-      onError: (errors) => {
-        toast.error(errors.name || 'Gagal menambahkan platform');
-        setIsLoading(false);
-      },
-    });
+      await router.post(route('admin.adgoals.store'), data, {
+        onSuccess: () => {
+          toast.success('Target berhasil ditambahkan');
+          setOpen(false);
+          form.reset();
+          onSuccess?.();
+        },
+        onError: (errors) => {
+          toast.error(errors.name || 'Gagal menambahkan target');
+        },
+        onFinish: () => setIsLoading(false),
+      });
+    } catch (error) {
+      toast.error('Terjadi kesalahan saat mengirim data');
+      setIsLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary hover:bg-blue-700 
+        <Button
+          className="gap-2 bg-primary hover:bg-blue-700 
               dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
         >
           <Plus className="h-4 w-4" />
-          Tambah Platform
+          Tambah Target
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Tambah Platfom Baru</DialogTitle>
+          <DialogTitle>Tambah Target Baru</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            {/* Nama Platform */}
+            {/* Nama Event */}
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Platform</FormLabel>
+                  <FormLabel>Nama Target</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama platform" {...field} />
+                    <Input placeholder="Masukkan nama target" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,7 +105,12 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
             />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isLoading}
+              >
                 Batal
               </Button>
               <Button

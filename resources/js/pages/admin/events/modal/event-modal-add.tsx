@@ -23,7 +23,7 @@ const schema = z.object({
   name: z.string().min(2, 'Nama event minimal 2 karakter'),
   batch: z.string().min(1, 'Batch wajib diisi'),
   end_date: z.string().min(1, 'Tanggal wajib diisi')
-  .refine(val => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
+    .refine(val => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -66,7 +66,10 @@ export function AddEventModal({ onSuccess }: AddEventModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+        <Button
+          className="gap-2 bg-primary hover:bg-blue-700 
+              dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+        >
           <Plus className="h-4 w-4" />
           Tambah Event
         </Button>

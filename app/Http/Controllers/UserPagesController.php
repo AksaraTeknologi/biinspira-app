@@ -11,19 +11,6 @@ use Illuminate\Http\Request;
 
 class UserPagesController extends Controller
 {
-    public function dashboard()
-    {
-        $stats = [
-            "totalUser" => User::count(),
-            "totalEvent" => MasterEvent::count(),
-            "totalIklan" => AdPlan::count(),
-        ];
-        return Inertia::render('user/dashboard', [
-            'stats' => $stats,
-            'dashboard_item' => 'Dashboard',
-        ]);
-    }
-
     public function marketing()
     {
         // data tabel
@@ -64,32 +51,4 @@ class UserPagesController extends Controller
             'ad_plans' => $adPlans
         ]);
     }
-
-    // public function planForm()
-    // {
-    //     $events = AdPlan::query()
-    //         ->join('master_events', 'ad_plans.event_id', '=', 'master_events.id')
-    //         ->select('ad_plans.id as ad_plan_id', 'master_events.name as event_name')
-    //         ->get()
-    //         ->map(fn($item) => [
-    //             'id' => $item->ad_plan_id,
-    //             'name' => $item->event_name,
-    //         ]);
-
-    //     $platforms = MasterPlatform::query()
-    //         ->select('master_platforms.id as platform_id', 'master_platforms.name as platform_name')
-    //         ->get()
-    //         ->map(fn($item) => [
-    //             'id' => $item->platform_id,
-    //             'name' => $item->platform_name,
-    //         ]);
-
-    //     // dd($events, $platforms);
-
-    //     return Inertia::render('user/adsForm', [
-    //         'title_pages' => 'Add Advertise',
-    //         'events' => $events,
-    //         'platforms' => $platforms,
-    //     ]);
-    // }
 }
