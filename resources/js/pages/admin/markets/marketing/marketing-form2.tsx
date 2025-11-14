@@ -31,27 +31,7 @@ export default function MarketingForm2() {
         ad_result_id: adResultData?.adResult?.id || '',
         ad_plan_id: adPlan?.id || '',
         event_id: event?.id || '',
-        platforms: platformList.map((p) => {
-            const existingData = adResultData?.adResultsByPlatform?.[p.id] || {};
-            const m = existingData.adMetric || {};
-            const r = existingData.adResultPlatform || {};
-            return {
-                platform_id: p.id,
-                total_cost: r.total_cost || '',
-                reach: m.reach || '',
-                impressions: m.impressions || '',
-                cost_per_result: m.cost_per_result || '',
-                result_ads: m.result_ads || '',
-                clicks: m.clicks || '',
-                likes: m.likes || '',
-                saves: m.saves || '',
-                shares: m.shares || '',
-                profile_visits: m.profile_visits || '',
-                folows: m.folows || '',
-                direct_messages: m.direct_messages || '',
-                external_link_clicks: m.external_link_clicks || '',
-            };
-        }),
+        platforms: [],
         checkout_count: adResultData?.adResult?.checkout_count || '',
         revenue: adResultData?.adResult?.revenue || '',
     });
@@ -63,10 +43,8 @@ export default function MarketingForm2() {
         business: ['result_ads'],
         meta: ['clicks', 'likes', 'saves', 'shares', 'profile_visits', 'folows', 'direct_messages', 'external_link_clicks'],
     };
-
     const isHidden = (field: string) => hiddenFieldsByPlatform[tab]?.includes(field);
 
-    // === Inisialisasi platformData baik ada data sebelumnya atau tidak ===
     useEffect(() => {
         const newPlatformData: Record<number, any> = {};
 
@@ -95,6 +73,17 @@ export default function MarketingForm2() {
         setPlatformData(newPlatformData);
     }, [platformList, adResultData]);
 
+    useEffect(() => {
+        if (Object.keys(platformData).length > 0) {
+            const mapped = Object.keys(platformData).map((pid) => ({
+                platform_id: Number(pid),
+                ...platformData[pid],
+            }));
+
+            setData('platforms', mapped);
+        }
+    }, [platformData]);
+
     const handleFieldChange = (platformId: number, field: string, value: string) => {
         setPlatformData((prev) => ({
             ...prev,
@@ -105,10 +94,23 @@ export default function MarketingForm2() {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
+
+        const mergedPlatforms = data.platforms.map((p) => ({
+            ...p,
+            ...platformData[p.platform_id],
+        }));
+
+        setData('platforms', mergedPlatforms);
+
+        console.log('data.platforms sebelum merge:', data.platforms);
+        console.log('platformData:', platformData);
+        console.log('mergedPlatforms:', mergedPlatforms);
+
         const submitRoute = isAdmin ? route('admin.marketing.result.store') : route('user.marketing.result.store');
-        post(submitRoute, data);
+
+        post(submitRoute);
     };
 
     return (
@@ -123,11 +125,13 @@ export default function MarketingForm2() {
                         </CardHeader>
 
                         <CardContent className="space-y-8">
+                            {/* EVENT */}
                             <div>
                                 <Label>Nama Event</Label>
                                 <Input value={event.name || ''} disabled />
                             </div>
 
+                            {/* CHECKOUT & REVENUE */}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <Label>Omset per Event</Label>
@@ -149,7 +153,7 @@ export default function MarketingForm2() {
                                 </div>
                             </div>
 
-                            {/* === Tabs untuk setiap platform === */}
+                            {/* PLATFORM TABS */}
                             <Tabs value={tab} onValueChange={setTab}>
                                 <TabsList className={`mb-4 grid w-full grid-cols-${platformList.length}`}>
                                     {platformList.map((p) => (
@@ -162,35 +166,35 @@ export default function MarketingForm2() {
                                 {platformList.map((p) => (
                                     <TabsContent key={p.id} value={getPlatformKey(p.name)}>
                                         <div className="space-y-6">
+                                            {/* BIAYA & HASIL IKLAN */}
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 {!isHidden('result_ads') && (
                                                     <div>
                                                         <Label>Hasil Iklan</Label>
                                                         <Input
                                                             type="number"
-                                                            placeholder="Masukkan hasil iklan"
                                                             value={platformData[p.id]?.result_ads || ''}
                                                             onChange={(e) => handleFieldChange(p.id, 'result_ads', e.target.value)}
                                                         />
                                                     </div>
                                                 )}
+
                                                 <div>
                                                     <Label>Total Biaya Iklan</Label>
                                                     <Input
                                                         type="number"
-                                                        placeholder="Rp. 0"
                                                         value={platformData[p.id]?.total_cost || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'total_cost', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
 
+                                            {/* METRIC UTAMA */}
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 <div>
                                                     <Label>Reach</Label>
                                                     <Input
                                                         type="number"
-                                                        placeholder="Jumlah reach"
                                                         value={platformData[p.id]?.reach || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'reach', e.target.value)}
                                                     />
@@ -199,24 +203,25 @@ export default function MarketingForm2() {
                                                     <Label>CPR</Label>
                                                     <Input
                                                         type="number"
-                                                        placeholder="Rp. 0"
                                                         value={platformData[p.id]?.cost_per_result || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'cost_per_result', e.target.value)}
                                                     />
                                                 </div>
+
                                                 <div className="md:col-span-2">
                                                     <Label>Impression</Label>
                                                     <Input
                                                         type="number"
-                                                        placeholder="Jumlah impression"
                                                         value={platformData[p.id]?.impressions || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'impressions', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
 
+                                            {/* METRIC TAMBAHAN */}
                                             <div className="mt-6 border-t pt-6">
                                                 <h3 className="mb-4 text-lg font-semibold">Metrics Tambahan</h3>
+
                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                     {[
                                                         'clicks',
@@ -228,13 +233,12 @@ export default function MarketingForm2() {
                                                         'direct_messages',
                                                         'external_link_clicks',
                                                     ]
-                                                        .filter((field) => !isHidden(field))
+                                                        .filter((f) => !isHidden(f))
                                                         .map((field) => (
                                                             <div key={field}>
                                                                 <Label>{field.replaceAll('_', ' ')}</Label>
                                                                 <Input
                                                                     type="number"
-                                                                    placeholder={`Masukkan ${field.replaceAll('_', ' ')}`}
                                                                     value={platformData[p.id]?.[field] || ''}
                                                                     onChange={(e) => handleFieldChange(p.id, field, e.target.value)}
                                                                 />
@@ -247,6 +251,7 @@ export default function MarketingForm2() {
                                 ))}
                             </Tabs>
 
+                            {/* BUTTONS */}
                             <div className="flex justify-between pt-4">
                                 <Button
                                     type="button"

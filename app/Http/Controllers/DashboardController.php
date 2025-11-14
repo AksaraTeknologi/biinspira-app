@@ -57,16 +57,21 @@ class DashboardController extends Controller
     {
         return AdResultPlatform::with(['result:id,revenue'])
             ->select('id', 'ad_result_id', 'total_cost', 'created_at')
-            ->get()
-            ->map(function ($item) {
-                $pendapatan = (int) round(optional($item->result)->revenue ?? 0);
-                $pengeluaran = (int) round($item->total_cost ?? 0);
+            ->get()->map(function ($item) {
                 return [
-                    'pendapatan' => $pendapatan,
-                    'pengeluaran' => $pengeluaran,
-                    'month' => $item->created_at->format('M') ?? null,
+                    'pendapatan' => (int) round(optional($item->result)->revenue ?? 0),
+                    'pengeluaran' => (int) round($item->total_cost ?? 0),
+                    'month' => $item->created_at->format('Y-m') ?? null,
+                    'label' => $item->created_at->format('M') ?? null,
                 ];
-            });
+            })
+            ->groupBy('month')->map(function ($i, $mK) {
+                return [
+                    'month'      => $i->first()['label'],
+                    'pendapatan' => $i->sum('pendapatan'),
+                    'pengeluaran' => $i->sum('pengeluaran'),
+                ];
+            })->values();
     }
 
     private function getTableData()

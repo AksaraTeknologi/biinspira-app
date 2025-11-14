@@ -108,7 +108,7 @@ export default function EventPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <EditEventModal event={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='events'/>
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='events' role='admin'/>
         </div>
       ),
       enableSorting: false,

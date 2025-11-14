@@ -98,7 +98,7 @@ export default function AdGoalPage({ masterAdGoals, dashboard_item }: PageProps)
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <EditMasterAdGoalsModal masterAdGoals={row.original} onSuccess={() => router.reload()} />
-                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="adgoals" />
+                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="adgoals" role='admin'/>
                 </div>
             ),
             enableSorting: false,

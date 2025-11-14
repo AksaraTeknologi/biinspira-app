@@ -146,6 +146,7 @@ export default function Marketing() {
                                                             id={plan.id}
                                                             routeTable="marketing"
                                                             name={plan.event?.name}
+                                                            role="admin"
                                                         />
                                                     )}
                                                 </div>

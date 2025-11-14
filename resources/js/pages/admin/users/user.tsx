@@ -94,7 +94,7 @@ export default function UserPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <EditUserModal user={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='users'/>
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='users' role='admin'/>
         </div>
       ),
       enableSorting: false,

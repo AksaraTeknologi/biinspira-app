@@ -53,55 +53,59 @@ class AdPlanPlatformController extends Controller
     }
     public function store(Request $request)
     {
+        $mode = $request->input('mode', 'next'); // ambil mode dulu
+
+        // Ambil data platform
         $platformDataList = $request->only(['boost', 'meta', 'business']);
-        $platformDataList = array_filter($platformDataList, function ($data) {
-            if (!is_array($data)) return false;
-            $meaningful = array_filter($data, fn($v) => $v !== null && $v !== '');
-            return count($meaningful) > 2;
-        });
+
+        // Untuk draft, jangan filter terlalu ketat
+        $platformDataList = array_filter($platformDataList, fn($data) => is_array($data));
+
         if (empty($platformDataList)) {
             return back()->withErrors(['message' => 'Tidak ada data platform yang diisi.']);
         }
         $firstPlatform = reset($platformDataList);
         $event = MasterEvent::findOrFail($firstPlatform['event_id']);
-        $adPlan = AdPlan::firstOrCreate(
-            [
-                'event_id' => $event->id,
-                'user_id' => $firstPlatform['user_id'] ?? auth()->id(),
-            ],
-            [
-                'status' => 'draft',
-            ]
-        );
+        $adPlan = AdPlan::create([
+            'event_id' => $event->id,
+            'user_id'  => $firstPlatform['user_id'] ?? auth()->id(),
+            'status'   => 'draft',
+        ]);
+
         if ($adPlan->wasRecentlyCreated) {
             $event->increment('batch');
         }
-
         foreach ($platformDataList as $platformKey => $platformData) {
-            $validator = Validator::make($platformData, [
-                'user_id'                => "required|exists:users,id",
-                'platform_id'            => "required|exists:master_platforms,id",
-                'goals_id'               => "required|exists:master_ad_goals,id",
-                'start_date'             => "required|date",
-                'end_date'               => "required|date|after_or_equal:start_date",
-                'daily_budget'           => "required|numeric|min:0",
-                'audience_target'        => "required|numeric|min:0",
-                'audience_type'          => "required|in:targeted,broad,combined",
-                'type_audience_targeted' => "nullable|string",
-                'name_audience_targeted' => "nullable|string|max:255",
-                'age_targeted'           => "nullable|string|max:255",
-                'location_targeted'      => "nullable|string|max:255",
-                'age_broad'              => "nullable|string|max:255",
-                'location_broad'         => "nullable|string|max:255",
-                'event_id'               => "required|exists:master_events,id",
-            ]);
+            // Sesuaikan aturan validasi untuk draft
+            $rules = [
+                'user_id' => 'required|exists:users,id',
+                'platform_id' => 'required|exists:master_platforms,id',
+                'goals_id' => $mode === 'draft' ? 'nullable|exists:master_ad_goals,id' : 'required|exists:master_ad_goals,id',
+                'start_date' => $mode === 'draft' ? 'nullable|date' : 'required|date',
+                'end_date' => $mode === 'draft' ? 'nullable|date' : 'required|date|after_or_equal:start_date',
+                'daily_budget' => $mode === 'draft' ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+                'audience_target' => $mode === 'draft' ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+                'audience_type' => $mode === 'draft' ? 'nullable|in:targeted,broad,combined' : 'required|in:targeted,broad,combined',
+                'type_audience_targeted' => 'nullable|string',
+                'name_audience_targeted' => 'nullable|string|max:255',
+                'age_targeted' => 'nullable|string|max:255',
+                'location_targeted' => 'nullable|string|max:255',
+                'age_broad' => 'nullable|string|max:255',
+                'location_broad' => 'nullable|string|max:255',
+                'event_id' => 'required|exists:master_events,id',
+            ];
+
+            $validator = Validator::make($platformData, $rules);
+
             if ($validator->fails()) {
                 return back()
                     ->withErrors($validator)
                     ->withInput()
                     ->with('error', "Validasi gagal untuk platform: {$platformKey}");
             }
+
             $validated = $validator->validated();
+
             AdPlanPlatform::updateOrCreate(
                 [
                     'ad_plan_id' => $adPlan->id,
@@ -110,25 +114,26 @@ class AdPlanPlatformController extends Controller
                 $validated
             );
         }
-        $mode = $request->input('mode', 'next');
+
         $isAdmin = auth()->user()->hasRole('admin');
 
         if ($mode === 'draft') {
             return redirect()
                 ->route($isAdmin ? 'admin.marketing.index' : 'user.marketing.index')
                 ->with('success', 'Draft berhasil disimpan!');
-        } else {
-            return redirect()
-                ->route(
-                    $isAdmin ? 'admin.marketing.result' : 'user.marketing.result',
-                    [
-                        'id_event'   => $event->id,
-                        'id_ad_plan' => $adPlan->id,
-                    ]
-                )
-                ->with('success', 'Semua perencanaan iklan berhasil disimpan!');
         }
+
+        return redirect()
+            ->route(
+                $isAdmin ? 'admin.marketing.result' : 'user.marketing.result',
+                [
+                    'id_event' => $event->id,
+                    'id_ad_plan' => $adPlan->id,
+                ]
+            )
+            ->with('success', 'Semua perencanaan iklan berhasil disimpan!');
     }
+
 
     public function edit($id)
     {
@@ -259,6 +264,10 @@ class AdPlanPlatformController extends Controller
     }
     public function destroy($id)
     {
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin');
+
+        // Ambil ad plan lengkap dengan relasi
         $adPlan = AdPlan::with([
             'user',
             'event',
@@ -266,18 +275,36 @@ class AdPlanPlatformController extends Controller
             'results.resultPlatforms',
             'evaluations',
         ])->findOrFail($id);
+
+        // Jika bukan admin → pastikan ini milik user sendiri
+        if (!$isAdmin && $adPlan->user_id !== $user->id) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus data ini.');
+        }
+
+        // Hapus data hasil (Form 2)
         if ($adPlan->results->isNotEmpty()) {
             foreach ($adPlan->results as $result) {
                 $result->resultPlatforms()->delete();
             }
             $adPlan->results()->delete();
         }
+
+        // Hapus data evaluasi (Form 3)
         if ($adPlan->evaluations->isNotEmpty()) {
             $adPlan->evaluations()->delete();
         }
+
+        // Hapus platform plan
+        if ($adPlan->planPlatforms->isNotEmpty()) {
+            $adPlan->planPlatforms()->delete();
+        }
+
+        // Hapus ad plan
         $adPlan->delete();
+
+        // Redirect sesuai role
         return redirect()
-            ->route('admin.marketing.index')
+            ->route($isAdmin ? 'admin.marketing.index' : 'user.marketing.index')
             ->with('success', 'Data Form 1–3 berhasil dihapus.');
     }
 }

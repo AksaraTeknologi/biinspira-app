@@ -9,11 +9,12 @@ use App\Http\Controllers\MasterPlatformController;
 use App\Http\Controllers\UserPagesController;
 use App\Http\Controllers\AdPlanPlatformController;
 use App\Http\Controllers\AdResultPlatformController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('home');
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard')->name('admin.home');
@@ -74,8 +75,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
-
-    Route::get('marketing', [UserPagesController::class, 'marketing'])->name('marketing');
 
     Route::get('form_iklan', [FormController::class, 'planForm'])->name('adsForm');
     Route::post('plan_form', [FormController::class, 'AdPlanStore'])->name('plan.store');

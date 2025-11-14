@@ -35,6 +35,8 @@ class AdResultPlatformController extends Controller
                 ];
             }
         }
+
+
         return Inertia::render('admin/markets/marketing/marketing-form2', [
             'events' => $event,
             'platforms' => $platforms,
@@ -69,7 +71,6 @@ class AdResultPlatformController extends Controller
             'platforms.*.direct_messages' => 'nullable|integer|min:0',
             'platforms.*.external_link_clicks' => 'nullable|integer|min:0',
         ]);
-
         if ($validator->fails()) {
             dd($validator->errors());
             return back()->withErrors($validator)->withInput();

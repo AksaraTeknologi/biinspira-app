@@ -97,9 +97,6 @@ export default function PerencanaanIklan() {
             return;
         }
 
-        console.log('Auth:', auth);
-        console.log('Data akhir yang dikirim:', filteredData);
-
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
             route(routeName),

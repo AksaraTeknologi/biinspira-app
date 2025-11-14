@@ -51,7 +51,7 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
     },
     {
         title: 'Marketing',
-        href: route("user.marketing"),
+        href: route("user.marketing.index"),
         icon: MessageSquareQuote,
         roles: ['user'],
     },
@@ -70,8 +70,8 @@ export function AppSidebar() {
         <Sidebar collapsible="icon" variant="inset">
             <div className="w-full relative z-0">
                 <div
-                    className={`absolute z-10 mt-2 lg:mt-0.5 ml-2 h-[95vh] bg-sidebar rounded-lg shadow-lg 
-                        border border-sidebar transition-all duration-300 
+                    className={`absolute z-10 mt-2 lg:mt-0.5 ml-2 h-[95vh] bg-sidebar rounded-lg shadow-lg
+                        border border-sidebar transition-all duration-300
                         ${isCollapsed ? "w-15.5" : "w-60"
                         }`}
                 >
@@ -103,7 +103,7 @@ export function AppSidebar() {
                     {/* ===== Main Content (Menu Navigasi) ===== */}
                     <SidebarContent className="h-[75%] px-2" style={{ scrollbarWidth: "none" }}>
                         <SidebarMenu
-                            className={`bg-background dark:active:bg-sidebar dark:bg-sidebar dark:border dark:border-muted-foreground rounded-lg 
+                            className={`bg-background dark:active:bg-sidebar dark:bg-sidebar dark:border dark:border-muted-foreground rounded-lg
                                 ${isCollapsed ? "p-0" : "p-2"}
                         `}>
                             {mainNavItems.map((item, i) => {
@@ -155,7 +155,7 @@ export function AppSidebar() {
                                         onOpenChange={(defaultOpen) => setOpenIndex(defaultOpen ? i : null)}
                                         className="group/collapsible"
                                     >
-                                        <SidebarMenuItem className={`p-1.5  rounded-lg 
+                                        <SidebarMenuItem className={`p-1.5  rounded-lg
                                             ${isActive ? "bg-sidebar-primary hover:bg-sidebar-primary text-background" : "hover:bg-sidebar-primary"}
                                             ${isOpen ? "bg-primary" : ""}
                                             `}>
@@ -164,7 +164,7 @@ export function AppSidebar() {
                                                 <CollapsibleTrigger asChild>
                                                     <SidebarMenuButton
                                                         tooltip={isCollapsed ? item.title : undefined}
-                                                        className={`w-full justify-between hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary 
+                                                        className={`w-full justify-between hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary
                                                             ${isActive ? "bg-gray-100 text-black" : `${isOpen ? "text-gray-100" : ""}`}
                                                             `}
                                                     >
@@ -172,7 +172,7 @@ export function AppSidebar() {
                                                             {item.icon && <item.icon className="w-5 h-5" />}
                                                             {!isCollapsed && <span>{item.title}</span>}
                                                         </div>
-                                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200 
+                                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200
                                                             ${isOpen ? 'rotate-90' : ''}
                                                             ${isActive ? 'rotate-90' : ''}
                                                             `} />
@@ -200,7 +200,7 @@ export function AppSidebar() {
                                             {item.children && (
                                                 <CollapsibleContent>
                                                     <SidebarMenuSub
-                                                        className={`border-0 pt-2 
+                                                        className={`border-0 pt-2
                                                             ${isCollapsed ? "-ml-2.5 w-13" : "ml-3"}`}
                                                         style={{ overflow: "visible" }}
                                                     >

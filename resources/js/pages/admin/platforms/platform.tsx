@@ -89,7 +89,7 @@ export default function PlatformPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <EditPlatformModal platform={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='platforms'/>
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='platforms'role='admin'/>
         </div>
       ),
       enableSorting: false,

@@ -19,12 +19,13 @@ import { router } from '@inertiajs/react';
 interface DeleteButtonProps {
   id: any;
   name?: string;
+  role: string;
   routeTable: string;
 }
 
-export default function DeleteButton({ id, name, routeTable }: DeleteButtonProps) {
+export default function DeleteButton({ id, name, routeTable, role }: DeleteButtonProps) {
   const handleDelete = () => {
-    router.delete(route(`admin.${routeTable}.destroy`, { id }), {
+    router.delete(route(`${role}.${routeTable}.destroy`, { id }), {
       onSuccess: () => {
         toast.success(`${name ?? id} berhasil dihapus`);
       },
