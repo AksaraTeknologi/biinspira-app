@@ -37,7 +37,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     return (
         <header className="flex h-16 shrink-0 items-center gap-2 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
             <div className="flex flex-row items-center gap-2 w-full">
-                <SidebarTrigger className="block md:hidden -ml-1" onClick={toggleSidebar} />
+                <SidebarTrigger className="flex md:hidden -ml-1" onClick={toggleSidebar} />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
                 <div className='flex flex-row items-center gap-x-2 ml-auto'>
                     <ThemeSwitcher

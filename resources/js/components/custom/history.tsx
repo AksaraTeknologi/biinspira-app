@@ -6,7 +6,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useEffect, useRef, useState } from "react";
 import { cn } from '@/lib/utils';
 
-interface EventItem {
+interface HistoryItem {
     id: number;
     date: string; // format YYYY-MM-DD
     user_name: string;
@@ -21,12 +21,12 @@ const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const weekNames = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4", "Minggu 5", "Minggu 6"];
 
-interface EventsProps {
+interface HistorisProps {
     className?: string;
-    dataEvents: EventItem[];
+    dataHistoris: HistoryItem[];
 }
 
-export default function History({ className, dataEvents }: EventsProps) {
+export default function History({ className, dataHistoris }: HistorisProps) {
     // ---------------------------------------------------
     // 🧠 State utama
     // ---------------------------------------------------
@@ -48,7 +48,7 @@ export default function History({ className, dataEvents }: EventsProps) {
     // --- Dapatkan semua bulan yang punya data ---
     const monthsWithData = Array.from(
         new Set(
-            dataEvents.map((e) => new Date(e.date).getMonth())
+            dataHistoris.map((e) => new Date(e.date).getMonth())
         )
     ).sort((a, b) => a - b);
 
@@ -88,7 +88,7 @@ export default function History({ className, dataEvents }: EventsProps) {
     }, [selectedMonth, selectedWeek]);
 
     // --- Filter event sesuai tanggal yang dipilih ---
-    const filteredEvents = dataEvents.filter((e) => {
+    const filteredHistoris = dataHistoris.filter((e) => {
         const d = new Date(e.date);
         return (
             d.getFullYear() === selectedDate.getFullYear() &&
@@ -197,26 +197,26 @@ export default function History({ className, dataEvents }: EventsProps) {
                     style={{ scrollbarWidth: "none" }}
                 >
                     <div className="flex flex-row gap-4 min-w-max px-2 pt-2">
-                        {filteredEvents.length > 0 ? (
-                            filteredEvents.map((event) => (
-                                <div key={event.id}>
+                        {filteredHistoris.length > 0 ? (
+                            filteredHistoris.map((h) => (
+                                <div key={h.id}>
                                     <div className={cn(
                                         "flex flex-col items-center rounded-full px-4 py-3 text-white h-63 w-17",
-                                        event.color
+                                        h.color
                                     )}>
                                         <div className="transform rotate-270 text-sm font-medium w-[45vw] sm:w-[40vw] md:w-[35vw] lg:w-[30vw] xl:w-[20vw]">
-                                            <p className="text-base font-semibold">{event.user_name}</p>
-                                            <p className="text-[11px] font-light">{event.event_name}</p>
-                                            <p className="text-[13px] font-semibold">Rp {event.amount}</p>
+                                            <p className="text-base font-semibold">{h.user_name}</p>
+                                            <p className="text-[11px] font-light">{h.event_name}</p>
+                                            <p className="text-[13px] font-semibold">Rp {h.amount}</p>
                                         </div>
                                         <img
-                                            src={event.avatar}
-                                            alt={event.user_name}
+                                            src={h.avatar}
+                                            alt={h.user_name}
                                             className="w-10 h-10 mt-auto rounded-full border-2 border-white mb-2"
                                         />
                                     </div>
                                     <p className="text-[11px] text-center text-gray-400 py-2">
-                                        {event.time}
+                                        {h.time}
                                     </p>
                                 </div>
                             ))

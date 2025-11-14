@@ -80,16 +80,16 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         if (mode === "mingguan") {
             return weeklyData.map((d) => ({
                 month: d.week,
-                pendapatan: d.pendapatan,
-                pengeluaran: d.pengeluaran,
-                akumulasi: d.pendapatan + d.pengeluaran,
+                rawPendapatan: d.pendapatan,
+                rawPengeluaran: d.pengeluaran,
+                rawAkumulasi: d.pendapatan + d.pengeluaran,
             }));
         }
         return RawData.map((d) => ({
             month: toFullMonthName(d.month),
-            pendapatan: d.pendapatan,
-            pengeluaran: d.pengeluaran,
-            akumulasi: d.pendapatan + d.pengeluaran,
+            rawPendapatan: d.pendapatan,
+            rawPengeluaran: d.pengeluaran,
+            rawAkumulasi: d.pendapatan + d.pengeluaran,
         }));
     }, [mode, RawData, weeklyData]);
 
@@ -143,6 +143,19 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         // otherwise current is RawData and has a 'month' property
         return toFullMonthName((selectedData.current as RawData).month);
     })();
+
+    // mengatur minimal ketinggian bar saat data memiliki selisih yang jauh
+    const normalizedChartData = useMemo(() => {
+        const maxValue = Math.max(...data.map(d => d.rawPendapatan + d.rawPengeluaran));
+        const minHeight = maxValue * 0.05; // 5%
+
+        return data.map(d => ({
+            ...d,
+            Pendapatan: Math.max(d.rawPendapatan, minHeight),
+            Pengeluaran: Math.max(d.rawPengeluaran, minHeight),
+            Akumulasi: Math.max(d.rawPendapatan + d.rawPengeluaran, minHeight),
+        }));
+    }, [data]);
 
     return (
         <Card className={`${className}`}>
@@ -199,7 +212,11 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                     <div className="col-span-2 flex flex-col h-full">
                         <div className="h-55 mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={data}>
+                                <ComposedChart
+                                    data={normalizedChartData}
+                                    barCategoryGap="10%"
+                                    barGap={10}
+                                >
                                     <defs>
                                         <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
                                             <feDropShadow
@@ -242,7 +259,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     />
                                     {/* bagian pengeluaran di bawah */}
                                     <Bar
-                                        dataKey="pengeluaran"
+                                        dataKey="Pengeluaran"
                                         stackId="a"
                                         fill="#3b82f6"
                                         radius={[50, 50, 50, 50]}
@@ -252,7 +269,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     />
                                     {/* bagian bersih di atas — ukuran bar mengikuti 'bersih', tapi label menampilkan 'pendapatan' */}
                                     <Bar
-                                        dataKey="pendapatan"
+                                        dataKey="Pendapatan"
                                         stackId="a"
                                         fill="#facc15"
                                         radius={[50, 50, 50, 50]}
@@ -263,7 +280,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     </Bar>
                                     <Line
                                         type="monotone"
-                                        dataKey="akumulasi"
+                                        dataKey="Akumulasi"
                                         stroke="#9ca3af"
                                         strokeWidth={2}
                                         dot={false}

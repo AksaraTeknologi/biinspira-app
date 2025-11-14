@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -42,7 +44,17 @@ class UserController extends Controller
         }
         $data = $validator->validated();
         $data['password'] = bcrypt('12345678');
-        User::create($data);
+        
+        $user = User::create($data);
+
+        $user->assignRole('user');
+
+        event(new Registered($user));
+
+        // Auth::login($user);
+
+        // dd($user);
+
         return redirect()->route('admin.users.index');
     }
     public function update(Request $request, String $id)

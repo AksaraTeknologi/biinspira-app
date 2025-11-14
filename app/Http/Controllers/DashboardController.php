@@ -28,13 +28,9 @@ class DashboardController extends Controller
     public function dashboardUser()
     {
         $rawDataGraphic = $this->getRawDataGraphic();
-        $tableData = $this->getTableData();
-        $dataEvents = $this->getDataEvents();
 
         return Inertia::render('user/dashboard', [
             'rawDataGraphic' => $rawDataGraphic,
-            'tableData' => $tableData,
-            'dataEvents' => $dataEvents,
             'dashboard_item' => 'Dashboard',
         ]);
     }

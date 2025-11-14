@@ -66,12 +66,44 @@ export function AppSidebar() {
 
     const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+    // === Helper: Hitung parent path ===
+    const getParentPath = (item: NavItem & { children?: NavItem[] }): string => {
+        // Jika item punya href, gunakan itu sebagai parent
+        if (item.href) {
+            return new URL(item.href, window.location.origin).pathname;
+        }
+
+        // Jika tidak punya href, ambil dari prefix child → /admin/{menu}
+        if (item.children && item.children.length > 0) {
+            const firstChild = item.children[0];
+            const segments = new URL(firstChild.href, window.location.origin)
+                .pathname
+                .split("/")
+                .filter(Boolean); // buang string kosong
+
+            // Ambil hanya /admin/marketing
+            return "/" + segments.slice(0, 2).join("/");
+        }
+
+        return "";
+    };
+
+    // === Helper: cek apakah submenu terbuka ===
+    const checkIsSubMenuOpen = (item: NavItem & { children?: NavItem[] }) => {
+        const currentPath = new URL(page.url, window.location.origin).pathname;
+        const parentPath = getParentPath(item);
+
+        if (!parentPath) return false;
+        return currentPath.startsWith(parentPath + "/") || currentPath === parentPath;
+    };
+
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <div className="w-full relative z-0">
                 <div
-                    className={`absolute z-10 mt-2 lg:mt-0.5 ml-2 h-[95vh] bg-sidebar rounded-lg shadow-lg
-                        border border-sidebar transition-all duration-300
+                    className={`absolute z-10 mt-2 lg:mt-0.5 ml-2 h-[95vh] bg-sidebar rounded-lg shadow-lg 
+                        border border-sidebar transition-all duration-300 
                         ${isCollapsed ? "w-15.5" : "w-60"
                         }`}
                 >
@@ -103,60 +135,22 @@ export function AppSidebar() {
                     {/* ===== Main Content (Menu Navigasi) ===== */}
                     <SidebarContent className="h-[75%] px-2" style={{ scrollbarWidth: "none" }}>
                         <SidebarMenu
-                            className={`bg-background dark:active:bg-sidebar dark:bg-sidebar dark:border dark:border-muted-foreground rounded-lg
+                            className={`bg-background dark:active:bg-sidebar dark:bg-sidebar dark:border dark:border-muted-foreground rounded-lg 
                                 ${isCollapsed ? "p-0" : "p-2"}
                         `}>
                             {mainNavItems.map((item, i) => {
                                 const isOpen = openIndex === i;
-                                const isActive = (() => {
-                                    const currentUrl = page.url.replace(/\/+$/, "");
-                                    const itemHref = item.href?.replace(window.location.origin, "").replace(/\/+$/, "");
-
-                                    if (item.children && item.children.length > 0) {
-                                        return item.children.some((child) =>
-                                            currentUrl.startsWith(child.href.replace(window.location.origin, ""))
-                                        );
-                                    }
-
-                                    const hrefMatch = currentUrl === itemHref || currentUrl.startsWith(itemHref);
-                                    const routeName = typeof page.props?.routeName === "string" ? page.props.routeName.toLowerCase() : undefined;
-                                    const itemTitle = typeof item.title === "string" ? item.title.toLowerCase() : undefined;
-                                    const routeNameMatch = routeName !== undefined && itemTitle !== undefined && routeName === itemTitle;
-
-                                    return hrefMatch || routeNameMatch;
-                                })();
+                                const isGroupOpen = checkIsSubMenuOpen(item);
 
                                 return (
                                     <Collapsible
                                         key={i}
-                                        defaultOpen={(() => {
-                                            if (!item.children || typeof window === 'undefined') return false;
-
-                                            const currentPath = window.location.pathname;
-
-                                            try {
-                                                // Ambil prefix parent berdasarkan salah satu child
-                                                // (semua child marketing punya pola /admin/marketing/...)
-                                                const firstChild = item.children[0];
-                                                if (!firstChild?.href) return false;
-
-                                                const parentPath = new URL(firstChild.href, window.location.origin)
-                                                    .pathname
-                                                    .split('/')
-                                                    .slice(0, -1) // hapus bagian terakhir (misal 'dashboard' jadi '/admin/marketing')
-                                                    .join('/');
-
-                                                // Jika currentPath mengandung parentPath, berarti kita sedang di area parent itu
-                                                return currentPath.startsWith(parentPath + '/');
-                                            } catch {
-                                                return false;
-                                            }
-                                        })()}
+                                        defaultOpen={isGroupOpen}
                                         onOpenChange={(defaultOpen) => setOpenIndex(defaultOpen ? i : null)}
-                                        className="group/collapsible"
+                                        className={`group/collapsible`}
                                     >
-                                        <SidebarMenuItem className={`p-1.5  rounded-lg
-                                            ${isActive ? "bg-sidebar-primary hover:bg-sidebar-primary text-background" : "hover:bg-sidebar-primary"}
+                                        <SidebarMenuItem className={`p-1.5  rounded-lg 
+                                            ${isGroupOpen ? "bg-sidebar-primary hover:bg-sidebar-primary text-background" : "hover:bg-sidebar-primary"}
                                             ${isOpen ? "bg-primary" : ""}
                                             `}>
                                             {item.children ? (
@@ -164,17 +158,17 @@ export function AppSidebar() {
                                                 <CollapsibleTrigger asChild>
                                                     <SidebarMenuButton
                                                         tooltip={isCollapsed ? item.title : undefined}
-                                                        className={`w-full justify-between hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary
-                                                            ${isActive ? "bg-gray-100 text-black" : `${isOpen ? "text-gray-100" : ""}`}
+                                                        className={`w-full justify-between hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary 
+                                                            ${isGroupOpen ? "bg-gray-100 text-black" : `${isOpen ? " text-gray-100" : ""}`}
                                                             `}
                                                     >
                                                         <div className="flex items-center gap-2 w-full cursor-pointer">
                                                             {item.icon && <item.icon className="w-5 h-5" />}
                                                             {!isCollapsed && <span>{item.title}</span>}
                                                         </div>
-                                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200
+                                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200 
                                                             ${isOpen ? 'rotate-90' : ''}
-                                                            ${isActive ? 'rotate-90' : ''}
+                                                            ${isGroupOpen ? 'rotate-90' : ''}
                                                             `} />
                                                     </SidebarMenuButton>
                                                 </CollapsibleTrigger>
@@ -183,7 +177,7 @@ export function AppSidebar() {
                                                 <SidebarMenuButton
                                                     tooltip={isCollapsed ? item.title : undefined}
                                                     className={`hover:bg-sidebar-primary active:bg-sidebar-primary hover:text-gray-100
-                                                        ${isActive ? "hover:bg-sidebar-primary text-gray-100" : ""}`}
+                                                        ${isGroupOpen ? "hover:bg-sidebar-primary text-gray-100" : ""}`}
                                                     asChild
                                                 >
                                                     <Link
@@ -200,12 +194,12 @@ export function AppSidebar() {
                                             {item.children && (
                                                 <CollapsibleContent>
                                                     <SidebarMenuSub
-                                                        className={`border-0 pt-2
+                                                        className={`border-0 pt-2 
                                                             ${isCollapsed ? "-ml-2.5 w-13" : "ml-3"}`}
                                                         style={{ overflow: "visible" }}
                                                     >
                                                         {item.children.map((sub, j) => {
-                                                            const subActive = (() => {
+                                                            const isSubActive = (() => {
                                                                 const currentUrl = page.url.replace(/\/$/, "");
                                                                 const subHref = sub.href.replace(window.location.origin, "").replace(/\/$/, "");
                                                                 return currentUrl === subHref || currentUrl.startsWith(subHref);
@@ -216,8 +210,7 @@ export function AppSidebar() {
                                                                     <Link
                                                                         href={sub.href}
                                                                         className={`flex items-center gap-2 py-1 text-sm hover:bg-gray-100 hover:text-black rounded-lg
-                                                                                ${isOpen ? "" : "text-background" }
-                                                                                ${subActive ? "bg-gray-100 text-black" : "text-gray-100"}
+                                                                                ${isSubActive ? "bg-gray-100 text-black" : `${isGroupOpen ? "text-gray-100" : ""}`}
                                                                                 ${isCollapsed ? "pl-2" : "pl-3"}
                                                                         `}
                                                                     >

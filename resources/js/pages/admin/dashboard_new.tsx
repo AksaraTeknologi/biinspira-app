@@ -21,7 +21,7 @@ interface DashboardProps {
         status: string;
         cost: number;
     }[];
-    dataEvents: {
+    dataHistoris: {
         id: number;
         date: string;
         user_name: string;
@@ -37,7 +37,7 @@ export default function Dashboard({
     dashboard_item,
     rawDataGraphic = [],
     tableData = [],
-    dataEvents = [],
+    dataHistoris = [],
 }: DashboardProps) {
 
     const { auth } = usePage<{ auth?: { user?: { name?: string } } }>().props;
@@ -95,7 +95,7 @@ export default function Dashboard({
                         />
                     </div>
                     <div className="md:col-start-16 md:col-span-9 flex flex-col gap-y-5">
-                        <History dataEvents={dataEvents} />
+                        <History dataHistoris={dataHistoris} />
                         <ReportCard />
                     </div>
                 </div>

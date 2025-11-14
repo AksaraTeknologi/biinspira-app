@@ -28,6 +28,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const isMobile = useIsMobile();
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+    const effectiveCollapsed = isMobile ? true : isCollapsed;
     const [prevCollapsedBeforeMobile, setPrevCollapsedBeforeMobile] = useState<boolean>(false);
 
     // 🔹 Saat mount (desktop), ambil dari localStorage
@@ -48,19 +49,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
         }
     }, [isCollapsed, isMobile]);
 
-    // 🔹 Perubahan mode
-    useEffect(() => {
-        if (isMobile) {
-            // Simpan keadaan terakhir sebelum mobile
-            setPrevCollapsedBeforeMobile(isCollapsed);
-            // Paksa collapse saat mobile
-            setIsCollapsed(true);
-        } else {
-            // Saat kembali ke desktop → kembalikan ke keadaan sebelumnya
-            setIsCollapsed(prevCollapsedBeforeMobile);
-        }
-    }, [isMobile]);
-
     const toggleSidebar = () => {
         // Toggle hanya boleh dilakukan di desktop
         if (!isMobile) {
@@ -73,7 +61,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <SidebarContext.Provider value={{ isCollapsed, toggleSidebar, isMobile }}>
+        <SidebarContext.Provider value={{ isCollapsed: effectiveCollapsed, toggleSidebar, isMobile }}>
             {children}
         </SidebarContext.Provider>
     );
