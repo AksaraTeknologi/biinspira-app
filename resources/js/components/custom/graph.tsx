@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowUpRight } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCallback, useMemo, useState } from "react";
-import { useTheme } from "next-themes";
 
 interface RawData {
     month: string;
@@ -17,8 +16,6 @@ interface GrafikPendapatanProps {
 }
 
 export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
-    const { theme } = useTheme();
-    const isDark = theme === "dark";
 
     const [mode, setMode] = useState<"bulanan" | "mingguan">("bulanan");
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -80,16 +77,23 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         if (mode === "mingguan") {
             return weeklyData.map((d) => ({
                 month: d.week,
-                rawPendapatan: d.pendapatan,
-                rawPengeluaran: d.pengeluaran,
-                rawAkumulasi: d.pendapatan + d.pengeluaran,
+                PendapatanHeight: d.pendapatan,
+                Pendapatan: d.pendapatan,
+                PengeluaranHeight: d.pengeluaran,
+                Pengeluaran: d.pengeluaran,
+                EfisiensiH: d.pendapatan + d.pengeluaran,
+                Efisiensi: d.pengeluaran - d.pendapatan,
             }));
         }
         return RawData.map((d) => ({
             month: toFullMonthName(d.month),
-            rawPendapatan: d.pendapatan,
-            rawPengeluaran: d.pengeluaran,
-            rawAkumulasi: d.pendapatan + d.pengeluaran,
+            PendapatanHeight: d.pendapatan,
+            Pendapatan: d.pendapatan,
+            PengeluaranHeight: d.pengeluaran,
+            Pengeluaran: d.pengeluaran,
+            // EfisiensiH: ((d.pendapatan - (d.pendapatan - d.pengeluaran)) + d.pengeluaran) / 2,
+            EfisiensiH: d.pendapatan + d.pengeluaran,
+            Efisiensi: d.pengeluaran - d.pendapatan,
         }));
     }, [mode, RawData, weeklyData]);
 
@@ -144,18 +148,20 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         return toFullMonthName((selectedData.current as RawData).month);
     })();
 
-    // mengatur minimal ketinggian bar saat data memiliki selisih yang jauh
-    const normalizedChartData = useMemo(() => {
-        const maxValue = Math.max(...data.map(d => d.rawPendapatan + d.rawPengeluaran));
-        const minHeight = maxValue * 0.05; // 5%
-
-        return data.map(d => ({
-            ...d,
-            Pendapatan: Math.max(d.rawPendapatan, minHeight),
-            Pengeluaran: Math.max(d.rawPengeluaran, minHeight),
-            Akumulasi: Math.max(d.rawPendapatan + d.rawPengeluaran, minHeight),
-        }));
-    }, [data]);
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const efisiensi = payload.find((p: any) => p.dataKey === "EfisiensiNilai");
+            return (
+                <div className="p-2 rounded-md shadow-md border border-foreground bg-background">
+                    <p><strong>{payload[0].payload.month}</strong></p>
+                    <p>Pendapatan: {payload[0].payload.Pendapatan}</p>
+                    <p>Pengeluaran: {payload[0].payload.Pengeluaran}</p>
+                    <p>Efisiensi: {payload[0].payload.Efisiensi}</p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <Card className={`${className}`}>
@@ -204,7 +210,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                             </div>
                             <div className="flex flex-row items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                                <span>Akumulasi</span>
+                                <span>Efisiensi</span>
                             </div>
                         </div>
                     </div>
@@ -213,9 +219,9 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                         <div className="h-55 mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart
-                                    data={normalizedChartData}
-                                    barCategoryGap="10%"
-                                    barGap={10}
+                                    data={data}
+                                    barCategoryGap="12%"
+                                    barGap={8}
                                 >
                                     <defs>
                                         <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -249,17 +255,15 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     />
                                     <YAxis hide />
                                     <Tooltip
+                                        content={<CustomTooltip />}
                                         cursor={{ fill: "rgba(0,0,0,0.05)" }}
                                         contentStyle={{
                                             borderRadius: "8px",
                                             border: "none",
-                                            background: isDark ? "black" : "white",
-                                            color: isDark ? "white" : "black",
                                         }}
                                     />
-                                    {/* bagian pengeluaran di bawah */}
                                     <Bar
-                                        dataKey="Pengeluaran"
+                                        dataKey="PengeluaranHeight"
                                         stackId="a"
                                         fill="#3b82f6"
                                         radius={[50, 50, 50, 50]}
@@ -267,20 +271,18 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
                                     />
-                                    {/* bagian bersih di atas — ukuran bar mengikuti 'bersih', tapi label menampilkan 'pendapatan' */}
                                     <Bar
-                                        dataKey="Pendapatan"
+                                        dataKey="PendapatanHeight"
                                         stackId="a"
                                         fill="#facc15"
                                         radius={[50, 50, 50, 50]}
                                         barSize={35}
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
-                                    >
-                                    </Bar>
+                                    />
                                     <Line
                                         type="monotone"
-                                        dataKey="Akumulasi"
+                                        dataKey="EfisiensiH"
                                         stroke="#9ca3af"
                                         strokeWidth={2}
                                         dot={false}

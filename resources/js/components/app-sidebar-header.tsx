@@ -7,17 +7,17 @@ import { Link } from '@inertiajs/react';
 import { Button } from './ui/button';
 import { ThemeSwitcher } from './ui/theme-switcher';
 import { useEffect, useState } from 'react';
+import { useTheme } from './useTheme';
 
-export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
+interface AppSidebarHeaderProps {
+    breadcrumbs?: BreadcrumbItemType[];
+}
+
+export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
     const { toggleSidebar } = useSidebar();
 
     // ✅ Ambil tema dari localStorage sebelum render pertama
-    const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-        if (typeof window !== 'undefined') {
-            return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
-        }
-        return 'system';
-    });
+    const { theme, setTheme } = useTheme();
 
     // 🌙 Terapkan tema ke <html> setiap kali berubah
     useEffect(() => {
