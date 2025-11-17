@@ -144,7 +144,7 @@ export default function PerencanaanIklan() {
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+      <div className="w-full p-6 space-y-6">
         <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
 
         <Card className="w-full">

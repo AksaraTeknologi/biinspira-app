@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
@@ -83,8 +83,6 @@ export interface AdPlanProps {
 }
 
 export default function MarketingShow({ data }: AdPlanProps) {
-    console.log('MarketingShow data:', data);
-    
     const [openPlan, setOpenPlan] = useState(true);
     const [openResult, setOpenResult] = useState(true);
     const [openEvaluation, setOpenEvaluation] = useState(true);
@@ -446,56 +444,54 @@ export default function MarketingShow({ data }: AdPlanProps) {
                             {openEvaluation && (
                                 <CardContent className="flex flex-col gap-y-3">
                                     <Card className="w-full border-zinc-200 shadow-md">
-                                        <CardContent>
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                <div>
-                                                    <div>
-                                                        <Label>Nama Event</Label>
-                                                        <div className="mt-1">{data?.name_event || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Nama Event Sebelumnya</Label>
-                                                        <div className="mt-1">{firstEvaluation?.previous_event || '-'}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <h2>Kinerja Events</h2>
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                <div>
-                                                    <div>
-                                                        <Label>Checkout Event Sekarang</Label>
-                                                        <div className="mt-1">{firstEvaluation?.current_checkout ?? '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Kinerja Iklan Sekarang</Label>
-                                                        <div className="mt-1">{firstEvaluation?.current_ad_performance || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Kinerja Lain Sekarang</Label>
-                                                        <div className="mt-1">{firstEvaluation?.current_other_performance || '-'}</div>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div>
-                                                        <Label>Checkout Event Sebelumnya</Label>
-                                                        <div className="mt-1">{firstEvaluation?.previous_checkout ?? '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Kinerja Iklan Sebelumnya</Label>
-                                                        <div className="mt-1">{firstEvaluation?.previous_ad_performance || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Kinerja Lain Sebelumnya</Label>
-                                                        <div className="mt-1">{firstEvaluation?.previous_other_performance || '-'}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
+                                        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2 mb-3">
                                             <div>
-                                                <Label>Strategi Iklan Selanjutnya</Label>
-                                                <div className="mt-1">{firstEvaluation?.next_ad_strategy || '-'}</div>
+                                                <Label>Nama Event</Label>
+                                                <div className="mt-1">{data?.name_event || '-'}</div>
                                             </div>
+                                            <div>
+                                                <Label>Nama Event Sebelumnya</Label>
+                                                <div className="mt-1">{firstEvaluation?.previous_event || '-'}</div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="w-full border-zinc-200 shadow-md">
+                                        <CardHeader>Kinerja Events</CardHeader>
+                                        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div className='flex flex-col gap-y-3'>
+                                                <div>
+                                                    <Label>Checkout Event Sekarang</Label>
+                                                    <div className="mt-1">{firstEvaluation?.current_checkout ?? '-'}</div>
+                                                </div>
+                                                <div>
+                                                    <Label>Kinerja Iklan Sekarang</Label>
+                                                    <div className="mt-1">{firstEvaluation?.current_ad_performance || '-'}</div>
+                                                </div>
+                                                <div>
+                                                    <Label>Kinerja Lain Sekarang</Label>
+                                                    <div className="mt-1">{firstEvaluation?.current_other_performance || '-'}</div>
+                                                </div>
+                                            </div>
+                                            <div className='flex flex-col gap-y-3'>
+                                                <div>
+                                                    <Label>Checkout Event Sebelumnya</Label>
+                                                    <div className="mt-1">{firstEvaluation?.previous_checkout ?? '-'}</div>
+                                                </div>
+                                                <div>
+                                                    <Label>Kinerja Iklan Sebelumnya</Label>
+                                                    <div className="mt-1">{firstEvaluation?.previous_ad_performance || '-'}</div>
+                                                </div>
+                                                <div>
+                                                    <Label>Kinerja Lain Sebelumnya</Label>
+                                                    <div className="mt-1">{firstEvaluation?.previous_other_performance || '-'}</div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="w-full border-zinc-200 shadow-md">
+                                        <CardContent>
+                                            <Label>Strategi Iklan Selanjutnya</Label>
+                                            <div className="mt-1">{firstEvaluation?.next_ad_strategy || '-'}</div>
                                         </CardContent>
                                     </Card>
                                 </CardContent>

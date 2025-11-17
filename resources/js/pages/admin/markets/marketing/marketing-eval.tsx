@@ -43,7 +43,7 @@ export default function MarketingEval() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
+            <div className="w-full space-y-6 p-6">
                 <h2 className="text-2xl font-semibold">Evaluasi Iklan</h2>
 
                 <form onSubmit={handleSubmit}>

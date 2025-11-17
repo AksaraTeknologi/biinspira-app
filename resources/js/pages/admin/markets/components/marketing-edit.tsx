@@ -467,7 +467,7 @@ export default function MarketingEdit() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+            <div className="w-full space-y-6 p-6">
                 <h2 className="text-2xl font-semibold">Edit Perencanaan Iklan</h2>
 
                 <form onSubmit={handleSubmit}>

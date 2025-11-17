@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdMetric;
 use App\Models\User;
 use App\Models\Variant;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -15,25 +16,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Role::create(['name' => 'admin']);
-        // Role::create(['name' => 'user']);
+        Role::create(['name' => 'admin']);
+        Role::create(['name' => 'user']);
 
-        // User::factory()->create([
-        //     'name' => 'Admin',
-        //     'email' => 'admin@gmail.com',
-        //     'password' => bcrypt('admin'),
-        //     'email_verified_at' => now(),
-        // ])->assignRole('admin');
+        User::factory()->create([
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => bcrypt('admin'),
+            'email_verified_at' => now(),
+        ])->assignRole('admin');
 
-        // User::factory()->create([
-        //     'name' => 'biinspira',
-        //     'email' => 'user@gmail.com',
-        //     'password' => bcrypt('user'),
-        //     'email_verified_at' => now(),
-        // ])->assignRole('user');
+        User::factory()->create([
+            'name' => 'biinspira',
+            'email' => 'user@gmail.com',
+            'password' => bcrypt('user'),
+            'email_verified_at' => now(),
+        ])->assignRole('user');
 
-        // $this->call(MasterSeeder::class);
+        $this->call(MasterSeeder::class);
 
-        
+        // 3. Setelah factory diperbaiki, panggil factory terdalam
+        // Ini akan membuat 50 data dummy lengkap dengan semua relasi ke atas
+        // (AdMetric -> AdResultPlatform -> AdResult -> AdPlan -> User/Event)
+        // AdMetric::factory()->count(50)->create();
     }
 }
