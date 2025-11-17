@@ -42,7 +42,7 @@ export default function ReportCard() {
                         </Button>
                     </Link>
                     <div className="mt-auto text-[10px] text-[#FFFFFFBF] text-justify">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                        Ingin mengetahui perkembangan iklan Anda? Lakukan pembaruan data dan dapatkan laporan terbaru.
                     </div>
                 </div>
             </div>

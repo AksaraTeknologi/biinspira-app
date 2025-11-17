@@ -12,13 +12,8 @@ class AdMetric extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
-    public function result()
+    public function resultPlatform()
     {
-        return $this->belongsTo(AdResult::class, 'ad_result_id');
-    }
-
-    public function platform()
-    {
-        return $this->belongsTo(MasterPlatform::class, 'platform_id');
+        return $this->belongsTo(AdResultPlatform::class, 'ad_result_platform_id');
     }
 }

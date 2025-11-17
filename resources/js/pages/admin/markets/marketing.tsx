@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 import DeleteButton from '@/components/delete-button';
 
 interface Event {
@@ -136,6 +136,11 @@ export default function Marketing() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <Link href={route('admin.marketing.show', plan.id)}>
+                                                            <Eye className="w-4 h-4" />
+                                                        </Link>
+                                                    </Button>
                                                     <Button asChild variant="outline" size="sm">
                                                         <Link href={route('admin.marketing.edit', plan.id)}>
                                                             <Pencil className="w-4 h-4" />

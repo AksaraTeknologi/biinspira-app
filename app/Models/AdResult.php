@@ -25,9 +25,4 @@ class AdResult extends Model
     {
         return $this->hasMany(AdResultPlatform::class, 'ad_result_id');
     }
-
-    public function metrics()
-    {
-        return $this->hasMany(AdMetric::class, 'ad_result_id');
-    }
 }

@@ -25,4 +25,9 @@ class AdResultPlatform extends Model
     {
         return $this->belongsTo(MasterPlatform::class, 'platform_id');
     }
+
+    public function metrics()
+    {
+        return $this->hasMany(AdMetric::class, 'ad_result_platform_id');
+    }
 }
