@@ -58,7 +58,7 @@ export default function MarketingEval() {
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {/* === Event Sekarang === */}
                                 <div>
-                                    <h3 className="mb-2 font-semibold text-gray-800">Event Sekarang</h3>
+                                    <h3 className="mb-2 font-semibold text-foreground">Event Sekarang</h3>
                                     <div className="space-y-3">
                                         <div>
                                             <Label>Nama Event</Label>
@@ -91,7 +91,7 @@ export default function MarketingEval() {
 
                                 {/* === Event Sebelumnya === */}
                                 <div>
-                                    <h3 className="mb-2 font-semibold text-gray-800">Event Sebelumnya</h3>
+                                    <h3 className="mb-2 font-semibold text-foreground">Event Sebelumnya</h3>
                                     <div className="space-y-3">
                                         <div>
                                             <Label>Nama Event</Label>

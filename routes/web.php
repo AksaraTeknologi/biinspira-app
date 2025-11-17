@@ -69,17 +69,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         });
         Route::get('/dashboard', [DashboardController::class, "dashboardMarketing"])->name("admin.marketing.dashboard");
     });
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    // Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 });
 
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
 
-    Route::get('form_iklan', [FormController::class, 'planForm'])->name('adsForm');
-    Route::post('plan_form', [FormController::class, 'AdPlanStore'])->name('plan.store');
-    Route::post('result_form', [FormController::class, 'AdResultStore'])->name('result.store');
-    Route::post('eval_form', [FormController::class, 'AdEvalStore'])->name('eval.store');
+    // Route::get('form_iklan', [FormController::class, 'planForm'])->name('adsForm');
+    // Route::post('plan_form', [FormController::class, 'AdPlanStore'])->name('plan.store');
+    // Route::post('result_form', [FormController::class, 'AdResultStore'])->name('result.store');
+    // Route::post('eval_form', [FormController::class, 'AdEvalStore'])->name('eval.store');
 
     Route::controller(AdPlanPlatformController::class)->group(function () {
         Route::get('/marketing/list', 'index')->name('marketing.index');

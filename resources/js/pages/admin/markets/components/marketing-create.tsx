@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { ArrowLeft, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -26,9 +26,9 @@ export default function PerencanaanIklan() {
     };
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
     const [formState, setFormState] = useState<Record<string, any>>({
-        boost: {},
-        meta: {},
-        business: {},
+        boost: { audience_details: [] },
+        meta: { audience_details: [] },
+        business: { audience_details: [] },
     });
 
     const platformMap: Record<string, string> = {
@@ -61,7 +61,21 @@ export default function PerencanaanIklan() {
         if (rangeValue?.from) handleInputChange('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
         if (rangeValue?.to) handleInputChange('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
     };
+    const addAudienceRow = () => {
+        const currentAudiences = formState[tab]?.audience_details || [];
+        handleInputChange('audience_details', [...currentAudiences, { type: '', name: '' }]);
+    };
+    const handleAudienceRowChange = (index: number, field: 'type' | 'name', value: string) => {
+        const currentAudiences = [...(formState[tab]?.audience_details || [])];
+        currentAudiences[index] = { ...currentAudiences[index], [field]: value };
+        handleInputChange('audience_details', currentAudiences);
+    };
 
+    const removeAudienceRow = (index: number) => {
+        const currentAudiences = [...(formState[tab]?.audience_details || [])];
+        currentAudiences.splice(index, 1);
+        handleInputChange('audience_details', currentAudiences);
+    };
     const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
@@ -69,18 +83,30 @@ export default function PerencanaanIklan() {
             .filter(([_, value]) => {
                 const entries = Object.entries(value || {});
                 const meaningfulFields = entries.filter(([key, val]) => {
-                    return val !== null && val !== '' && !['platform_id', 'event_id', 'user_id', 'audience_type'].includes(key);
+                    return val !== null && val !== '' && !['platform_id', 'event_id', 'user_id', 'audience_type', 'audience_details'].includes(key);
                 });
-                return meaningfulFields.length > 0 || value?.audience_type;
+                const hasAudienceDetails = value.audience_details && value.audience_details.length > 0;
+                return meaningfulFields.length > 0 || hasAudienceDetails;
             })
             .reduce(
                 (acc, [key, value]) => {
+                    const audienceDetails = value.audience_details || [];
+                    const { audience_details, ...restOfValue } = value;
                     acc[key] = {
-                        ...value,
+                        ...restOfValue,
                         audience_type: value?.audience_type || 'targeted',
                         event_id: selectedEvent || null,
                         platform_id: platformMap[key],
                         user_id: isAdmin ? value?.user_id : auth?.user?.id,
+                        type_audience_targeted: audienceDetails
+                            .map((ad: any) => ad.type)
+                            .filter(Boolean)
+                            .join(','),
+
+                        name_audience_targeted: audienceDetails
+                            .map((ad: any) => ad.name)
+                            .filter(Boolean)
+                            .join(','),
                     };
                     return acc;
                 },
@@ -116,17 +142,35 @@ export default function PerencanaanIklan() {
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    {/* AGE TARGETED */}
                     {showTargeted && (
                         <div className="space-y-4">
                             <div>
                                 <Label>Umur (Targeted)</Label>
-                                <Input
-                                    type="number"
-                                    placeholder="Masukkan umur target"
-                                    value={platformData?.age_targeted || ''}
-                                    onChange={(e) => handleInputChange('age_targeted', e.target.value)}
-                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Input
+                                        type="number"
+                                        placeholder="Min"
+                                        value={platformData?.age_targeted?.split('-')[0] || ''}
+                                        onChange={(e) => {
+                                            const min = e.target.value;
+                                            const max = platformData?.age_targeted?.split('-')[1] || '';
+                                            handleInputChange('age_targeted', `${min}-${max}`);
+                                        }}
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Max"
+                                        value={platformData?.age_targeted?.split('-')[1] || ''}
+                                        onChange={(e) => {
+                                            const max = e.target.value;
+                                            const min = platformData?.age_targeted?.split('-')[0] || '';
+                                            handleInputChange('age_targeted', `${min}-${max}`);
+                                        }}
+                                    />
+                                </div>
                             </div>
+
                             <div>
                                 <Label>Lokasi (Targeted)</Label>
                                 <Input
@@ -135,45 +179,88 @@ export default function PerencanaanIklan() {
                                     onChange={(e) => handleInputChange('location_targeted', e.target.value)}
                                 />
                             </div>
-                            <div>
-                                <Label>Jenis Audiens</Label>
-                                <Select
-                                    value={platformData?.type_audience_targeted || ''}
-                                    onValueChange={(val) => handleInputChange('type_audience_targeted', val)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih jenis audiens" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain-lain'].map((item) => (
-                                            <SelectItem key={item} value={item}>
-                                                {item}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+
+                            {/* --- DIUBAH --- : Blok audiens dinamis */}
                             <div>
                                 <Label>Detail Audiens</Label>
-                                <Input
-                                    placeholder="Masukkan detail audiens"
-                                    value={platformData?.name_audience_targeted || ''}
-                                    onChange={(e) => handleInputChange('name_audience_targeted', e.target.value)}
-                                />
+                                <div className="space-y-3">
+                                    {/* 1. Ambil array 'audience_details' dari platformData */}
+                                    {(platformData?.audience_details || []).map((audience: any, index: number) => (
+                                        <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-3">
+                                            {/* Input Select untuk Tipe */}
+                                            <Select value={audience.type} onValueChange={(val) => handleAudienceRowChange(index, 'type', val)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Jenis audiens" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain-lain'].map(
+                                                        (item) => (
+                                                            <SelectItem key={item} value={item}>
+                                                                {item}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+
+                                            {/* Input Teks untuk Nama/Detail */}
+                                            <Input
+                                                placeholder="Detail audiens"
+                                                value={audience.name}
+                                                onChange={(e) => handleAudienceRowChange(index, 'name', e.target.value)}
+                                            />
+
+                                            {/* Tombol Hapus Baris (perlu import Trash2) */}
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeAudienceRow(index)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    {/* 2. Tombol untuk menambah baris baru */}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                                        onClick={addAudienceRow}
+                                    >
+                                        + Tambah Jenis Audiens
+                                    </Button>
+                                </div>
                             </div>
+                            {/* --- AKHIR BLOK DINAMIS --- */}
                         </div>
                     )}
 
+                    {/* AGE BROAD */}
                     {showBroad && (
                         <div className="space-y-4">
                             <div>
                                 <Label>Umur (Broad)</Label>
-                                <Input
-                                    type="number"
-                                    value={platformData?.age_broad || ''}
-                                    onChange={(e) => handleInputChange('age_broad', e.target.value)}
-                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Input
+                                        type="number"
+                                        placeholder="Min"
+                                        value={platformData?.age_broad?.split('-')[0] || ''}
+                                        onChange={(e) => {
+                                            const min = e.target.value;
+                                            const max = platformData?.age_broad?.split('-')[1] || '';
+                                            handleInputChange('age_broad', `${min}-${max}`);
+                                        }}
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Max"
+                                        value={platformData?.age_broad?.split('-')[1] || ''}
+                                        onChange={(e) => {
+                                            const max = e.target.value;
+                                            const min = platformData?.age_broad?.split('-')[0] || '';
+                                            handleInputChange('age_broad', `${min}-${max}`);
+                                        }}
+                                    />
+                                </div>
                             </div>
+
                             <div>
                                 <Label>Lokasi (Broad)</Label>
                                 <Input

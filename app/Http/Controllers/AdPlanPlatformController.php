@@ -53,12 +53,8 @@ class AdPlanPlatformController extends Controller
     }
     public function store(Request $request)
     {
-        $mode = $request->input('mode', 'next'); // ambil mode dulu
-
-        // Ambil data platform
+        $mode = $request->input('mode', 'next');
         $platformDataList = $request->only(['boost', 'meta', 'business']);
-
-        // Untuk draft, jangan filter terlalu ketat
         $platformDataList = array_filter($platformDataList, fn($data) => is_array($data));
 
         if (empty($platformDataList)) {
@@ -76,7 +72,6 @@ class AdPlanPlatformController extends Controller
             $event->increment('batch');
         }
         foreach ($platformDataList as $platformKey => $platformData) {
-            // Sesuaikan aturan validasi untuk draft
             $rules = [
                 'user_id' => 'required|exists:users,id',
                 'platform_id' => 'required|exists:master_platforms,id',
@@ -138,8 +133,6 @@ class AdPlanPlatformController extends Controller
     public function edit($id)
     {
         $user = auth()->user();
-
-        // 🔹 Ambil AdPlan lengkap
         $adPlan = AdPlan::with([
             'user',
             'event',
@@ -150,11 +143,7 @@ class AdPlanPlatformController extends Controller
         if ($user->hasRole('user') && $adPlan->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
-
-        // 🔹 Ambil semua master platform untuk tampilan saja
         $masterPlatforms = MasterPlatform::all();
-
-        // 🔹 Refresh data relasi
         $adPlan->load([
             'planPlatforms.platform',
             'planPlatforms.goal',
@@ -179,8 +168,6 @@ class AdPlanPlatformController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->all();
-
-        // Filter platform yang valid sebelum validasi penuh
         $filteredPlatforms = collect($data['platforms'] ?? [])
             ->filter(function ($platform) {
                 return !empty($platform['goals_id']) &&
@@ -189,11 +176,7 @@ class AdPlanPlatformController extends Controller
             })
             ->values()
             ->toArray();
-
-        // Ganti 'platforms' di data request dengan yang sudah difilter
         $data['platforms'] = $filteredPlatforms;
-
-        // Jalankan validasi hanya pada platform yang valid
         $validator = Validator::make($data, [
             'user_id' => 'required|exists:users,id',
             'event_id' => 'required|exists:master_events,id',
@@ -219,15 +202,11 @@ class AdPlanPlatformController extends Controller
         }
 
         $validated = $validator->validated();
-
-        // ✅ Update AdPlan utama
         $adPlan = AdPlan::findOrFail($validated['ad_plan_id']);
         $adPlan->update([
             'event_id' => $validated['event_id'],
             'user_id'  => $validated['user_id'],
         ]);
-
-        // ✅ Simpan platform (createOrUpdate)
         foreach ($validated['platforms'] ?? [] as $platformData) {
             AdPlanPlatform::updateOrCreate(
                 [

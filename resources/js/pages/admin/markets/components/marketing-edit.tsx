@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
-import { ArrowLeft, ArrowRight, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function MarketingEdit() {
@@ -20,27 +20,46 @@ export default function MarketingEdit() {
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
 
     const planPlatforms = adPlan.plan_platforms || [];
+    console.log(props);
+
     const mergedPlatforms = platforms.map((platform: any) => {
         const existing = planPlatforms.find((p: any) => p.platform_id === platform.id);
-        return (
-            existing || {
-                id: null,
-                platform_id: platform.id,
-                platform,
-                goals_id: '',
-                start_date: '',
-                end_date: '',
-                daily_budget: '',
-                audience_target: '',
-                audience_type: 'targeted',
-                type_audience_targeted: '',
-                name_audience_targeted: '',
-                age_targeted: '',
-                location_targeted: '',
-                age_broad: '',
-                location_broad: '',
+
+        let audienceDetails: any[] = [];
+
+        if (existing) {
+            // PERBAIKAN: Handle data dari database dengan benar
+            const types = existing.type_audience_targeted
+                ? existing.type_audience_targeted
+                      .split(',')
+                      .map((x: string) => x.trim())
+                      .filter(Boolean)
+                : [];
+
+            const names = existing.name_audience_targeted
+                ? existing.name_audience_targeted
+                      .split(',')
+                      .map((x: string) => x.trim())
+                      .filter(Boolean)
+                : [];
+
+            // Gabungkan type dan name menjadi array objek
+            // Jika jumlah type dan name tidak sama, ambil panjang maksimum
+            const maxLength = Math.max(types.length, names.length);
+
+            for (let i = 0; i < maxLength; i++) {
+                audienceDetails.push({
+                    type: types[i] || '',
+                    name: names[i] || '',
+                });
             }
-        );
+        }
+
+        return {
+            ...existing,
+            audience_details: audienceDetails,
+            platform,
+        };
     });
 
     const [activePlatformId, setActivePlatformId] = useState(mergedPlatforms[0]?.platform_id || '');
@@ -124,6 +143,7 @@ export default function MarketingEdit() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         const filteredPlatforms = data.platforms.filter((p) => {
             return (
                 Boolean(p.start_date) &&
@@ -134,9 +154,45 @@ export default function MarketingEdit() {
                 p.audience_target !== null
             );
         });
+
         const updateRoute = isAdmin ? route('admin.marketing.update', adPlan.id) : route('user.marketing.update', adPlan.id);
+
+        // REVISI: Format data sesuai dengan yang diharapkan backend
+        const formData: any = {
+            event_id: data.event_id,
+            ad_plan_id: data.ad_plan_id,
+            user_id: data.user_id,
+            mode: 'draft',
+        };
+
+        // Tambahkan setiap platform dengan nama platform sebagai key
+        filteredPlatforms.forEach((platform) => {
+            const platformName = platforms.find((p: any) => p.id === platform.platform_id)?.name.toLowerCase() || 'boost';
+
+            formData[platformName] = {
+                user_id: platform.user_id,
+                start_date: platform.start_date,
+                end_date: platform.end_date,
+                daily_budget: platform.daily_budget,
+                audience_target: platform.audience_target,
+                age_targeted: platform.age_targeted,
+                location_targeted: platform.location_targeted,
+                audience_type: platform.audience_type,
+                event_id: platform.event_id,
+                platform_id: platform.platform_id,
+                type_audience_targeted: platform.type_audience_targeted, // Langsung dari data
+                name_audience_targeted: platform.name_audience_targeted, // Langsung dari data
+                age_broad: platform.age_broad,
+                location_broad: platform.location_broad,
+                goals_id: platform.goals_id,
+                id: platform.id,
+            };
+        });
+
+        console.log('Data yang dikirim:', formData);
+
         post(updateRoute, {
-            data: { ...data, platforms: filteredPlatforms },
+            data: formData,
             preserveScroll: true,
         });
     };
@@ -146,11 +202,25 @@ export default function MarketingEdit() {
         { title: 'Edit Perencanaan Iklan', href: route('admin.marketing.edit', adPlan.id) },
     ];
 
+    const addAudience = () => {
+        const currentAudiences = activePlatform.audience_details || [];
+        updateActivePlatformField('audience_details', [...currentAudiences, { type: '', name: '' }]);
+    };
+
+    const handleAudienceChange = (index: number, field: 'type' | 'name', value: string) => {
+        const updatedAudiences = [...activePlatform.audience_details];
+        updatedAudiences[index] = { ...updatedAudiences[index], [field]: value };
+        updateActivePlatformField('audience_details', updatedAudiences);
+    };
+
+    const removeAudience = (index: number) => {
+        const updatedAudiences = [...activePlatform.audience_details];
+        updatedAudiences.splice(index, 1);
+        updateActivePlatformField('audience_details', updatedAudiences);
+    };
+
     const renderTargetingFields = () => {
         const targetType = activePlatform.audience_type;
-        const typeAudiens = activePlatform.type_audience_targeted;
-        const detailAudiens = activePlatform.name_audience_targeted;
-
         const showTargeting = targetType === 'targeted' || targetType === 'combined';
         const showBroad = targetType === 'broad' || targetType === 'combined';
 
@@ -161,11 +231,26 @@ export default function MarketingEdit() {
                         <div className="space-y-4">
                             <div>
                                 <Label>Umur (Targeted)</Label>
-                                <Input
-                                    type="number"
-                                    value={activePlatform.age_targeted}
-                                    onChange={(e) => updateActivePlatformField('age_targeted', e.target.value)}
-                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Input
+                                        type="number"
+                                        placeholder="Min"
+                                        value={activePlatform.age_targeted?.split('-')[0] || ''}
+                                        onChange={(e) => {
+                                            const max = activePlatform.age_targeted?.split('-')[1] || '';
+                                            updateActivePlatformField('age_targeted', `${e.target.value}-${max}`);
+                                        }}
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Max"
+                                        value={activePlatform.age_targeted?.split('-')[1] || ''}
+                                        onChange={(e) => {
+                                            const min = activePlatform.age_targeted?.split('-')[0] || '';
+                                            updateActivePlatformField('age_targeted', `${min}-${e.target.value}`);
+                                        }}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <Label>Lokasi</Label>
@@ -175,40 +260,72 @@ export default function MarketingEdit() {
                                 />
                             </div>
                             <div>
-                                <Label>Jenis Audiens</Label>
-                                <Select value={typeAudiens} onValueChange={(val) => updateActivePlatformField('type_audience_targeted', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih jenis audiens" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map((item) => (
-                                            <SelectItem key={item} value={item}>
-                                                {item}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {typeAudiens && (
-                                <div>
-                                    <Label>Detail Audiens ({typeAudiens})</Label>
-                                    <Input
-                                        value={detailAudiens}
-                                        onChange={(e) => updateActivePlatformField('name_audience_targeted', e.target.value)}
-                                    />
+                                <Label>Detail Audiens</Label>
+                                <div className="space-y-3">
+                                    {/* PERBAIKAN: Tampilkan audience_details yang sudah di-parse dari database */}
+                                    {activePlatform.audience_details?.map((audience: any, index: number) => (
+                                        <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-3">
+                                            <Select value={audience.type} onValueChange={(value) => handleAudienceChange(index, 'type', value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Jenis audiens" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map(
+                                                        (item) => (
+                                                            <SelectItem key={item} value={item}>
+                                                                {item}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <Input
+                                                placeholder="Detail audiens"
+                                                value={audience.name}
+                                                onChange={(e) => handleAudienceChange(index, 'name', e.target.value)}
+                                            />
+
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeAudience(index)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                                        onClick={addAudience}
+                                    >
+                                        + Tambah Jenis Audiens
+                                    </Button>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     )}
 
                     {showBroad && (
                         <div className="space-y-4">
-                            <div>
-                                <Label>Umur (Broad)</Label>
+                            <Label>Umur (broad)</Label>
+                            <div className="grid grid-cols-2 gap-3">
                                 <Input
                                     type="number"
-                                    value={activePlatform.age_broad}
-                                    onChange={(e) => updateActivePlatformField('age_broad', e.target.value)}
+                                    placeholder="Min"
+                                    value={activePlatform.age_broad?.split('-')[0] || ''}
+                                    onChange={(e) => {
+                                        const max = activePlatform.age_broad?.split('-')[1] || '';
+                                        updateActivePlatformField('age_broad', `${e.target.value}-${max}`);
+                                    }}
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={activePlatform.age_broad?.split('-')[1] || ''}
+                                    onChange={(e) => {
+                                        const min = activePlatform.age_broad?.split('-')[0] || '';
+                                        updateActivePlatformField('age_broad', `${min}-${e.target.value}`);
+                                    }}
                                 />
                             </div>
                             <div>
@@ -374,7 +491,7 @@ export default function MarketingEdit() {
                                             variant="outline"
                                             disabled={!isButtonActive || processing}
                                             className={cn(
-                                                'bg-blue-600 text-white hover:bg-blue-700 ml-2',
+                                                'ml-2 bg-blue-600 text-white hover:bg-blue-700',
                                                 (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
                                             )}
                                             onClick={() => {
