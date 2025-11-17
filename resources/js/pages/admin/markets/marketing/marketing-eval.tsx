@@ -33,7 +33,6 @@ export default function MarketingEval() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const submitRoute = isAdmin ? route('admin.marketing.evaluation.storeOrUpdate') : route('user.marketing.evaluation.storeOrUpdate')
-        console.log(isAdmin);
         post(submitRoute);
     };
 

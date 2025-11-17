@@ -56,7 +56,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::get('/create', 'create')->name('admin.marketing.create');
             Route::post('/store', 'store')->name('admin.marketing.store');
             Route::get("/edit/{id}", "edit")->name("admin.marketing.edit");
-            Route::post("/update/{id}", "update")->name("admin.marketing.update");
+            Route::post("/update/{id}/{mode}","update")->name("admin.marketing.update.mode");
             Route::delete("/delete/{id}", "destroy")->name("admin.marketing.destroy");
         });
         Route::controller(AdResultPlatformController::class)->group(function () {
@@ -68,6 +68,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::post("/evaluation/store", "storeOrUpdate")->name("admin.marketing.evaluation.storeOrUpdate");
         });
         Route::get('/dashboard', [DashboardController::class, "dashboardMarketing"])->name("admin.marketing.dashboard");
+        Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('admin.marketing.show');
     });
     // Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 });

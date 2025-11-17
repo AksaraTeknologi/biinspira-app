@@ -24,9 +24,7 @@ export default function MarketingForm2() {
         if (lower.includes('business')) return 'business';
         return lower;
     };
-
     const [tab, setTab] = useState(getPlatformKey(platformList[0]?.name || ''));
-
     const { data, setData, post, processing } = useForm({
         ad_result_id: adResultData?.adResult?.id || '',
         ad_plan_id: adPlan?.id || '',
@@ -37,7 +35,6 @@ export default function MarketingForm2() {
     });
 
     const [platformData, setPlatformData] = useState<Record<number, any>>({});
-
     const hiddenFieldsByPlatform: Record<string, string[]> = {
         boost: ['result_ads'],
         business: ['result_ads'],
@@ -96,20 +93,12 @@ export default function MarketingForm2() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
         const mergedPlatforms = data.platforms.map((p) => ({
             ...p,
             ...platformData[p.platform_id],
         }));
-
         setData('platforms', mergedPlatforms);
-
-        console.log('data.platforms sebelum merge:', data.platforms);
-        console.log('platformData:', platformData);
-        console.log('mergedPlatforms:', mergedPlatforms);
-
         const submitRoute = isAdmin ? route('admin.marketing.result.store') : route('user.marketing.result.store');
-
         post(submitRoute);
     };
 

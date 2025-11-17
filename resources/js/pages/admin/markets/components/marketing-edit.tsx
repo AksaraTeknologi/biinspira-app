@@ -20,15 +20,19 @@ export default function MarketingEdit() {
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
 
     const planPlatforms = adPlan.plan_platforms || [];
-    console.log(props);
+
+    const genId = () => {
+        if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) {
+            return (crypto as any).randomUUID();
+        }
+        return `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    };
 
     const mergedPlatforms = platforms.map((platform: any) => {
         const existing = planPlatforms.find((p: any) => p.platform_id === platform.id);
-
         let audienceDetails: any[] = [];
 
         if (existing) {
-            // PERBAIKAN: Handle data dari database dengan benar
             const types = existing.type_audience_targeted
                 ? existing.type_audience_targeted
                       .split(',')
@@ -43,15 +47,22 @@ export default function MarketingEdit() {
                       .filter(Boolean)
                 : [];
 
-            // Gabungkan type dan name menjadi array objek
-            // Jika jumlah type dan name tidak sama, ambil panjang maksimum
             const maxLength = Math.max(types.length, names.length);
 
             for (let i = 0; i < maxLength; i++) {
                 audienceDetails.push({
+                    id: genId(),
                     type: types[i] || '',
                     name: names[i] || '',
                 });
+            }
+
+            if (Array.isArray(existing.audience_details) && existing.audience_details.length) {
+                audienceDetails = existing.audience_details.map((a: any) => ({
+                    id: a.id || genId(), // CHANGED
+                    type: a.type || '',
+                    name: a.name || '',
+                }));
             }
         }
 
@@ -63,9 +74,7 @@ export default function MarketingEdit() {
     });
 
     const [activePlatformId, setActivePlatformId] = useState(mergedPlatforms[0]?.platform_id || '');
-
     const formatDate = (isoDate?: string) => (isoDate ? format(parseISO(isoDate), 'yyyy-MM-dd') : '');
-
     const { data, setData, post, processing } = useForm({
         event_id: adPlan.event?.id || '',
         ad_plan_id: adPlan.id,
@@ -81,6 +90,7 @@ export default function MarketingEdit() {
             audience_type: p.audience_type || 'targeted',
             type_audience_targeted: p.type_audience_targeted || '',
             name_audience_targeted: p.name_audience_targeted || '',
+            audience_details: p.audience_details || [],
             age_targeted: p.age_targeted || '',
             location_targeted: p.location_targeted || '',
             age_broad: p.age_broad || '',
@@ -141,9 +151,7 @@ export default function MarketingEdit() {
         );
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleSubmit = (submitMode: 'draft' | 'next') => {
         const filteredPlatforms = data.platforms.filter((p) => {
             return (
                 Boolean(p.start_date) &&
@@ -154,45 +162,16 @@ export default function MarketingEdit() {
                 p.audience_target !== null
             );
         });
-
-        const updateRoute = isAdmin ? route('admin.marketing.update', adPlan.id) : route('user.marketing.update', adPlan.id);
-
-        // REVISI: Format data sesuai dengan yang diharapkan backend
-        const formData: any = {
-            event_id: data.event_id,
-            ad_plan_id: data.ad_plan_id,
-            user_id: data.user_id,
-            mode: 'draft',
-        };
-
-        // Tambahkan setiap platform dengan nama platform sebagai key
-        filteredPlatforms.forEach((platform) => {
-            const platformName = platforms.find((p: any) => p.id === platform.platform_id)?.name.toLowerCase() || 'boost';
-
-            formData[platformName] = {
-                user_id: platform.user_id,
-                start_date: platform.start_date,
-                end_date: platform.end_date,
-                daily_budget: platform.daily_budget,
-                audience_target: platform.audience_target,
-                age_targeted: platform.age_targeted,
-                location_targeted: platform.location_targeted,
-                audience_type: platform.audience_type,
-                event_id: platform.event_id,
-                platform_id: platform.platform_id,
-                type_audience_targeted: platform.type_audience_targeted, // Langsung dari data
-                name_audience_targeted: platform.name_audience_targeted, // Langsung dari data
-                age_broad: platform.age_broad,
-                location_broad: platform.location_broad,
-                goals_id: platform.goals_id,
-                id: platform.id,
-            };
-        });
-
-        console.log('Data yang dikirim:', formData);
-
+        const updateRoute = isAdmin
+            ? route('admin.marketing.update.mode', [adPlan.id, submitMode])
+            : route('user.marketing.update.mode', [adPlan.id, submitMode]);
         post(updateRoute, {
-            data: formData,
+            data: {
+                event_id: data.event_id,
+                ad_plan_id: data.ad_plan_id,
+                user_id: data.user_id,
+                platforms: filteredPlatforms,
+            },
             preserveScroll: true,
         });
     };
@@ -203,20 +182,78 @@ export default function MarketingEdit() {
     ];
 
     const addAudience = () => {
-        const currentAudiences = activePlatform.audience_details || [];
-        updateActivePlatformField('audience_details', [...currentAudiences, { type: '', name: '' }]);
+        const updatedPlatforms = data.platforms.map((p) => {
+            if (p.platform_id === activePlatformId) {
+                const currentAudience = p.audience_details || [];
+                const newAudience = [...currentAudience, { id: genId(), type: '', name: '' }];
+
+                return {
+                    ...p,
+                    audience_details: newAudience,
+                    type_audience_targeted: newAudience
+                        .map((a) => a.type)
+                        .filter(Boolean)
+                        .join(','),
+                    name_audience_targeted: newAudience
+                        .map((a) => a.name)
+                        .filter(Boolean)
+                        .join(','),
+                };
+            }
+            return p;
+        });
+
+        setData('platforms', updatedPlatforms);
     };
 
     const handleAudienceChange = (index: number, field: 'type' | 'name', value: string) => {
-        const updatedAudiences = [...activePlatform.audience_details];
-        updatedAudiences[index] = { ...updatedAudiences[index], [field]: value };
-        updateActivePlatformField('audience_details', updatedAudiences);
+        const updatedPlatforms = data.platforms.map((p) => {
+            if (p.platform_id === activePlatformId) {
+                const updatedAudience = [...(p.audience_details || [])];
+                if (updatedAudience[index]) {
+                    updatedAudience[index] = { ...updatedAudience[index], [field]: value };
+                }
+                return {
+                    ...p,
+                    audience_details: updatedAudience,
+                    type_audience_targeted: updatedAudience
+                        .map((a) => a.type)
+                        .filter(Boolean)
+                        .join(','),
+                    name_audience_targeted: updatedAudience
+                        .map((a) => a.name)
+                        .filter(Boolean)
+                        .join(','),
+                };
+            }
+            return p;
+        });
+
+        setData('platforms', updatedPlatforms);
     };
 
-    const removeAudience = (index: number) => {
-        const updatedAudiences = [...activePlatform.audience_details];
-        updatedAudiences.splice(index, 1);
-        updateActivePlatformField('audience_details', updatedAudiences);
+    const removeAudience = (id: string) => {
+        const updatedPlatforms = data.platforms.map((p) => {
+            if (p.platform_id === activePlatformId) {
+                const updatedAudience = (p.audience_details || []).filter((a) => a.id !== id);
+
+                return {
+                    ...p,
+                    audience_details: updatedAudience,
+                    type_audience_targeted: updatedAudience
+                        .map((a) => a.type)
+                        .filter(Boolean)
+                        .join(','),
+                    name_audience_targeted: updatedAudience
+                        .map((a) => a.name)
+                        .filter(Boolean)
+                        .join(','),
+                };
+            }
+            return p;
+        });
+
+        setData('platforms', updatedPlatforms);
     };
 
     const renderTargetingFields = () => {
@@ -262,9 +299,8 @@ export default function MarketingEdit() {
                             <div>
                                 <Label>Detail Audiens</Label>
                                 <div className="space-y-3">
-                                    {/* PERBAIKAN: Tampilkan audience_details yang sudah di-parse dari database */}
                                     {activePlatform.audience_details?.map((audience: any, index: number) => (
-                                        <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-3">
+                                        <div key={audience.id} className="grid grid-cols-[1fr,1fr,auto] gap-3">
                                             <Select value={audience.type} onValueChange={(value) => handleAudienceChange(index, 'type', value)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Jenis audiens" />
@@ -286,7 +322,7 @@ export default function MarketingEdit() {
                                                 onChange={(e) => handleAudienceChange(index, 'name', e.target.value)}
                                             />
 
-                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeAudience(index)}>
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeAudience(audience.id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -459,18 +495,17 @@ export default function MarketingEdit() {
 
                                 <Tabs value={tab} onValueChange={handleTabChange}>
                                     <TabsList className="mb-4 grid w-full grid-cols-3">
-                                        {mergedPlatforms.map((p) => (
-                                            <TabsTrigger key={p.platform_id} value={p.platform.name.toLowerCase()}>
+                                        {mergedPlatforms.map((p: any) => (
+                                            // CHANGED: use stable key (platform id)
+                                            <TabsTrigger key={p.platform?.id ?? p.platform_id} value={p.platform.name.toLowerCase()}>
                                                 {p.platform.name}
                                             </TabsTrigger>
                                         ))}
                                     </TabsList>
 
-                                    {mergedPlatforms.map((p) => (
-                                        <TabsContent key={p.platform_id} value={p.platform.name.toLowerCase()}>
-                                            {renderFormContent()}
-                                        </TabsContent>
-                                    ))}
+                                    <TabsContent key={activePlatformId} value={tab}>
+                                        {renderFormContent()}
+                                    </TabsContent>
                                 </Tabs>
 
                                 <div className="flex justify-between gap-3 pt-4">
@@ -482,29 +517,29 @@ export default function MarketingEdit() {
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
-                                    <div>
-                                        <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
-                                            {processing ? 'Menyimpan...' : 'Perbarui Data'}
-                                        </Button>
+                                    <div className="flex gap-2">
+                                        {/* Tombol Perbarui Data - type="button" dengan mode 'draft' */}
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            disabled={processing}
+                                            className="bg-blue-600 text-white hover:bg-blue-700"
+                                            onClick={() => handleSubmit('draft')}
+                                        >
+                                            {processing ? 'Menyimpan...' : 'Perbarui Data'}
+                                        </Button>
+
+                                        {/* Tombol Selanjutnya - type="button" dengan mode 'next' */}
+                                        <Button
+                                            type="button"
                                             disabled={!isButtonActive || processing}
                                             className={cn(
-                                                'ml-2 bg-blue-600 text-white hover:bg-blue-700',
+                                                'bg-green-600 text-white hover:bg-green-700',
                                                 (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
                                             )}
-                                            onClick={() => {
-                                                console.log(isAdmin);
-                                                const routeName = isAdmin ? 'admin.marketing.result' : 'user.marketing.result';
-                                                window.location.href = route(routeName, {
-                                                    id_event: data.event_id,
-                                                    id_ad_plan: data.ad_plan_id,
-                                                });
-                                            }}
+                                            onClick={() => handleSubmit('next')}
                                         >
-                                            Selanjutnya
-                                            <ArrowRight />
+                                            {processing ? 'Menyimpan...' : 'Selanjutnya'}
+                                            <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>

@@ -9,6 +9,7 @@ use App\Models\MasterAdGoal;
 use App\Models\MasterEvent;
 use App\Models\MasterPlatform;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -93,6 +94,7 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
+                dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()
@@ -165,7 +167,7 @@ class AdPlanPlatformController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $mode)
     {
         $data = $request->all();
         $filteredPlatforms = collect($data['platforms'] ?? [])
@@ -177,6 +179,7 @@ class AdPlanPlatformController extends Controller
             ->values()
             ->toArray();
         $data['platforms'] = $filteredPlatforms;
+
         $validator = Validator::make($data, [
             'user_id' => 'required|exists:users,id',
             'event_id' => 'required|exists:master_events,id',
@@ -207,6 +210,7 @@ class AdPlanPlatformController extends Controller
             'event_id' => $validated['event_id'],
             'user_id'  => $validated['user_id'],
         ]);
+        $latestEndDate = null;
         foreach ($validated['platforms'] ?? [] as $platformData) {
             AdPlanPlatform::updateOrCreate(
                 [
@@ -228,25 +232,30 @@ class AdPlanPlatformController extends Controller
                     'location_broad' => $platformData['location_broad'] ?? null,
                 ]
             );
+            $currentEndDate = Carbon::parse($platformData['end_date']);
+            if (!$latestEndDate || $currentEndDate->greaterThan($latestEndDate)) {
+                $latestEndDate = $currentEndDate;
+            }
         }
 
         $user = auth()->user();
-        if ($user->hasRole('admin')) {
-            $redirectRoute = 'admin.marketing.index';
-        } elseif ($user->hasRole('user')) {
-            $redirectRoute = 'user.marketing.index';
+        if ($mode === 'draft') {
+            $route = $user->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index';
+            return redirect()->route($route)->with('success', 'Disimpan sebagai draft.');
         }
 
-        return redirect()
-            ->route($redirectRoute)
-            ->with('success', 'Perencanaan iklan berhasil diperbarui.');
+        if ($mode === 'next') {
+            $route = $user->hasRole('admin') ? 'admin.marketing.result' : 'user.marketing.result';
+            return redirect()->route($route, [
+                'id_event' => $request->event_id,
+                'id_ad_plan' => $request->ad_plan_id,
+            ])->with('success', 'Berhasil diperbarui.');
+        }
     }
     public function destroy($id)
     {
         $user = auth()->user();
         $isAdmin = $user->hasRole('admin');
-
-        // Ambil ad plan lengkap dengan relasi
         $adPlan = AdPlan::with([
             'user',
             'event',
@@ -255,33 +264,23 @@ class AdPlanPlatformController extends Controller
             'evaluations',
         ])->findOrFail($id);
 
-        // Jika bukan admin → pastikan ini milik user sendiri
+
         if (!$isAdmin && $adPlan->user_id !== $user->id) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus data ini.');
         }
-
-        // Hapus data hasil (Form 2)
         if ($adPlan->results->isNotEmpty()) {
             foreach ($adPlan->results as $result) {
                 $result->resultPlatforms()->delete();
             }
             $adPlan->results()->delete();
         }
-
-        // Hapus data evaluasi (Form 3)
         if ($adPlan->evaluations->isNotEmpty()) {
             $adPlan->evaluations()->delete();
         }
-
-        // Hapus platform plan
         if ($adPlan->planPlatforms->isNotEmpty()) {
             $adPlan->planPlatforms()->delete();
         }
-
-        // Hapus ad plan
         $adPlan->delete();
-
-        // Redirect sesuai role
         return redirect()
             ->route($isAdmin ? 'admin.marketing.index' : 'user.marketing.index')
             ->with('success', 'Data Form 1–3 berhasil dihapus.');
