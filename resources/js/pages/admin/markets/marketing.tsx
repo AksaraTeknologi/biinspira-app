@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
+import DeleteButton from '@/components/delete-button';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil } from 'lucide-react';
-import DeleteButton from '@/components/delete-button';
 
 interface Event {
     id: number;
@@ -58,20 +57,18 @@ export default function Marketing() {
     const formatDate = (dateString?: string) => {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        return isNaN(date.getTime())
-            ? '-'
-            : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold">Daftar Iklan</h1>
                     {isAdmin && (
                         <Button
                             onClick={handleAddAd}
-                            className="gap-2 bg-primary hover:bg-blue-700 dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+                            className="gap-2 bg-primary hover:bg-blue-700 dark:border dark:border-primary dark:bg-background dark:hover:bg-blue-900"
                         >
                             + Tambah Iklan
                         </Button>
@@ -80,7 +77,7 @@ export default function Marketing() {
 
                 <div className="overflow-hidden rounded-lg border shadow-sm">
                     <Table>
-                        <TableHeader className='bg-border'>
+                        <TableHeader className="bg-border">
                             <TableRow>
                                 <TableHead>Event</TableHead>
                                 <TableHead>Batch</TableHead>
@@ -93,7 +90,7 @@ export default function Marketing() {
                                 <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody className='bg-input'>
+                        <TableBody className="bg-input">
                             {adPlans.length > 0 ? (
                                 adPlans.map((plan) => {
                                     const platforms = plan.plan_platforms.map((p) => p.platform?.name).join(', ');
@@ -104,11 +101,11 @@ export default function Marketing() {
                                                 p.audience_type === 'targeted'
                                                     ? 'Targetting Audiens'
                                                     : p.audience_type === 'broad'
-                                                        ? 'Broad'
-                                                        : p.audience_type === 'combined'
-                                                            ? 'Combined'
-                                                            : '-'
-                                            )
+                                                      ? 'Broad'
+                                                      : p.audience_type === 'combined'
+                                                        ? 'Combined'
+                                                        : '-',
+                                            ),
                                         ),
                                     ].join(', ');
                                     const endDates = plan.plan_platforms.map((p) => formatDate(p.end_date)).join(', ');
@@ -124,12 +121,13 @@ export default function Marketing() {
                                             <TableCell>{plan.user?.name || '-'}</TableCell>
                                             <TableCell>
                                                 <span
-                                                    className={`rounded px-2 py-1 text-xs font-medium ${plan.status === 'active'
+                                                    className={`rounded px-2 py-1 text-xs font-medium ${
+                                                        plan.status === 'active'
                                                             ? 'bg-green-100 text-green-700'
                                                             : plan.status === 'draft'
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-gray-100 text-gray-700'
-                                                        }`}
+                                                              ? 'bg-yellow-100 text-yellow-700'
+                                                              : 'bg-gray-100 text-gray-700'
+                                                    }`}
                                                 >
                                                     {plan.status || '-'}
                                                 </span>
@@ -138,21 +136,16 @@ export default function Marketing() {
                                                 <div className="flex items-center gap-2">
                                                     <Button asChild variant="outline" size="sm">
                                                         <Link href={route('admin.marketing.show', plan.id)}>
-                                                            <Eye className="w-4 h-4" />
+                                                            <Eye className="h-4 w-4" />
                                                         </Link>
                                                     </Button>
                                                     <Button asChild variant="outline" size="sm">
                                                         <Link href={route('admin.marketing.edit', plan.id)}>
-                                                            <Pencil className="w-4 h-4" />
+                                                            <Pencil className="h-4 w-4" />
                                                         </Link>
                                                     </Button>
                                                     {isAdmin && (
-                                                        <DeleteButton
-                                                            id={plan.id}
-                                                            routeTable="marketing"
-                                                            name={plan.event?.name}
-                                                            role="admin"
-                                                        />
+                                                        <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role="admin" />
                                                     )}
                                                 </div>
                                             </TableCell>
