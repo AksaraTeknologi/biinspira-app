@@ -185,6 +185,7 @@ class AdPlanPlatformController extends Controller
             'event_id' => 'required|exists:master_events,id',
             'ad_plan_id' => 'required|exists:ad_plans,id',
             'platforms' => 'nullable|array',
+            'platforms.*.id' => 'nullable|exists:ad_plan_platforms,id',
             'platforms.*.platform_id' => 'required|exists:master_platforms,id',
             'platforms.*.goals_id' => 'required|exists:master_ad_goals,id',
             'platforms.*.start_date' => 'required|date',
@@ -210,14 +211,16 @@ class AdPlanPlatformController extends Controller
             'event_id' => $validated['event_id'],
             'user_id'  => $validated['user_id'],
         ]);
+
         $latestEndDate = null;
         foreach ($validated['platforms'] ?? [] as $platformData) {
-            AdPlanPlatform::updateOrCreate(
+            $platform = AdPlanPlatform::updateOrCreate(
+                [
+                    'id' => $platformData['id'] ?? null,
+                ],
                 [
                     'ad_plan_id' => $adPlan->id,
                     'platform_id' => $platformData['platform_id'],
-                ],
-                [
                     'goals_id' => $platformData['goals_id'],
                     'start_date' => $platformData['start_date'],
                     'end_date' => $platformData['end_date'],
@@ -232,6 +235,8 @@ class AdPlanPlatformController extends Controller
                     'location_broad' => $platformData['location_broad'] ?? null,
                 ]
             );
+
+            // update tanggal terakhir
             $currentEndDate = Carbon::parse($platformData['end_date']);
             if (!$latestEndDate || $currentEndDate->greaterThan($latestEndDate)) {
                 $latestEndDate = $currentEndDate;

@@ -87,7 +87,8 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::get('/marketing/create', 'create')->name('marketing.create');
         Route::post('/marketing/store', 'store')->name('marketing.store');
         Route::get("/marketing/edit/{id}", "edit")->name("marketing.edit");
-        Route::post("/marketing/update/{id}", "update")->name("marketing.update");
+        // Route::post("/marketing/update/{id}", "update")->name("marketing.update");
+        Route::post("/update/{id}/{mode}", "update")->name("marketing.update.mode");
         Route::delete("/marketing/delete/{id}", "destroy")->name("marketing.destroy");
     });
     Route::controller(AdResultPlatformController::class)->group(function () {

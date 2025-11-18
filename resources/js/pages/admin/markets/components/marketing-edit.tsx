@@ -68,6 +68,7 @@ export default function MarketingEdit() {
 
         return {
             ...existing,
+            platform_id: existing?.platform_id || platform.id,
             audience_details: audienceDetails,
             platform,
         };
@@ -97,6 +98,8 @@ export default function MarketingEdit() {
             location_broad: p.location_broad || '',
         })),
     });
+
+    console.log(data.platforms.platform_id);
 
     const activePlatform = data.platforms.find((p) => p.platform_id === activePlatformId) || data.platforms[0];
     const tab = mergedPlatforms.find((p) => p.platform_id === activePlatformId)?.platform?.name.toLowerCase() || 'boost';
@@ -154,6 +157,7 @@ export default function MarketingEdit() {
     const handleSubmit = (submitMode: 'draft' | 'next') => {
         const filteredPlatforms = data.platforms.filter((p) => {
             return (
+                Boolean(p.platform_id) &&
                 Boolean(p.start_date) &&
                 Boolean(p.end_date) &&
                 p.daily_budget !== '' &&
@@ -162,6 +166,17 @@ export default function MarketingEdit() {
                 p.audience_target !== null
             );
         });
+
+        // const filteredPlatforms = data.platforms.filter((p) => {
+        //     return (
+        //         Boolean(p.start_date) &&
+        //         Boolean(p.end_date) &&
+        //         p.daily_budget !== '' &&
+        //         p.daily_budget !== null &&
+        //         p.audience_target !== '' &&
+        //         p.audience_target !== null
+        //     );
+        // });
         const updateRoute = isAdmin
             ? route('admin.marketing.update.mode', [adPlan.id, submitMode])
             : route('user.marketing.update.mode', [adPlan.id, submitMode]);
