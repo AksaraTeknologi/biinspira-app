@@ -42,7 +42,7 @@ export interface PlatformData {
 export interface ResultData {
     checkout_count: number;
     revenue: number;
-    result_platforms: ResultPlatformData[] | null;
+    result_platforms: ResultPlatformData[] | ResultPlatformData | null;
 }
 
 export interface ResultPlatformData {
@@ -101,6 +101,12 @@ export default function MarketingShow({ data }: AdPlanProps) {
             : [data.result]
         : [];
 
+    const resultPlatformList: ResultPlatformData[] = resultList?.[0]?.result_platforms
+    ? Array.isArray(resultList[0].result_platforms)
+        ? resultList[0].result_platforms
+        : [resultList[0].result_platforms]
+    : [];
+
     const evaluationList: EvaluationData[] = data?.evaluation
         ? Array.isArray(data.evaluation)
             ? data.evaluation
@@ -124,7 +130,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
 
     const [resultTab, setResultTab] = useState<string>(() => {
         return resultList.length
-            ? getPlatformKey(firstResult.result_platforms?.[0].platform_name ?? undefined, 0)
+            ? getPlatformKey(resultPlatformList[0].platform_name ?? undefined, 0)
             : 'platforms';
     });
 
@@ -135,7 +141,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
             <div className="w-full space-y-6 p-6">
                 <h2 className="text-2xl font-semibold">Detail Marketing</h2>
 
-                <Card>
+                <Card className="w-full border-zinc-200 shadow-md">
                     <CardHeader className='flex flex-row justify-between items-center'>
                         <div>
                             Persiapan Iklan
@@ -206,7 +212,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                         </div>
                                                         <div>
                                                             <Label>Budget Harian</Label>
-                                                            <div className="mt-1">{p.daily_budget ?? '-'}</div>
+                                                            <div className="mt-1">Rp {p.daily_budget ?? '-'}</div>
                                                         </div>
                                                         <div>
                                                             <Label>Taget Audiens (Value)</Label>
@@ -287,7 +293,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             </div>
                                             <div>
                                                 <Label>Omset Per Event</Label>
-                                                <div className="mt-1">{firstResult?.revenue ?? '-'}</div>
+                                                <div className="mt-1">Rp {firstResult?.revenue ?? '-'}</div>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -299,11 +305,11 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             <TabsList
                                                 className="mb-4 grid w-full"
                                                 style={{
-                                                    gridTemplateColumns: `repeat(${Math.max(1, resultList.length)}, minmax(0, 1fr))`,
+                                                    gridTemplateColumns: `repeat(${Math.max(1, resultPlatformList.length)}, minmax(0, 1fr))`,
                                                 }}
                                             >
-                                                {resultList.map((p, idx) => {
-                                                    const name = p.result_platforms?.[0]?.platform_name ?? `Platform ${idx + 1}`;
+                                                {resultPlatformList.map((p, idx) => {
+                                                    const name = p.platform_name ?? `Platform ${idx + 1}`;
                                                     const key = getPlatformKey(name, idx);
                                                     return (
                                                         <TabsTrigger key={key} value={key}>
@@ -313,14 +319,14 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                 })}
                                             </TabsList>
 
-                                            {resultList.map((p, idx) => {
-                                                const name = p.result_platforms?.[0]?.platform_name ?? `Platform ${idx + 1}`;
+                                            {resultPlatformList.map((p, idx) => {
+                                                const name = p.platform_name ?? `Platform ${idx + 1}`;
                                                 const key = getPlatformKey(name, idx);
 
                                                 // find the corresponding result platform by name, fallback to index
-                                                const rp = firstResult?.result_platforms?.find(r =>
+                                                const rp = resultPlatformList.find(r =>
                                                     (r.platform_name ?? '').toString().toLowerCase() === (name ?? '').toString().toLowerCase()
-                                                ) ?? firstResult?.result_platforms?.[idx];
+                                                ) ?? resultPlatformList?.[idx];
 
                                                 // metrics can be an array; take first metrics entry if present
                                                 const metrics = rp?.metrics ? (Array.isArray(rp.metrics) ? rp.metrics[0] : rp.metrics) : undefined;
@@ -336,9 +342,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                             </div>
                                                             <div>
                                                                 <Label>Total Biaya Iklan</Label>
-                                                                <div className="mt-1">
-                                                                    {rp?.total_cost ?? '-'}
-                                                                </div>
+                                                                <div className="mt-1">Rp {rp?.total_cost ?? '-'}</div>
                                                             </div>
                                                         </div>
 
@@ -461,7 +465,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             <div className='flex flex-col gap-y-3'>
                                                 <div>
                                                     <Label>Checkout Event Sekarang</Label>
-                                                    <div className="mt-1">{firstEvaluation?.current_checkout ?? '-'}</div>
+                                                    <div className="mt-1">Rp {firstEvaluation?.current_checkout ?? '-'}</div>
                                                 </div>
                                                 <div>
                                                     <Label>Kinerja Iklan Sekarang</Label>
@@ -475,7 +479,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             <div className='flex flex-col gap-y-3'>
                                                 <div>
                                                     <Label>Checkout Event Sebelumnya</Label>
-                                                    <div className="mt-1">{firstEvaluation?.previous_checkout ?? '-'}</div>
+                                                    <div className="mt-1">Rp {firstEvaluation?.previous_checkout ?? '-'}</div>
                                                 </div>
                                                 <div>
                                                     <Label>Kinerja Iklan Sebelumnya</Label>

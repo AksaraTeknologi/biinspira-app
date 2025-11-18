@@ -32,7 +32,9 @@ class AdEvaluationFactory extends Factory
             'current_ad_performance' => $this->faker->sentence(),
             'previous_other_performance' => $this->faker->sentence(),
             'current_other_performance' => $this->faker->sentence(),
-            'next_ad_strategy' => $this->faker->paragraph(),
+            'next_ad_strategy' => $this->faker->sentences(3, true),
+            'created_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
         ];
     }
 }

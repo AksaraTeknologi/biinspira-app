@@ -25,6 +25,8 @@ class AdPlanFactory extends Factory
             'user_id' => User::inRandomOrder()->first()->id,
             'event_id' => MasterEvent::inRandomOrder()->first()->id,
             'status' => $this->faker->randomElement(['draft', 'completed']),
+            'created_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
         ];
     }
 }

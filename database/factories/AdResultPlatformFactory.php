@@ -26,6 +26,8 @@ class AdResultPlatformFactory extends Factory
             'platform_id' => MasterPlatform::inRandomOrder()->first()->id,
             'result' => $this->faker->optional()->numberBetween(100, 5000), // Sesuai goal
             'total_cost' => $this->faker->randomFloat(2, 500000, 10000000),
+            'created_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
         ];
     }
 }

@@ -23,7 +23,9 @@ class AdResultFactory extends Factory
             'id' => $this->faker->uuid(),
             'ad_plan_id' => AdPlan::inRandomOrder()->first()->id,
             'checkout_count' => $this->faker->numberBetween(10, 1000),
-            'revenue' => $this->faker->randomFloat(2, 1000000, 500000000),
+            'revenue' => $this->faker->randomFloat(2,  500000, 10000000),
+            'created_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
         ];
     }
 }

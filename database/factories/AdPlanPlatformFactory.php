@@ -22,8 +22,8 @@ class AdPlanPlatformFactory extends Factory
      */
     public function definition(): array
     {
-        $startDate = $this->faker->dateTimeBetween('now', '+1 month');
-        $endDate = $this->faker->dateTimeBetween($startDate, (clone $startDate)->modify('+45 days'));
+        $startDate = $this->faker->dateTimeBetween('-9 months', 'now');
+        $endDate = $this->faker->dateTimeBetween('-9 months', 'now');
         $audienceType = $this->faker->randomElement(['targeted', 'broad', 'combined']);
 
         return [
@@ -42,6 +42,8 @@ class AdPlanPlatformFactory extends Factory
             'location_broad' => $audienceType != 'targeted' ? $this->faker->country() : null,
             'type_audience_targeted' => $audienceType != 'broad' ? $this->faker->randomElement(['Interests', 'Lookalike', 'Custom Audience']) : null,
             'name_audience_targeted' => $audienceType != 'broad' ? $this->faker->words(3, true) : null,
+            'created_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-9 months', 'now'),
         ];
     }
 }

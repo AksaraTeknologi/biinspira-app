@@ -19,7 +19,7 @@ interface DashboardProps {
         no: number;
         user: string;
         status: string;
-        cost: number;
+        cost: string; // formatted as "x.xxx.xxx"
     }[];
     dataHistoris: {
         id: number;

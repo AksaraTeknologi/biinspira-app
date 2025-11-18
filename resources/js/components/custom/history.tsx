@@ -27,6 +27,7 @@ interface HistorisProps {
 }
 
 export default function History({ className, dataHistoris }: HistorisProps) {
+
     // ---------------------------------------------------
     // 🧠 State utama
     // ---------------------------------------------------
@@ -204,10 +205,12 @@ export default function History({ className, dataHistoris }: HistorisProps) {
                                         "flex flex-col items-center rounded-full px-4 py-3 text-white h-63 w-17",
                                         h.color
                                     )}>
-                                        <div className="transform rotate-270 text-sm font-medium w-[45vw] sm:w-[40vw] md:w-[35vw] lg:w-[30vw] xl:w-[20vw]">
+                                        <div className="transform rotate-270 text-sm font-medium w-[45vw] sm:w-[38vw] md:w-[30vw] lg:w-[28vw] xl:w-[18vw]">
                                             <p className="text-base font-semibold">{h.user_name}</p>
                                             <p className="text-[11px] font-light">{h.event_name}</p>
-                                            <p className="text-[13px] font-semibold">Rp {h.amount}</p>
+                                            <p className="text-[13px] font-semibold">
+                                                Rp {(parseInt(h.amount.replace(/\D/g, ''), 10) || 0).toLocaleString('id-ID')}
+                                            </p>
                                         </div>
                                         <img
                                             src={h.avatar}

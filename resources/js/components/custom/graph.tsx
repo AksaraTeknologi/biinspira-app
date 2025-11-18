@@ -31,6 +31,18 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
 
         return map[s.slice(0, 3)] || input;
     }
+    
+    function toMonthName(input: string) {
+        if (!input) return '';
+        const s = input.toString().trim().toLowerCase();
+        const map: Record<string, string> = {
+            jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May',
+            jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct',
+            nov: 'Nov', dec: 'Dec'
+        };
+
+        return map[s.slice(0, 3)] || input;
+    }
 
     // Hitung kenaikan default (bulan terakhir)
     // rumus perhitungan: ((pendapatan bulan ini - pendapatan bulan lalu) / pendapatan bulan lalu) * 100
@@ -86,7 +98,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
             }));
         }
         return RawData.map((d) => ({
-            month: toFullMonthName(d.month),
+            month: toMonthName(d.month),
             PendapatanHeight: d.pendapatan,
             Pendapatan: d.pendapatan,
             PengeluaranHeight: d.pengeluaran,
@@ -154,9 +166,9 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
             return (
                 <div className="p-2 rounded-md shadow-md border border-foreground bg-background">
                     <p><strong>{payload[0].payload.month}</strong></p>
-                    <p>Pendapatan: {payload[0].payload.Pendapatan}</p>
-                    <p>Pengeluaran: {payload[0].payload.Pengeluaran}</p>
-                    <p>Efisiensi: {payload[0].payload.Efisiensi}</p>
+                    <p>Pendapatan: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
+                    <p>Pengeluaran: {Number(payload[0].payload.Pengeluaran).toLocaleString('id-ID')}</p>
+                    <p>Efisiensi: {Number(payload[0].payload.Efisiensi).toLocaleString('id-ID')}</p>
                 </div>
             );
         }

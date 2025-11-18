@@ -2,7 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdEvaluation;
 use App\Models\AdMetric;
+use App\Models\AdPlan;
+use App\Models\AdPlanPlatform;
+use App\Models\AdResult;
+use App\Models\AdResultPlatform;
 use App\Models\User;
 use App\Models\Variant;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -36,8 +41,13 @@ class DatabaseSeeder extends Seeder
         $this->call(MasterSeeder::class);
 
         // 3. Setelah factory diperbaiki, panggil factory terdalam
-        // Ini akan membuat 50 data dummy lengkap dengan semua relasi ke atas
+        // Ini akan membuat 20 data dummy lengkap dengan semua relasi ke atas
         // (AdMetric -> AdResultPlatform -> AdResult -> AdPlan -> User/Event)
-        // AdMetric::factory()->count(50)->create();
+        AdPlan::factory()->count(20)->create();
+        AdPlanPlatform::factory()->count(20)->create();
+        AdResult::factory()->count(20)->create();
+        AdResultPlatform::factory()->count(20)->create();
+        AdMetric::factory()->count(20)->create();
+        AdEvaluation::factory()->count(20)->create();
     }
 }

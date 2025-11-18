@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\MasterEvent;
 use App\Models\AdPlan;
 use App\Models\AdResultPlatform;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -40,7 +41,7 @@ class DashboardController extends Controller
     {
         $rawDataGraphic = $this->getRawDataGraphic();
         $tableData = $this->getTableData();
-        $dataHistoris = $this->getDataEvents();
+        $dataHistoris = $this->getDataHistories();
 
         // dd($rawDataGraphic, $tableData, $dataHistoris);
 
@@ -73,6 +74,12 @@ class DashboardController extends Controller
             });
         }
 
+        // filter hanya mengambi 12 bulan terakhir
+        $query->whereBetween('created_at', [
+            now()->subMonths(12)->startOfMonth(),
+            now()->endOfMonth()
+        ]);
+
         return $query->get()->map(function ($item) {
             return [
                 'pendapatan' => (int) round(optional($item->result)->revenue ?? 0),
@@ -89,6 +96,8 @@ class DashboardController extends Controller
                     'pendapatan' => $i->sum('pendapatan'),
                     'pengeluaran' => $i->sum('pengeluaran'),
                 ];
+            })->sortBy(function ($item, $key) {  // <<< SORT DI SINI
+                return $key;                   // key = "Y-m" format → auto ascending
             })->values();
     }
 
@@ -97,7 +106,7 @@ class DashboardController extends Controller
         $query = AdResultPlatform::with([
             'result.plan.user:id,name',
             'platform:id,name',
-        ])->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
+        ])->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at')->orderByDesc('created_at');
 
         $user = Auth::user();
         $userName = null;
@@ -115,19 +124,26 @@ class DashboardController extends Controller
             });
         }
 
+        // filter hanya mengambi 6 bulan terakhir
+        $query->where('created_at', '>=', now()->subMonths(6)->startOfMonth());
+
         return $query->get()
             ->map(function ($item, $key) {
                 return [
                     'no' => $key + 1,
                     'user' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
                     'status' => optional($item->platform)->name,
-                    'cost' => "Rp " . (int) round($item->total_cost ?? 0),
+                    'cost' => 'Rp ' . number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
                     'date' => $item->created_at->format('F'),
                 ];
+            })  // 🔥 SORT berdasarkan tanggal asli
+            ->values()
+            ->map(function ($item) {
+                return $item;
             });
     }
 
-    private function getDataEvents()
+    private function getDataHistories()
     {
         $query = AdResultPlatform::with([
             'result.plan:id,created_at,event_id,user_id',
@@ -136,7 +152,7 @@ class DashboardController extends Controller
             'result.plan.user:id,name',
             'platform:id,name',
         ])
-            ->select('id', 'ad_result_id', 'platform_id', 'total_cost');
+            ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
 
         $user = Auth::user();
         $userName = null;
@@ -153,6 +169,12 @@ class DashboardController extends Controller
                 $q->where('id', Auth::user()->id);
             });
         }
+
+        // filter hanya mengambi 11 bulan terakhir
+        $query->whereBetween('created_at', [
+            now()->subMonths(11)->startOfMonth(),
+            now()->endOfMonth()
+        ]);
 
         return $query->get()
             ->map(function ($item, $key) {
@@ -174,6 +196,9 @@ class DashboardController extends Controller
                         };
                     })(),
                 ];
-            });
+            })->sortBy(function ($item) {
+                return $item['date'] ? Carbon::parse($item['date'])->format('Y-m-d') : '9999-99-99';
+            })
+            ->values();
     }
 }
