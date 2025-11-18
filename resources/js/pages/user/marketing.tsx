@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 
 interface Event {
   id: number;
@@ -119,13 +119,12 @@ export default function Marketing() {
                       <TableCell>{plan.user?.name || '-'}</TableCell>
                       <TableCell>
                         <span
-                          className={`rounded px-2 py-1 text-xs font-medium ${
-                            plan.status === 'active'
+                          className={`rounded px-2 py-1 text-xs font-medium ${plan.status === 'active'
                               ? 'bg-green-100 text-green-700'
                               : plan.status === 'draft'
                                 ? 'bg-yellow-100 text-yellow-700'
                                 : 'bg-gray-100 text-gray-700'
-                          }`}
+                            }`}
                         >
                           {plan.status || '-'}
                         </span>
@@ -133,11 +132,16 @@ export default function Marketing() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button asChild variant="outline" size="sm">
+                            <Link href={route('user.marketing.show', plan.id)}>
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
                             <Link href={route(isAdmin ? 'admin.marketing.edit' : 'user.marketing.edit', plan.id)}>
                               <Pencil className="h-4 w-4" />
                             </Link>
                           </Button>
-                          <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role='user'/>
+                          <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role='user' />
                         </div>
                       </TableCell>
                     </TableRow>
