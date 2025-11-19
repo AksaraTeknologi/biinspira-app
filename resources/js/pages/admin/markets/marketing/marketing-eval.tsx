@@ -107,6 +107,8 @@ export default function MarketingEval() {
     };
 
     const toNumberOnly = (value: string) => {
+        if (!value) return '';
+        value = value.split('.')[0].split(',')[0];
         return value.replace(/[^0-9]/g, '');
     };
     const isPrevLocked = isFirstBatch;

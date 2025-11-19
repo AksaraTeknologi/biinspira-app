@@ -14,6 +14,27 @@ export default function MarketingForm2() {
     const { props } = usePage();
     const { events, platforms, adPlan, adResultData, isAdmin }: any = props;
 
+    const formatRupiah = (value: string | number) => {
+        if (!value) return '';
+        let numberString = value.toString().replace(/[^,\d]/g, '');
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let rupiah = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
+
+    const toNumberOnly = (value: string) => {
+        if (!value) return '';
+        value = value.split('.')[0].split(',')[0];
+        return value.replace(/[^0-9]/g, '');
+    };
     const event = events || {};
     const platformList = Array.isArray(platforms) ? platforms : [];
 
@@ -31,7 +52,7 @@ export default function MarketingForm2() {
         event_id: event?.id || '',
         platforms: [],
         checkout_count: adResultData?.adResult?.checkout_count || '',
-        revenue: adResultData?.adResult?.revenue || '',
+        revenue: toNumberOnly(adResultData?.adResult?.revenue?.toString() || ''),
     });
 
     const [platformData, setPlatformData] = useState<Record<number, any>>({});
@@ -97,30 +118,6 @@ export default function MarketingForm2() {
         }));
     };
 
-    const formatRupiah = (value: string | number) => {
-        if (!value) return '';
-
-        // Hapus semua selain angka dan koma
-        let numberString = value.toString().replace(/[^,\d]/g, '');
-
-        // Hapus decimal jika ada, contoh: "10000.50" → "10000"
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let rupiah = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return rupiah ? 'Rp ' + rupiah : '';
-    };
-
-    const toNumberOnly = (value: string) => {
-        return value.replace(/[^0-9]/g, '');
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
         const mergedPlatforms = data.platforms.map((p) => ({
@@ -157,6 +154,7 @@ export default function MarketingForm2() {
                                     <Input
                                         type="text"
                                         inputMode="numeric"
+                                        maxLength={13}
                                         placeholder="Rp 0"
                                         value={formatRupiah(data.revenue)}
                                         onChange={(e) => setData('revenue', toNumberOnly(e.target.value))}

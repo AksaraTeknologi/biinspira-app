@@ -20,7 +20,27 @@ export default function MarketingEdit() {
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
 
     const planPlatforms = adPlan.plan_platforms || [];
+    const formatRupiah = (value: string | number) => {
+        if (!value) return '';
+        let numberString = value.toString().replace(/[^,\d]/g, '');
+        numberString = numberString.split(',')[0].split('.')[0];
 
+        const remainder = numberString.length % 3;
+        let rupiah = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
+
+    const toNumberOnly = (value: string) => {
+        if (!value) return '';
+        value = value.split('.')[0].split(',')[0];
+        return value.replace(/[^0-9]/g, '');
+    };
     const genId = () => {
         if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) {
             return (crypto as any).randomUUID();
@@ -86,7 +106,7 @@ export default function MarketingEdit() {
             goals_id: p.goal?.id || '',
             start_date: formatDate(p.start_date),
             end_date: formatDate(p.end_date),
-            daily_budget: p.daily_budget || '',
+            daily_budget: toNumberOnly(p.daily_budget) || '',
             audience_target: p.audience_target || '',
             audience_type: p.audience_type || 'targeted',
             type_audience_targeted: p.type_audience_targeted || '',
@@ -98,8 +118,6 @@ export default function MarketingEdit() {
             location_broad: p.location_broad || '',
         })),
     });
-
-    console.log(data.platforms.platform_id);
 
     const activePlatform = data.platforms.find((p) => p.platform_id === activePlatformId) || data.platforms[0];
     const tab = mergedPlatforms.find((p) => p.platform_id === activePlatformId)?.platform?.name.toLowerCase() || 'boost';
@@ -460,18 +478,20 @@ export default function MarketingEdit() {
                 <div>
                     <Label>Budget Harian</Label>
                     <Input
-                        type="number"
-                        value={activePlatform.daily_budget || ''}
-                        onChange={(e) => updateActivePlatformField('daily_budget', e.target.value)}
+                        type="text"
+                        inputMode='numeric'
+                        value={formatRupiah(activePlatform.daily_budget) || ''}
+                        onChange={(e) => updateActivePlatformField('daily_budget', toNumberOnly(e.target.value))}
                     />
                 </div>
 
                 <div>
                     <Label>Target Audiens (jumlah)</Label>
                     <Input
-                        type="number"
+                        type="text"
+                        inputMode='numeric'
                         value={activePlatform.audience_target}
-                        onChange={(e) => updateActivePlatformField('audience_target', e.target.value)}
+                        onChange={(e) => updateActivePlatformField('audience_target', toNumberOnly(e.target.value))}
                     />
                 </div>
             </div>
