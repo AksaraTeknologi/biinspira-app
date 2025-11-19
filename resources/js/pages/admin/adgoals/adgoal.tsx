@@ -63,8 +63,19 @@ export default function AdGoalPage({ masterAdGoals, dashboard_item }: PageProps)
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
-    // ⚙️ Definisi kolom tabel
     const columns: ColumnDef<MasterAdGoal>[] = [
+        {
+            id: 'aksi',
+            header: 'Aksi',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <EditMasterAdGoalsModal masterAdGoals={row.original} onSuccess={() => router.reload()} />
+                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="adgoals" role='admin'/>
+                </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             id: 'select',
             header: ({ table }) => (
@@ -91,18 +102,6 @@ export default function AdGoalPage({ masterAdGoals, dashboard_item }: PageProps)
             accessorKey: 'name',
             header: 'Nama',
             cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
-        },
-        {
-            id: 'aksi',
-            header: 'Aksi',
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <EditMasterAdGoalsModal masterAdGoals={row.original} onSuccess={() => router.reload()} />
-                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="adgoals" role='admin'/>
-                </div>
-            ),
-            enableSorting: false,
-            enableHiding: false,
         },
     ];
 

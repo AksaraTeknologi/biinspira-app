@@ -57,6 +57,18 @@ export default function PlatformPage() {
   const breadcrumbs: BreadcrumbItem[] = [{ title: 'Platform', href: route('admin.platforms.index') }];
   const columns: ColumnDef<Platform>[] = [
     {
+      id: 'Aksi',
+      header: 'Aksi',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <EditPlatformModal platform={row.original} onSuccess={() => router.reload()} />
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='platforms'role='admin'/>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       id: 'select',
       header: ({ table }) => (
         <Checkbox
@@ -82,18 +94,6 @@ export default function PlatformPage() {
       accessorKey: 'nama',
       header: 'Nama',
       cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
-    },
-    {
-      id: 'Aksi',
-      header: 'Aksi',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <EditPlatformModal platform={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='platforms'role='admin'/>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
     },
   ];
 

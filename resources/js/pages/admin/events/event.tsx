@@ -58,6 +58,18 @@ export default function EventPage() {
   const breadcrumbs: BreadcrumbItem[] = [{ title: 'Event', href: route('admin.events.index') }];
   const columns: ColumnDef<Event>[] = [
     {
+      id: 'Aksi',
+      header: 'Aksi',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <EditEventModal event={row.original} onSuccess={() => router.reload()} />
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='events' role='admin'/>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       id: 'select',
       header: ({ table }) => (
         <Checkbox
@@ -101,18 +113,6 @@ export default function EventPage() {
         });
         return <div className="font-medium">{formatted}</div>;
       }
-    },
-    {
-      id: 'Aksi',
-      header: 'Aksi',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <EditEventModal event={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='events' role='admin'/>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
     },
   ];
 
