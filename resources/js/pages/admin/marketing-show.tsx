@@ -102,10 +102,10 @@ export default function MarketingShow({ data }: AdPlanProps) {
         : [];
 
     const resultPlatformList: ResultPlatformData[] = resultList?.[0]?.result_platforms
-    ? Array.isArray(resultList[0].result_platforms)
-        ? resultList[0].result_platforms
-        : [resultList[0].result_platforms]
-    : [];
+        ? Array.isArray(resultList[0].result_platforms)
+            ? resultList[0].result_platforms
+            : [resultList[0].result_platforms]
+        : [];
 
     const evaluationList: EvaluationData[] = data?.evaluation
         ? Array.isArray(data.evaluation)
@@ -334,12 +334,17 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                 return (
                                                     <TabsContent key={key} value={key}>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                            <div>
-                                                                <Label>Hasil Iklan</Label>
-                                                                <div className="mt-1">
-                                                                    {metrics?.result_ads ?? rp?.result ?? '-'}
-                                                                </div>
-                                                            </div>
+                                                            {(() => {
+                                                                const isBoost = (rp?.platform_name ?? '').toString().toLowerCase().includes('boost post');
+                                                                return (
+                                                                    <div className={isBoost ? "hidden" : ""}>
+                                                                        <Label>Hasil Iklan</Label>
+                                                                        <div className="mt-1">
+                                                                            {metrics?.result_ads ?? rp?.result ?? '-'}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                             <div>
                                                                 <Label>Total Biaya Iklan</Label>
                                                                 <div className="mt-1">Rp {rp?.total_cost ?? '-'}</div>
@@ -365,6 +370,9 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                                     {metrics?.cpr ?? '-'}
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                        <h2 className="text-lg font-semibold mt-3">Metrix tambahan</h2>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                                                             <div>
                                                                 <Label>Clicks</Label>
                                                                 <div className="mt-1">

@@ -1,6 +1,6 @@
 import { Bar, ResponsiveContainer, XAxis, Tooltip, Line, CartesianGrid, YAxis, ComposedChart } from "recharts";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCallback, useMemo, useState } from "react";
 
@@ -200,20 +200,20 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                 <div className="grid grid-cols-3">
                     <div className="col-span-1 h-full flex flex-col py-4">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-4xl font-semibold text-primary mb-1">{percentageIncrease}%</h2>
-                            <div className="bg-primary rounded-full p-1">
-                                <ArrowUpRight className="text-white" />
+                            <h2 className={`text-4xl font-semibold ${percentageIncrease < 0 ? 'text-orange-500' : 'text-primary'} mb-1`}>{percentageIncrease}%</h2>
+                            <div className={`${percentageIncrease < 0 ? 'bg-orange-500' : 'bg-primary'} rounded-full p-1`}>
+                                {percentageIncrease < 0 ? <ArrowDownRight className="text-white" /> : <ArrowUpRight className="text-white" />}
                             </div>
                         </div>
                         <p className="text-gray-500 text-sm mb-9 flex flex-col">
-                            <span>Total kenaikan </span>
-                            <span>omset iklan untuk</span>
+                            <span>Total <strong className={percentageIncrease < 0 ? 'text-orange-500' : 'text-blue-500'}>{percentageIncrease < 0 ? 'penurunan' : 'kenaikan'} </strong></span>
+                            <span>omset iklan pada</span>
                             <span>bulan <strong className="font-semibold">{currentLabel}</strong></span>
                         </p>
 
                         <div className="flex flex-col text-sm mt-auto">
                             <div className="flex flex-row items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
+                                <span className="w-3 h-3 rounded-full bg-secondary"></span>
                                 <span>Omset</span>
                             </div>
                             <div className="flex flex-row items-center gap-2">

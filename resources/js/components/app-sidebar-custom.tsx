@@ -117,9 +117,19 @@ export function AppSidebar() {
                                     className={`${isCollapsed ? "hidden" : "flex"}`}
                                     asChild
                                 >
-                                    <Link href="/dashboard" prefetch>
-                                        <AppLogo />
-                                    </Link>
+                                    {role === 'user' ? (
+                                        <Link href="/user/dashboard" prefetch>
+                                            <AppLogo />
+                                        </Link>
+                                    ) : role === 'admin' ? (
+                                        <Link href="/admin/marketing/dashboard" prefetch>
+                                            <AppLogo />
+                                        </Link>
+                                    ) : (
+                                        <Link href="/dashboard" prefetch>
+                                            <AppLogo />
+                                        </Link>
+                                    )}
                                 </SidebarMenuButton>
 
                                 {/* Collapse Trigger */}
