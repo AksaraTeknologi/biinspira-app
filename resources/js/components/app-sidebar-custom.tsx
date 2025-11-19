@@ -150,7 +150,46 @@ export function AppSidebar() {
                         `}>
                             {mainNavItems.map((item, i) => {
                                 const isOpen = openIndex === i;
-                                const isGroupOpen = checkIsSubMenuOpen(item);
+                                const isGroupOpen = (() => {
+                                    let open = checkIsSubMenuOpen(item);
+                                    const currentUrl = page.url.replace(/\/$/, "");
+
+                                    if (item.title === 'Marketing') {
+                                        try {
+                                            if (role === 'user') {
+                                                const indexBase = route('user.marketing.index').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const showBase = route('user.marketing.show', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const createBase = route('user.marketing.create').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const resultBase = String(route('user.marketing.result', { id_event: 'dummy', id_ad_plan: 'dummy' })).replace(/\/dummy/g, '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const evalBase = route('user.marketing.evaluation', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const editBase = route('user.marketing.edit', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                const editRegex = /^\/user\/marketing\/[^/]+\/edit$/;
+
+                                                // Perbaikan: gunakan variable `open` bukan `active`
+                                                if (
+                                                    currentUrl === indexBase ||
+                                                    currentUrl === showBase ||
+                                                    currentUrl === createBase ||
+                                                    currentUrl === resultBase ||
+                                                    currentUrl === evalBase ||
+                                                    currentUrl === editBase ||
+                                                    currentUrl.startsWith(indexBase) ||
+                                                    currentUrl.startsWith(showBase) ||
+                                                    currentUrl.startsWith(createBase) ||
+                                                    currentUrl.startsWith(resultBase) ||
+                                                    currentUrl.startsWith(evalBase) ||
+                                                    currentUrl.startsWith(editBase) ||
+                                                    editRegex.test(currentUrl)
+                                                ) {
+                                                    open = true; // Perbaikan: set `open` bukan `active`
+                                                }
+                                            }
+                                        } catch (e) {
+                                            // ignore if route helper unavailable
+                                        }
+                                    }
+                                    return open;
+                                })();
 
                                 return (
                                     <Collapsible
@@ -212,7 +251,48 @@ export function AppSidebar() {
                                                             const isSubActive = (() => {
                                                                 const currentUrl = page.url.replace(/\/$/, "");
                                                                 const subHref = sub.href.replace(window.location.origin, "").replace(/\/$/, "");
-                                                                return currentUrl === subHref || currentUrl.startsWith(subHref);
+                                                                // return currentUrl === subHref || currentUrl.startsWith(subHref);
+                                                                // })();
+                                                                // const isSubActive = (() => {
+                                                                // const currentUrl = page.url.replace(/\/$/, "");
+                                                                // const subHref = sub.href.replace(window.location.origin, "").replace(/\/$/, "");
+                                                                let active = currentUrl === subHref || currentUrl.startsWith(subHref);
+
+                                                                // biarkan isSubActive pada 'Daftar Iklan' juga saat berada di create/edit untuk role terkait
+                                                                if (sub.title === 'Daftar Iklan') {
+                                                                    try {
+                                                                        if (role === 'admin') {
+                                                                            const indexBase = route('admin.marketing.index').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const showBase = route('admin.marketing.show', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const createBase = route('admin.marketing.create').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const resultBase = String(route('admin.marketing.result', { id_event: 'dummy', id_ad_plan: 'dummy' })).replace(/\/dummy/g, '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const evalBase = route('admin.marketing.evaluation', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const editBase = route('admin.marketing.edit', { id: 'dummy' }).replace('/dummy', '').replace(window.location.origin, '').replace(/\/$/, '');
+                                                                            const editRegex = /^\/admin\/marketing\/[^/]+\/edit$/;
+                                                                            if (
+                                                                                currentUrl === indexBase ||
+                                                                                currentUrl === showBase ||
+                                                                                currentUrl === createBase ||
+                                                                                currentUrl === resultBase ||
+                                                                                currentUrl === evalBase ||
+                                                                                currentUrl === editBase ||
+                                                                                currentUrl.startsWith(indexBase) ||
+                                                                                currentUrl.startsWith(showBase) ||
+                                                                                currentUrl.startsWith(createBase) ||
+                                                                                currentUrl.startsWith(resultBase) ||
+                                                                                currentUrl.startsWith(evalBase) ||
+                                                                                currentUrl.startsWith(editBase) ||
+                                                                                editRegex.test(currentUrl)
+                                                                            ) {
+                                                                                active = true;
+                                                                            }
+                                                                        }
+                                                                    } catch (e) {
+                                                                        // ignore if route helper unavailable
+                                                                    }
+                                                                }
+
+                                                                return active;
                                                             })();
 
                                                             return (

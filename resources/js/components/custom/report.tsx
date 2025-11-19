@@ -3,6 +3,7 @@ import { StickyNote } from "lucide-react";
 import React from "react";
 import { Card } from "../ui/card";
 import { Link, usePage } from "@inertiajs/react";
+import { SharedData } from "@/types";
 
 const containerStyle: React.CSSProperties = {
     padding: "20px 10px 20px 15px",
@@ -21,7 +22,8 @@ const containerStyle: React.CSSProperties = {
 
 export default function ReportCard() {
     const { props } = usePage<any>();
-    const role: string = props?.auth?.user?.role ?? "user"; // default to 'user' if missing
+    const { auth } = usePage<SharedData>().props;
+    const role: string =  auth.role[0];
 
     const createRoute = role === "admin"
         ? route("admin.marketing.create")
