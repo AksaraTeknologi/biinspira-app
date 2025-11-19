@@ -473,7 +473,7 @@ export default function PerencanaanIklan() {
                                     </Button>
                                     <div className="flex gap-2">
                                         <Button
-                                            type="button"
+                                            type="submit"
                                             disabled={processing}
                                             className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={(e) => handleSubmit(e, 'draft')}
@@ -481,7 +481,7 @@ export default function PerencanaanIklan() {
                                             {processing ? 'Menyimpan...' : 'Simpan Draft'}
                                         </Button>
                                         <Button
-                                            type="button"
+                                            type="submit"
                                             disabled={processing}
                                             className="bg-blue-600 text-white hover:bg-blue-700"
                                             onClick={(e) => handleSubmit(e, 'next')}
