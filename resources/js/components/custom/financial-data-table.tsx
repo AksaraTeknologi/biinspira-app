@@ -18,8 +18,6 @@ export default function FinancialDataTable({
     className,
 }: FinanceProps) {
 
-    console.log("tableData:", tableData);
-
     const monthMap: Record<string, string> = {
         january: "Januari", february: "Februari", march: "Maret", april: "April", may: "Mei", june: "Juni", july: "Juli",
         august: "Agustus", september: "September", october: "Oktober", november: "November", december: "Desember",

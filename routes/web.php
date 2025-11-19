@@ -18,6 +18,7 @@ Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('home')
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard')->name('admin.home');
+    Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('admin.marketing.print');
     Route::controller(UserController::class)->group(function () {
         Route::get('/users', 'index')->name('admin.users.index');
         Route::get('/users/create', 'create')->name('admin.users.create');
@@ -76,6 +77,7 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
     Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
+    Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('admin.marketing.print');
 
     Route::controller(AdPlanPlatformController::class)->group(function () {
         Route::get('/marketing/list', 'index')->name('marketing.index');
