@@ -110,6 +110,21 @@ export default function Marketing() {
 
                   return (
                     <TableRow key={plan.id}>
+                        <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={route('user.marketing.show', plan.id)}>
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={route(isAdmin ? 'admin.marketing.edit' : 'user.marketing.edit', plan.id)}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role='user' />
+                        </div>
+                      </TableCell>
                       <TableCell>{plan.event?.name || '-'}</TableCell>
                       <TableCell>{plan.event?.batch || '-'}</TableCell>
                       <TableCell>{platforms || '-'}</TableCell>
@@ -128,21 +143,6 @@ export default function Marketing() {
                         >
                           {plan.status || '-'}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={route('user.marketing.show', plan.id)}>
-                              <Eye className="w-4 h-4" />
-                            </Link>
-                          </Button>
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={route(isAdmin ? 'admin.marketing.edit' : 'user.marketing.edit', plan.id)}>
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role='user' />
-                        </div>
                       </TableCell>
                     </TableRow>
                   );

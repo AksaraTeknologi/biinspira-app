@@ -86,8 +86,29 @@ export default function MarketingEval() {
         { title: 'Marketing', href: route('admin.marketing.index') },
         { title: 'Evaluasi Iklan', href: '' },
     ];
+    const formatRupiah = (value: string | number) => {
+        if (!value) return '';
 
-    // Lock only in first batch
+        // Hapus semua selain angka dan koma
+        let numberString = value.toString().replace(/[^,\d]/g, '');
+
+        // Hapus decimal jika ada, contoh: "10000.50" → "10000"
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let rupiah = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
+
+    const toNumberOnly = (value: string) => {
+        return value.replace(/[^0-9]/g, '');
+    };
     const isPrevLocked = isFirstBatch;
 
     return (
@@ -118,9 +139,11 @@ export default function MarketingEval() {
                                         <div>
                                             <Label>Checkout</Label>
                                             <Input
-                                                value={data.current_checkout}
+                                                type='text'
+                                                inputMode='numeric'
+                                                value={formatRupiah(data.current_checkout)}
                                                 onChange={(e) =>
-                                                    setData('current_checkout', e.target.value)
+                                                    setData('current_checkout', toNumberOnly(e.target.value))
                                                 }
                                             />
                                         </div>
@@ -171,10 +194,10 @@ export default function MarketingEval() {
                                         <div>
                                             <Label>Checkout Sebelumnya</Label>
                                             <Input
-                                                value={data.previous_checkout}
+                                                value={formatRupiah(data.previous_checkout)}
                                                 readOnly={isPrevLocked}
                                                 onChange={(e) =>
-                                                    setData('previous_checkout', e.target.value)
+                                                    setData('previous_checkout', toNumberOnly(e.target.value))
                                                 }
                                             />
                                         </div>

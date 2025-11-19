@@ -40,6 +40,12 @@ export default function MarketingForm2() {
         business: ['result_ads'],
         meta: ['clicks', 'likes', 'saves', 'shares', 'profile_visits', 'folows', 'direct_messages', 'external_link_clicks'],
     };
+    const capitalizeWords = (str: string) => {
+        return str
+            .split('_')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+    };
     const isHidden = (field: string) => hiddenFieldsByPlatform[tab]?.includes(field);
 
     useEffect(() => {
@@ -91,6 +97,30 @@ export default function MarketingForm2() {
         }));
     };
 
+    const formatRupiah = (value: string | number) => {
+        if (!value) return '';
+
+        // Hapus semua selain angka dan koma
+        let numberString = value.toString().replace(/[^,\d]/g, '');
+
+        // Hapus decimal jika ada, contoh: "10000.50" → "10000"
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let rupiah = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
+
+    const toNumberOnly = (value: string) => {
+        return value.replace(/[^0-9]/g, '');
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const mergedPlatforms = data.platforms.map((p) => ({
@@ -125,19 +155,21 @@ export default function MarketingForm2() {
                                 <div>
                                     <Label>Omset per Event</Label>
                                     <Input
-                                        type="number"
-                                        placeholder="Rp. 0"
-                                        value={data.revenue}
-                                        onChange={(e) => setData('revenue', e.target.value)}
+                                        type="text"
+                                        inputMode="numeric"
+                                        placeholder="Rp 0"
+                                        value={formatRupiah(data.revenue)}
+                                        onChange={(e) => setData('revenue', toNumberOnly(e.target.value))}
                                     />
                                 </div>
                                 <div>
                                     <Label>Jumlah Checkout</Label>
                                     <Input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
                                         placeholder="Masukkan jumlah checkout"
-                                        value={data.checkout_count}
-                                        onChange={(e) => setData('checkout_count', e.target.value)}
+                                        value={formatRupiah(data.checkout_count)}
+                                        onChange={(e) => setData('checkout_count', toNumberOnly(e.target.value))}
                                     />
                                 </div>
                             </div>
@@ -161,9 +193,11 @@ export default function MarketingForm2() {
                                                     <div>
                                                         <Label>Hasil Iklan</Label>
                                                         <Input
-                                                            type="number"
-                                                            value={platformData[p.id]?.result_ads || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', e.target.value)}
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            placeholder="Rp.0"
+                                                            value={formatRupiah(platformData[p.id]?.result_ads) || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', toNumberOnly(e.target.value))}
                                                         />
                                                     </div>
                                                 )}
@@ -171,9 +205,11 @@ export default function MarketingForm2() {
                                                 <div>
                                                     <Label>Total Biaya Iklan</Label>
                                                     <Input
-                                                        type="number"
-                                                        value={platformData[p.id]?.total_cost || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'total_cost', e.target.value)}
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        placeholder="Rp. 0"
+                                                        value={formatRupiah(platformData[p.id]?.total_cost) || ''}
+                                                        onChange={(e) => handleFieldChange(p.id, 'total_cost', toNumberOnly(e.target.value))}
                                                     />
                                                 </div>
                                             </div>
@@ -184,16 +220,18 @@ export default function MarketingForm2() {
                                                     <Label>Reach</Label>
                                                     <Input
                                                         type="number"
+                                                        placeholder="Masukkan reach"
                                                         value={platformData[p.id]?.reach || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'reach', e.target.value)}
+                                                        onChange={(e) => handleFieldChange(p.id, 'reach', toNumberOnly(e.target.value))}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label>CPR</Label>
+                                                    <Label>Cost Per Result</Label>
                                                     <Input
-                                                        type="number"
-                                                        value={platformData[p.id]?.cost_per_result || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'cost_per_result', e.target.value)}
+                                                        type="text"
+                                                        placeholder="Rp. 0"
+                                                        value={formatRupiah(platformData[p.id]?.cost_per_result) || ''}
+                                                        onChange={(e) => handleFieldChange(p.id, 'cost_per_result', toNumberOnly(e.target.value))}
                                                     />
                                                 </div>
 
@@ -201,6 +239,7 @@ export default function MarketingForm2() {
                                                     <Label>Impression</Label>
                                                     <Input
                                                         type="number"
+                                                        placeholder="Masukkan Impression"
                                                         value={platformData[p.id]?.impressions || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'impressions', e.target.value)}
                                                     />
@@ -225,9 +264,10 @@ export default function MarketingForm2() {
                                                         .filter((f) => !isHidden(f))
                                                         .map((field) => (
                                                             <div key={field}>
-                                                                <Label>{field.replaceAll('_', ' ')}</Label>
+                                                                <Label>{capitalizeWords(field)}</Label>
                                                                 <Input
                                                                     type="number"
+                                                                    placeholder={'Masukkan ' + capitalizeWords(field)}
                                                                     value={platformData[p.id]?.[field] || ''}
                                                                     onChange={(e) => handleFieldChange(p.id, field, e.target.value)}
                                                                 />

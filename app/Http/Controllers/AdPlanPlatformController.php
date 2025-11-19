@@ -24,7 +24,7 @@ class AdPlanPlatformController extends Controller
             'planPlatforms.platform',
             'planPlatforms.goal',
             'results'
-        ]);
+        ])->orderBy("created_at","desc");
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id)->latest();
         }

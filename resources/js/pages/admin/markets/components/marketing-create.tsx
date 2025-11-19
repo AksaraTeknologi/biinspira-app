@@ -37,6 +37,22 @@ export default function PerencanaanIklan() {
         business: '3',
     };
 
+    const formatRupiah = (value: string | number) => {
+        if (!value) return '';
+        const numberString = value.toString().replace(/[^,\d]/g, '');
+        const integerPart = numberString;
+        const remainder = integerPart.length % 3;
+
+        let rupiah = integerPart.substr(0, remainder);
+        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
+
     const [tab, setTab] = useState<'boost' | 'meta' | 'business'>('boost');
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
     const [selectedEvent, setSelectedEvent] = useState('');
@@ -94,6 +110,7 @@ export default function PerencanaanIklan() {
                     const { audience_details, ...restOfValue } = value;
                     acc[key] = {
                         ...restOfValue,
+                        daily_budget: parseInt(value.daily_budget || 0),
                         audience_type: value?.audience_type || 'targeted',
                         event_id: selectedEvent || null,
                         platform_id: platformMap[key],
@@ -289,9 +306,9 @@ export default function PerencanaanIklan() {
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {currentData.start_date && currentData.end_date
                                     ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                        new Date(currentData.end_date),
-                                        'dd MMM yyyy',
-                                    )}`
+                                          new Date(currentData.end_date),
+                                          'dd MMM yyyy',
+                                      )}`
                                     : 'Pilih tanggal mulai dan selesai'}
                             </Button>
                         </PopoverTrigger>
@@ -350,10 +367,14 @@ export default function PerencanaanIklan() {
                     <div>
                         <Label>Budget Harian</Label>
                         <Input
-                            type="number"
+                            type="text"
+                            inputMode='numeric'
                             placeholder="Rp. 0"
-                            value={currentData.daily_budget || ''}
-                            onChange={(e) => handleInputChange('daily_budget', e.target.value)}
+                            value={formatRupiah(currentData.daily_budget) || ''}
+                            onChange={(e) => {
+                                const raw = e.target.value.replace(/[^0-9]/g, '');
+                                handleInputChange('daily_budget', raw);
+                            }}
                         />
                     </div>
                     <div>
