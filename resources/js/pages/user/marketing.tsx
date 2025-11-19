@@ -77,6 +77,7 @@ export default function Marketing() {
           <Table>
             <TableHeader className="bg-border">
               <TableRow>
+                <TableHead>Aksi</TableHead>
                 <TableHead>Event</TableHead>
                 <TableHead>Batch</TableHead>
                 <TableHead>Platform</TableHead>
@@ -85,7 +86,6 @@ export default function Marketing() {
                 <TableHead>Tanggal Berakhir</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="bg-input">

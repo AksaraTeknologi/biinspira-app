@@ -180,7 +180,8 @@ class DashboardController extends Controller
             ->map(function ($item, $key) {
                 return [
                     'id' => $key + 1,
-                    'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('d M Y') : null,
+                    // 'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('d M Y') : null,
+                    'date' => optional($item->result->plan)->created_at ? optional($item->result->plan)->created_at->format('d M Y') : null,
                     'event_name' => optional($item->result->plan->event)->name,
                     'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
                     'amount' => $item->total_cost,

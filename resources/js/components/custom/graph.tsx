@@ -213,7 +213,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
 
                         <div className="flex flex-col text-sm mt-auto">
                             <div className="flex flex-row items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-secondary"></span>
+                                <span className="w-3 h-3 rounded-full bg-yellow-300"></span>
                                 <span>Omset</span>
                             </div>
                             <div className="flex flex-row items-center gap-2">
@@ -234,12 +234,13 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     data={data}
                                     barCategoryGap="12%"
                                     barGap={8}
+                                    style={{ minHeight: 50 }}
                                 >
                                     <defs>
-                                        <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <filter id="barShadow" x="-20%" y="-20%" width="200%" height="140%">
                                             <feDropShadow
                                                 dx="0"
-                                                dy="-3"
+                                                dy="-2"
                                                 stdDeviation="5"
                                                 floodColor="rgba(0,0,0,0.25)"
                                             />

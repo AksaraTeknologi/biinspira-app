@@ -162,7 +162,7 @@ export default function History({ className, dataHistoris }: HistorisProps) {
             </CardHeader>
             <CardContent>
                 {/* days */}
-                <div className="flex justify-between">
+                <div className="flex justify-between w-full overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                     {weekDays.map((day) => {
                         const isSelected =
                             day.getDate() === selectedDate.getDate() &&
@@ -202,20 +202,22 @@ export default function History({ className, dataHistoris }: HistorisProps) {
                             filteredHistoris.map((h) => (
                                 <div key={h.id}>
                                     <div className={cn(
-                                        "flex flex-col items-center rounded-full px-4 py-3 text-white h-63 w-17",
+                                        "flex flex-col items-center rounded-full px-2 py-3 text-white h-63 w-17",
                                         h.color
                                     )}>
-                                        <div className="transform rotate-270 text-sm font-medium w-[45vw] sm:w-[38vw] md:w-[30vw] lg:w-[28vw] xl:w-[18vw]">
-                                            <p className="text-base font-semibold">{h.user_name}</p>
-                                            <p className="text-[11px] font-light">{h.event_name}</p>
-                                            <p className="text-[13px] font-semibold">
-                                                Rp {(parseInt(h.amount.replace(/\D/g, ''), 10) || 0).toLocaleString('id-ID')}
-                                            </p>
+                                        <div className="relative h-50 w-full">
+                                            <div className="transform rotate-270 text-sm font-medium absolute bottom-12.5 -right-13.5 w-40">
+                                                <p className="text-base font-semibold">{h.user_name}</p>
+                                                <p className="text-[11px] font-light">{h.event_name}</p>
+                                                <p className="text-[13px] font-semibold">
+                                                    Rp {(parseInt(h.amount.replace(/\D/g, ''), 10) || 0).toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
                                         </div>
                                         <img
                                             src={h.avatar}
                                             alt={h.user_name}
-                                            className="w-10 h-10 mt-auto rounded-full border-2 border-white mb-2"
+                                            className="w-10 h-10 mt-3 rounded-full border-2 border-white mb-2"
                                         />
                                     </div>
                                     <p className="text-[11px] text-center text-gray-400 py-2">
