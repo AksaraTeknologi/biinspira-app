@@ -166,7 +166,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
             return (
                 <div className="p-2 rounded-md shadow-md border border-foreground bg-background">
                     <p><strong>{payload[0].payload.month}</strong></p>
-                    <p>Pendapatan: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
+                    <p>Omset: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
                     <p>Pengeluaran: {Number(payload[0].payload.Pengeluaran).toLocaleString('id-ID')}</p>
                     <p>Efisiensi: {Number(payload[0].payload.Efisiensi).toLocaleString('id-ID')}</p>
                 </div>
@@ -200,21 +200,21 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                 <div className="grid grid-cols-3">
                     <div className="col-span-1 h-full flex flex-col py-4">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-4xl font-semibold text-secondary mb-1">{percentageIncrease}%</h2>
+                            <h2 className="text-4xl font-semibold text-primary mb-1">{percentageIncrease}%</h2>
                             <div className="bg-primary rounded-full p-1">
                                 <ArrowUpRight className="text-white" />
                             </div>
                         </div>
                         <p className="text-gray-500 text-sm mb-9 flex flex-col">
                             <span>Total kenaikan </span>
-                            <span>pendapatan iklan untuk</span>
+                            <span>omset iklan untuk</span>
                             <span>bulan <strong className="font-semibold">{currentLabel}</strong></span>
                         </p>
 
                         <div className="flex flex-col text-sm mt-auto">
                             <div className="flex flex-row items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
-                                <span>Pendapatan</span>
+                                <span>Omset</span>
                             </div>
                             <div className="flex flex-row items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-blue-700"></span>

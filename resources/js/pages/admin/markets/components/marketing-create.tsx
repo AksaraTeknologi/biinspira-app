@@ -289,9 +289,9 @@ export default function PerencanaanIklan() {
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {currentData.start_date && currentData.end_date
                                     ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                          new Date(currentData.end_date),
-                                          'dd MMM yyyy',
-                                      )}`
+                                        new Date(currentData.end_date),
+                                        'dd MMM yyyy',
+                                    )}`
                                     : 'Pilih tanggal mulai dan selesai'}
                             </Button>
                         </PopoverTrigger>

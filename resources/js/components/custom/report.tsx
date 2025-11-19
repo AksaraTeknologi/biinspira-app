@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { StickyNote } from "lucide-react";
 import React from "react";
 import { Card } from "../ui/card";
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 
 const containerStyle: React.CSSProperties = {
     padding: "20px 10px 20px 15px",
@@ -20,6 +20,12 @@ const containerStyle: React.CSSProperties = {
 };
 
 export default function ReportCard() {
+    const { props } = usePage<any>();
+    const role: string = props?.auth?.user?.role ?? "user"; // default to 'user' if missing
+
+    const createRoute = role === "admin"
+        ? route("admin.marketing.create")
+        : route("user.marketing.create");
 
     return (
         <Card
@@ -35,7 +41,7 @@ export default function ReportCard() {
         >
             <div className="grid grid-cols-12 h-full">
                 <div className="col-start-7 col-span-6 flex flex-col">
-                    <Link href={route('admin.marketing.create')} className="ml-auto">
+                    <Link href={createRoute} className="ml-auto">
                         <Button variant="outline" className="w-fit text-[12px]">
                             <span className="hidden sm:block">Laporkan Iklan Anda</span>
                             <StickyNote />
