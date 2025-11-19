@@ -36,6 +36,11 @@ export default function MarketingEdit() {
         return rupiah ? 'Rp ' + rupiah : '';
     };
 
+    const toPlainNumber = (value: string) => {
+        if (!value) return '';
+        return value.replace(/[^0-9]/g, '');
+    };
+
     const toNumberOnly = (value: string) => {
         if (!value) return '';
         value = value.split('.')[0].split(',')[0];
@@ -479,9 +484,9 @@ export default function MarketingEdit() {
                     <Label>Budget Harian</Label>
                     <Input
                         type="text"
-                        inputMode='numeric'
+                        inputMode="numeric"
                         value={formatRupiah(activePlatform.daily_budget) || ''}
-                        onChange={(e) => updateActivePlatformField('daily_budget', toNumberOnly(e.target.value))}
+                        onChange={(e) => updateActivePlatformField('daily_budget', toPlainNumber(e.target.value))}
                     />
                 </div>
 
@@ -489,7 +494,7 @@ export default function MarketingEdit() {
                     <Label>Target Audiens (jumlah)</Label>
                     <Input
                         type="text"
-                        inputMode='numeric'
+                        inputMode="numeric"
                         value={activePlatform.audience_target}
                         onChange={(e) => updateActivePlatformField('audience_target', toNumberOnly(e.target.value))}
                     />

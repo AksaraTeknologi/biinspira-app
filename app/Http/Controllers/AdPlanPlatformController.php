@@ -18,13 +18,18 @@ class AdPlanPlatformController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $today = now()->toDateString();
         $query = AdPlan::with([
             'user',
             'event',
             'planPlatforms.platform',
             'planPlatforms.goal',
             'results'
-        ])->orderBy("created_at","desc");
+        ])
+            ->whereHas('event', function ($q) use ($today) {
+                $q->where('end_date', '>=', $today);
+            })
+            ->orderBy("created_at", "desc");
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id)->latest();
         }

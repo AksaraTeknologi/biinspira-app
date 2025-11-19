@@ -106,6 +106,11 @@ export default function MarketingEval() {
         return rupiah ? 'Rp ' + rupiah : '';
     };
 
+    const toPlainNumber = (value: string) => {
+        if (!value) return '';
+        return value.replace(/[^0-9]/g, '');
+    };
+    // !! beberapa masih di pakai
     const toNumberOnly = (value: string) => {
         if (!value) return '';
         value = value.split('.')[0].split(',')[0];
@@ -145,7 +150,7 @@ export default function MarketingEval() {
                                                 inputMode='numeric'
                                                 value={formatRupiah(data.current_checkout)}
                                                 onChange={(e) =>
-                                                    setData('current_checkout', toNumberOnly(e.target.value))
+                                                    setData('current_checkout', toPlainNumber(e.target.value))
                                                 }
                                             />
                                         </div>
@@ -199,7 +204,7 @@ export default function MarketingEval() {
                                                 value={formatRupiah(data.previous_checkout)}
                                                 readOnly={isPrevLocked}
                                                 onChange={(e) =>
-                                                    setData('previous_checkout', toNumberOnly(e.target.value))
+                                                    setData('previous_checkout', toPlainNumber(e.target.value))
                                                 }
                                             />
                                         </div>

@@ -57,6 +57,18 @@ export default function UserPage() {
   const breadcrumbs: BreadcrumbItem[] = [{ title: 'Users', href: route('admin.users.index') }];
   const columns: ColumnDef<User>[] = [
     {
+      id: 'Aksi',
+      header: 'Aksi',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <EditUserModal user={row.original} onSuccess={() => router.reload()} />
+          <DeleteButton id={row.original.id} name={row.original.name} routeTable='users' role='admin'/>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       id: 'select',
       header: ({ table }) => (
         <Checkbox
@@ -87,18 +99,6 @@ export default function UserPage() {
       accessorKey: 'email',
       header: 'Email',
       cell: ({ row }) => <div className="font-medium">{row.original.email}</div>,
-    },
-    {
-      id: 'Aksi',
-      header: 'Aksi',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <EditUserModal user={row.original} onSuccess={() => router.reload()} />
-          <DeleteButton id={row.original.id} name={row.original.name} routeTable='users' role='admin'/>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
     },
   ];
 

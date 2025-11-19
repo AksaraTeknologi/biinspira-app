@@ -16,12 +16,12 @@ export default function MarketingForm2() {
 
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
-        let numberString = value.toString().replace(/[^,\d]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
+        const numberString = value.toString().replace(/[^,\d]/g, '');
+        const integerPart = numberString;
+        const remainder = integerPart.length % 3;
 
-        const remainder = numberString.length % 3;
-        let rupiah = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+        let rupiah = integerPart.substr(0, remainder);
+        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
 
         if (thousands) {
             rupiah += (remainder ? '.' : '') + thousands.join('.');
@@ -30,6 +30,12 @@ export default function MarketingForm2() {
         return rupiah ? 'Rp ' + rupiah : '';
     };
 
+    const toPlainNumber = (value: string) => {
+        if (!value) return '';
+        return value.replace(/[^0-9]/g, '');
+    };
+
+    // !! beberapa masih di pakai
     const toNumberOnly = (value: string) => {
         if (!value) return '';
         value = value.split('.')[0].split(',')[0];
@@ -157,7 +163,7 @@ export default function MarketingForm2() {
                                         maxLength={13}
                                         placeholder="Rp 0"
                                         value={formatRupiah(data.revenue)}
-                                        onChange={(e) => setData('revenue', toNumberOnly(e.target.value))}
+                                        onChange={(e) => setData('revenue', toPlainNumber(e.target.value))}
                                     />
                                 </div>
                                 <div>
@@ -167,7 +173,7 @@ export default function MarketingForm2() {
                                         inputMode="numeric"
                                         placeholder="Masukkan jumlah checkout"
                                         value={formatRupiah(data.checkout_count)}
-                                        onChange={(e) => setData('checkout_count', toNumberOnly(e.target.value))}
+                                        onChange={(e) => setData('checkout_count', toPlainNumber(e.target.value))}
                                     />
                                 </div>
                             </div>
@@ -195,7 +201,7 @@ export default function MarketingForm2() {
                                                             inputMode="numeric"
                                                             placeholder="Rp.0"
                                                             value={formatRupiah(platformData[p.id]?.result_ads) || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', toNumberOnly(e.target.value))}
+                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', toPlainNumber(e.target.value))}
                                                         />
                                                     </div>
                                                 )}
@@ -207,7 +213,7 @@ export default function MarketingForm2() {
                                                         inputMode="numeric"
                                                         placeholder="Rp. 0"
                                                         value={formatRupiah(platformData[p.id]?.total_cost) || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'total_cost', toNumberOnly(e.target.value))}
+                                                        onChange={(e) => handleFieldChange(p.id, 'total_cost', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
                                             </div>
@@ -229,7 +235,7 @@ export default function MarketingForm2() {
                                                         type="text"
                                                         placeholder="Rp. 0"
                                                         value={formatRupiah(platformData[p.id]?.cost_per_result) || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'cost_per_result', toNumberOnly(e.target.value))}
+                                                        onChange={(e) => handleFieldChange(p.id, 'cost_per_result', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
 
