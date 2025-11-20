@@ -31,23 +31,23 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ])->assignRole('admin');
 
-        User::factory()->create([
-            'name' => 'biinspira',
-            'email' => 'user@gmail.com',
-            'password' => bcrypt('user'),
-            'email_verified_at' => now(),
-        ])->assignRole('user');
+        // User::factory()->create([
+        //     'name' => 'biinspira',
+        //     'email' => 'user@gmail.com',
+        //     'password' => bcrypt('user'),
+        //     'email_verified_at' => now(),
+        // ])->assignRole('user');
 
         $this->call(MasterSeeder::class);
 
         // 3. Setelah factory diperbaiki, panggil factory terdalam
         // Ini akan membuat 20 data dummy lengkap dengan semua relasi ke atas
         // (AdMetric -> AdResultPlatform -> AdResult -> AdPlan -> User/Event)
-        AdPlan::factory()->count(20)->create();
-        AdPlanPlatform::factory()->count(20)->create();
-        AdResult::factory()->count(20)->create();
-        AdResultPlatform::factory()->count(20)->create();
-        AdMetric::factory()->count(20)->create();
-        AdEvaluation::factory()->count(20)->create();
+        // AdPlan::factory()->count(20)->create();
+        // AdPlanPlatform::factory()->count(20)->create();
+        // AdResult::factory()->count(20)->create();
+        // AdResultPlatform::factory()->count(20)->create();
+        // AdMetric::factory()->count(20)->create();
+        // AdEvaluation::factory()->count(20)->create();
     }
 }
