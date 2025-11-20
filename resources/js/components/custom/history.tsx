@@ -28,6 +28,8 @@ interface HistorisProps {
 
 export default function History({ className, dataHistoris }: HistorisProps) {
 
+    console.log(dataHistoris);
+
     // ---------------------------------------------------
     // 🧠 State utama
     // ---------------------------------------------------

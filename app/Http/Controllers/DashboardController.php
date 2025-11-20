@@ -30,9 +30,15 @@ class DashboardController extends Controller
     public function dashboardUser()
     {
         $rawDataGraphic = $this->getRawDataGraphic();
+        $tableData = $this->getTableData();
+        $dataHistoris = $this->getDataHistories();
+
+        // dd($tableData);
 
         return Inertia::render('user/dashboard', [
             'rawDataGraphic' => $rawDataGraphic,
+            'tableData' => $tableData,
+            'dataHistoris' => $dataHistoris,
             'dashboard_item' => 'Dashboard',
         ]);
     }
@@ -42,6 +48,8 @@ class DashboardController extends Controller
         $rawDataGraphic = $this->getRawDataGraphic();
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
+
+        // dd($tableData);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
