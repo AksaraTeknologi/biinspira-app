@@ -48,7 +48,9 @@ class AdPlanPlatformController extends Controller
         $events = MasterEvent::all();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
-        $users = User::select('id', 'name')->get();
+        $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'admin');
+        })->get();
         return Inertia::render('admin/markets/components/marketing-create', [
             'dashboard_item' => 'Buat Market Iklan',
             'events' => $events,
@@ -158,7 +160,9 @@ class AdPlanPlatformController extends Controller
         $events = MasterEvent::all();
         $goals = MasterAdGoal::all();
         $platforms = $masterPlatforms;
-        $users = User::select('id', 'name')->get();
+        $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'admin');
+        })->get();
 
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,

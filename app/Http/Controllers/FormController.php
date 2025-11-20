@@ -218,8 +218,6 @@ class FormController extends Controller
 
         $goals = MasterAdGoal::all();
 
-        // dd($events, $platforms);
-
         return Inertia::render('user/adsForm', [
             'title_pages' => 'Add Advertise',
             'events' => $events,
@@ -229,24 +227,18 @@ class FormController extends Controller
     }
     public function AdPlanStore(Request $request)
     {
-        dd($request->all());
-
         return response()->json([
             'message' => 'Ad plan platform berhasil disimpan',
         ]);
     }
     public function AdResultStore(Request $request)
     {
-        dd($request->all());
-
         return response()->json([
             'message' => 'REsult Iklan berhasil disimpan!',
         ]);
     }
     public function AdEvalStore(Request $request)
     {
-        dd($request->all());
-
         return response()->json([
             'message' => 'Evaluasi Iklan berhasil disimpan!',
         ]);

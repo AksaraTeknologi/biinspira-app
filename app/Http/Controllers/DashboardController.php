@@ -43,8 +43,6 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($rawDataGraphic, $tableData, $dataHistoris);
-
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
             'tableData' => $tableData,
@@ -65,8 +63,6 @@ class DashboardController extends Controller
             $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
-
-        // dd($userName);
 
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {
@@ -116,8 +112,6 @@ class DashboardController extends Controller
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
 
-        // dd($userName);
-
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {
                 $q->where('id', Auth::user()->id);
@@ -161,8 +155,6 @@ class DashboardController extends Controller
             $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
-
-        // dd($userName);
 
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {

@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { ArrowLeft, CalendarIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -37,6 +37,23 @@ export default function PerencanaanIklan() {
         business: '3',
     };
 
+    const formatNol = (value: string | number) => {
+        if (!value) return '';
+
+        let numberString = value.toString().replace(/[^0-9]/g, '');
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let formatted = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            formatted += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return formatted;
+    };
+
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
         const numberString = value.toString().replace(/[^,\d]/g, '');
@@ -51,6 +68,11 @@ export default function PerencanaanIklan() {
         }
 
         return rupiah ? 'Rp ' + rupiah : '';
+    };
+
+    const toPlainNumber = (value: string) => {
+        if (!value) return '';
+        return value.replace(/[^0-9]/g, '');
     };
 
     const [tab, setTab] = useState<'boost' | 'meta' | 'business'>('boost');
@@ -158,7 +180,7 @@ export default function PerencanaanIklan() {
 
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {/* AGE TARGETED */}
                     {showTargeted && (
                         <div className="space-y-4">
@@ -168,6 +190,7 @@ export default function PerencanaanIklan() {
                                     <Input
                                         type="number"
                                         placeholder="Min"
+                                        maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[0] || ''}
                                         onChange={(e) => {
                                             const min = e.target.value;
@@ -178,6 +201,7 @@ export default function PerencanaanIklan() {
                                     <Input
                                         type="number"
                                         placeholder="Max"
+                                        maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[1] || ''}
                                         onChange={(e) => {
                                             const max = e.target.value;
@@ -202,7 +226,7 @@ export default function PerencanaanIklan() {
                                 <div className="space-y-3">
                                     {/* 1. Ambil array 'audience_details' dari platformData */}
                                     {(platformData?.audience_details || []).map((audience: any, index: number) => (
-                                        <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-3">
+                                        <div key={index} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr,1fr,auto]">
                                             {/* Input Select untuk Tipe */}
                                             <Select value={audience.type} onValueChange={(val) => handleAudienceRowChange(index, 'type', val)}>
                                                 <SelectTrigger>
@@ -253,10 +277,11 @@ export default function PerencanaanIklan() {
                         <div className="space-y-4">
                             <div>
                                 <Label>Umur (Broad)</Label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-3 md:grid-cols-2">
                                     <Input
                                         type="number"
                                         placeholder="Min"
+                                        maxLength={3}
                                         value={platformData?.age_broad?.split('-')[0] || ''}
                                         onChange={(e) => {
                                             const min = e.target.value;
@@ -267,6 +292,7 @@ export default function PerencanaanIklan() {
                                     <Input
                                         type="number"
                                         placeholder="Max"
+                                        maxLength={3}
                                         value={platformData?.age_broad?.split('-')[1] || ''}
                                         onChange={(e) => {
                                             const max = e.target.value;
@@ -295,98 +321,95 @@ export default function PerencanaanIklan() {
         const currentData = formState[tab] || {};
 
         return (
-            <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
-                {/* Kolom kiri: periode dan tujuan */}
-                <div className="space-y-3">
-                    <Label>Periode Iklan</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-full justify-start', !range?.from && 'text-muted-foreground')}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {currentData.start_date && currentData.end_date
-                                    ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                          new Date(currentData.end_date),
-                                          'dd MMM yyyy',
-                                      )}`
-                                    : 'Pilih tanggal mulai dan selesai'}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
-                            <Calendar
-                                mode="range"
-                                numberOfMonths={2}
-                                selected={range}
-                                onSelect={handleDateChange}
-                                className={cn(
-                                    'rounded-xl p-2 text-sm',
-                                    '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
-                                    '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
-                                    '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
-                                    '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
-                                    '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
-                                )}
+            <div className="mt-6">
+                {/* Kolom kiri (di mobile menjadi 1 kolom penuh) */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label>Periode Iklan</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn('w-full justify-start', !range?.from && 'text-muted-foreground')}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {currentData.start_date && currentData.end_date
+                                            ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
+                                                  new Date(currentData.end_date),
+                                                  'dd MMM yyyy',
+                                              )}`
+                                            : 'Pilih tanggal mulai dan selesai'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
+                                    <Calendar mode="range" numberOfMonths={2} selected={range} onSelect={handleDateChange} />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label>Tujuan Iklan</Label>
+                            <Select required value={currentData.goals_id || ''} onValueChange={(val) => handleInputChange('goals_id', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih tujuan iklan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {goals?.map((goal) => (
+                                        <SelectItem key={goal.id} value={String(goal.id)}>
+                                            {goal.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label>Jenis Target Audiens</Label>
+                            <Select required value={currentData.audience_type || 'targeted'} onValueChange={(val) => handleInputChange('audience_type', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih jenis audiens" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="targeted">Targeted</SelectItem>
+                                    <SelectItem value="broad">Broad</SelectItem>
+                                    <SelectItem value="combined">Combined</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Kolom kanan (di mobile turun ke bawah jadi 1 kolom juga) */}
+                    <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label>Budget Harian</Label>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Rp. 0"
+                                maxLength={13}
+                                required
+                                value={formatRupiah(currentData.daily_budget) || ''}
+                                onChange={(e) => {
+                                    const raw = e.target.value.replace(/[^0-9]/g, '');
+                                    handleInputChange('daily_budget', raw);
+                                }}
                             />
-                        </PopoverContent>
-                    </Popover>
+                        </div>
 
-                    <div className="mt-4">
-                        <Label>Tujuan Iklan</Label>
-                        <Select value={currentData.goals_id || ''} onValueChange={(val) => handleInputChange('goals_id', val)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih tujuan iklan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {goals?.map((goal) => (
-                                    <SelectItem key={goal.id} value={String(goal.id)}>
-                                        {goal.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="mt-4">
-                        <Label>Jenis Target Audiens</Label>
-                        <Select value={currentData.audience_type || 'targeted'} onValueChange={(val) => handleInputChange('audience_type', val)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih jenis audiens" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="targeted">Targeted</SelectItem>
-                                <SelectItem value="broad">Broad</SelectItem>
-                                <SelectItem value="combined">Combined</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="space-y-3">
+                            <Label>Target Audiens (jumlah)</Label>
+                            <Input
+                                type="text"
+                                inputMode='numeric'
+                                maxLength={10}
+                                required
+                                placeholder="Masukkan jumlah target audiens"
+                                value={formatNol(currentData.audience_target) || ''}
+                                onChange={(e) => handleInputChange('audience_target', toPlainNumber(e.target.value))}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Kolom kanan: budget */}
-                <div className="space-y-4">
-                    <div>
-                        <Label>Budget Harian</Label>
-                        <Input
-                            type="text"
-                            inputMode='numeric'
-                            placeholder="Rp. 0"
-                            value={formatRupiah(currentData.daily_budget) || ''}
-                            onChange={(e) => {
-                                const raw = e.target.value.replace(/[^0-9]/g, '');
-                                handleInputChange('daily_budget', raw);
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <Label>Target Audiens (jumlah)</Label>
-                        <Input
-                            type="number"
-                            placeholder="Masukkan jumlah target audiens"
-                            value={currentData.audience_target || ''}
-                            onChange={(e) => handleInputChange('audience_target', e.target.value)}
-                        />
-                    </div>
-                </div>
-
+                {/* Targeting fields full width */}
                 <div className="col-span-2">{renderTargetingFields(currentData)}</div>
             </div>
         );
@@ -394,7 +417,7 @@ export default function PerencanaanIklan() {
 
     return (
         <AppLayout>
-            <div className="w-full space-y-6 p-6">
+            <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
                 <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
 
                 <form onSubmit={handleSubmit}>
@@ -434,7 +457,7 @@ export default function PerencanaanIklan() {
                                     )}
 
                                     <Label>Nama Event</Label>
-                                    <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
+                                    <Select required value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih nama event" />
                                         </SelectTrigger>
@@ -450,7 +473,7 @@ export default function PerencanaanIklan() {
 
                                 {/* Tabs */}
                                 <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3">
+                                    <TabsList className="mb-4 grid w-full grid-cols-3 text-sm md:text-base">
                                         <TabsTrigger value="boost">Boost Post</TabsTrigger>
                                         <TabsTrigger value="meta">Meta Ads</TabsTrigger>
                                         <TabsTrigger value="business">Business Suite</TabsTrigger>
@@ -461,7 +484,7 @@ export default function PerencanaanIklan() {
                                     <TabsContent value="business">{renderFormContent()}</TabsContent>
                                 </Tabs>
 
-                                <div className="flex justify-between pt-4">
+                                <div className="flex flex-col gap-3 pt-4 md:flex-row md:justify-between">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -470,7 +493,7 @@ export default function PerencanaanIklan() {
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-row gap-2 justify-between md:justify-end">
                                         <Button
                                             type="submit"
                                             disabled={processing}
@@ -482,10 +505,11 @@ export default function PerencanaanIklan() {
                                         <Button
                                             type="submit"
                                             disabled={processing}
-                                            className="bg-blue-600 text-white hover:bg-blue-700"
+                                            className="bg-primary text-white hover:bg-blue-700"
                                             onClick={(e) => handleSubmit(e, 'next')}
                                         >
                                             {processing ? 'Menyimpan...' : 'Selanjutnya'}
+                                            <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>

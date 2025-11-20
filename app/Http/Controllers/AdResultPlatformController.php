@@ -72,7 +72,6 @@ class AdResultPlatformController extends Controller
             'platforms.*.external_link_clicks' => 'nullable|integer|min:0',
         ]);
         if ($validator->fails()) {
-            dd($validator->errors());
             return back()->withErrors($validator)->withInput();
         }
         $data = $validator->validated();

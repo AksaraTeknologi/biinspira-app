@@ -13,8 +13,6 @@ class MasterAdGoalController extends Controller
     {
         $masterAdGoals = MasterAdGoal::all();
 
-        // dd($masterAdGoals);
-
         return Inertia::render('admin/adgoals/adgoal', [
             'masterAdGoals' => $masterAdGoals,
             'dashboard_item' => 'Master Ad Goal',

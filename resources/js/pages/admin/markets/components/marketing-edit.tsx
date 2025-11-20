@@ -20,6 +20,22 @@ export default function MarketingEdit() {
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
 
     const planPlatforms = adPlan.plan_platforms || [];
+    const formatNol = (value: string | number) => {
+        if (!value) return '';
+
+        let numberString = value.toString().replace(/[^0-9]/g, '');
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let formatted = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            formatted += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return formatted;
+    };
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
         let numberString = value.toString().replace(/[^,\d]/g, '');
@@ -310,6 +326,7 @@ export default function MarketingEdit() {
                                     <Input
                                         type="number"
                                         placeholder="Min"
+                                        maxLength={3}
                                         value={activePlatform.age_targeted?.split('-')[0] || ''}
                                         onChange={(e) => {
                                             const max = activePlatform.age_targeted?.split('-')[1] || '';
@@ -319,6 +336,7 @@ export default function MarketingEdit() {
                                     <Input
                                         type="number"
                                         placeholder="Max"
+                                        maxLength={3}
                                         value={activePlatform.age_targeted?.split('-')[1] || ''}
                                         onChange={(e) => {
                                             const min = activePlatform.age_targeted?.split('-')[0] || '';
@@ -386,6 +404,7 @@ export default function MarketingEdit() {
                                 <Input
                                     type="number"
                                     placeholder="Min"
+                                    maxLength={3}
                                     value={activePlatform.age_broad?.split('-')[0] || ''}
                                     onChange={(e) => {
                                         const max = activePlatform.age_broad?.split('-')[1] || '';
@@ -395,6 +414,7 @@ export default function MarketingEdit() {
                                 <Input
                                     type="number"
                                     placeholder="Max"
+                                    maxLength={3}
                                     value={activePlatform.age_broad?.split('-')[1] || ''}
                                     onChange={(e) => {
                                         const min = activePlatform.age_broad?.split('-')[0] || '';
@@ -417,87 +437,91 @@ export default function MarketingEdit() {
     };
 
     const renderFormContent = () => (
-        <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
-            <div className="space-y-3">
-                <Label>Periode Iklan</Label>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
-                            <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
-                            {activePlatform.start_date && activePlatform.end_date
-                                ? `${format(parseISO(activePlatform.start_date), 'dd MMM yyyy')} - ${format(parseISO(activePlatform.end_date), 'dd MMM yyyy')}`
-                                : 'Pilih tanggal mulai dan selesai'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
-                        <Calendar
-                            mode="range"
-                            numberOfMonths={2}
-                            selected={range}
-                            onSelect={handleDateChange}
-                            className={cn(
-                                'rounded-xl p-2 text-sm',
-                                '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
-                                '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
-                                '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
-                                '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
-                                '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
-                            )}
+        <div className="mt-6">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+                <div className="space-y-3">
+                    <Label>Periode Iklan</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start">
+                                <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                                {activePlatform.start_date && activePlatform.end_date
+                                    ? `${format(parseISO(activePlatform.start_date), 'dd MMM yyyy')} - ${format(parseISO(activePlatform.end_date), 'dd MMM yyyy')}`
+                                    : 'Pilih tanggal mulai dan selesai'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
+                            <Calendar
+                                mode="range"
+                                numberOfMonths={2}
+                                selected={range}
+                                onSelect={handleDateChange}
+                                className={cn(
+                                    'rounded-xl p-2 text-sm',
+                                    '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                                    '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                                    '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                    '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
+                                    '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+                                )}
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    <div className="mt-4">
+                        <Label>Tujuan Iklan</Label>
+                        <Select value={String(activePlatform.goals_id)} onValueChange={(val) => updateActivePlatformField('goals_id', val)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih tujuan iklan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {goals.map((goal: any) => (
+                                    <SelectItem key={goal.id} value={String(goal.id)}>
+                                        {goal.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="mt-4">
+                        <Label>Jenis Target Audiens</Label>
+                        <Select value={activePlatform.audience_type} onValueChange={(val) => updateActivePlatformField('audience_type', val)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih jenis audiens" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="targeted">Targeted</SelectItem>
+                                <SelectItem value="broad">Broad</SelectItem>
+                                <SelectItem value="combined">Combined</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <Label>Budget Harian</Label>
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={13}
+                            value={formatRupiah(activePlatform.daily_budget) || ''}
+                            onChange={(e) => updateActivePlatformField('daily_budget', toPlainNumber(e.target.value))}
                         />
-                    </PopoverContent>
-                </Popover>
+                    </div>
 
-                <div className="mt-4">
-                    <Label>Tujuan Iklan</Label>
-                    <Select value={String(activePlatform.goals_id)} onValueChange={(val) => updateActivePlatformField('goals_id', val)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Pilih tujuan iklan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {goals.map((goal: any) => (
-                                <SelectItem key={goal.id} value={String(goal.id)}>
-                                    {goal.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="mt-4">
-                    <Label>Jenis Target Audiens</Label>
-                    <Select value={activePlatform.audience_type} onValueChange={(val) => updateActivePlatformField('audience_type', val)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Pilih jenis audiens" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="targeted">Targeted</SelectItem>
-                            <SelectItem value="broad">Broad</SelectItem>
-                            <SelectItem value="combined">Combined</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <div>
-                    <Label>Budget Harian</Label>
-                    <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatRupiah(activePlatform.daily_budget) || ''}
-                        onChange={(e) => updateActivePlatformField('daily_budget', toPlainNumber(e.target.value))}
-                    />
-                </div>
-
-                <div>
-                    <Label>Target Audiens (jumlah)</Label>
-                    <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={activePlatform.audience_target}
-                        onChange={(e) => updateActivePlatformField('audience_target', toNumberOnly(e.target.value))}
-                    />
+                    <div>
+                        <Label>Target Audiens (jumlah)</Label>
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={10}
+                            value={formatNol(activePlatform.audience_target)}
+                            onChange={(e) => updateActivePlatformField('audience_target', toPlainNumber(e.target.value))}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -534,7 +558,7 @@ export default function MarketingEdit() {
                                 </div>
 
                                 <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3">
+                                    <TabsList className="mb-4 grid w-full grid-cols-3 text-xs md:text-xs">
                                         {mergedPlatforms.map((p: any) => (
                                             // CHANGED: use stable key (platform id)
                                             <TabsTrigger key={p.platform?.id ?? p.platform_id} value={p.platform.name.toLowerCase()}>
@@ -548,7 +572,7 @@ export default function MarketingEdit() {
                                     </TabsContent>
                                 </Tabs>
 
-                                <div className="flex justify-between gap-3 pt-4">
+                                <div className="flex flex-col gap-3 pt-4 md:flex-row md:justify-between">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -557,12 +581,12 @@ export default function MarketingEdit() {
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         {/* Tombol Perbarui Data - type="button" dengan mode 'draft' */}
                                         <Button
                                             type="button"
                                             disabled={processing}
-                                            className="bg-blue-600 text-white hover:bg-blue-700"
+                                            className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={() => handleSubmit('draft')}
                                         >
                                             {processing ? 'Menyimpan...' : 'Perbarui Data'}
@@ -573,7 +597,7 @@ export default function MarketingEdit() {
                                             type="button"
                                             disabled={!isButtonActive || processing}
                                             className={cn(
-                                                'bg-green-600 text-white hover:bg-green-700',
+                                                'bg-primary text-white hover:bg-blue-700',
                                                 (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',
                                             )}
                                             onClick={() => handleSubmit('next')}

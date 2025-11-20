@@ -44,16 +44,12 @@ class UserController extends Controller
         }
         $data = $validator->validated();
         $data['password'] = bcrypt('12345678');
-        
+
         $user = User::create($data);
 
         $user->assignRole('user');
 
         event(new Registered($user));
-
-        // Auth::login($user);
-
-        // dd($user);
 
         return redirect()->route('admin.users.index');
     }
