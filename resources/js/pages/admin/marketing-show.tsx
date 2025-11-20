@@ -351,7 +351,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                                 <div className="mt-1">{metrics?.cpr ?? '-'}</div>
                                                             </div>
                                                         </div>
-                                                        <h2 className="mt-3 text-lg font-semibold">Metrix tambahan</h2>
+                                                        <h2 className="mt-3 text-lg font-semibold">Metrics tambahan</h2>
                                                         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                                             <div>
                                                                 <Label>Clicks</Label>
@@ -381,11 +381,10 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                                 <Label>Direct Messages</Label>
                                                                 <div className="mt-1">{metrics?.direct_messages ?? '-'}</div>
                                                             </div>
-                                                        </div>
-
-                                                        <div className="mt-3">
-                                                            <Label>External Link Clicks</Label>
-                                                            <div className="mt-1">{metrics?.external_link_clicks ?? '-'}</div>
+                                                            <div>
+                                                                <Label>External Link Clicks</Label>
+                                                                <div className="mt-1">{metrics?.external_link_clicks ?? '-'}</div>
+                                                            </div>
                                                         </div>
                                                     </TabsContent>
                                                 );

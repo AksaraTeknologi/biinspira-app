@@ -28,7 +28,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const isMobile = useIsMobile();
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-    const effectiveCollapsed = isMobile ? true : isCollapsed;
+    const effectiveCollapsed = isMobile ? false : isCollapsed;
     const [prevCollapsedBeforeMobile, setPrevCollapsedBeforeMobile] = useState<boolean>(false);
 
     // 🔹 Saat mount (desktop), ambil dari localStorage

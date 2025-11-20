@@ -14,7 +14,26 @@ use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('home');
+Route::get('/', function () {
+    $user = auth()->user();
+
+    if (! $user) {
+        // show login page
+        return redirect()->route('login');
+    }
+
+    // redirect based on role
+    if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+        return redirect()->route('admin.marketing.dashboard');
+    }
+
+    if (method_exists($user, 'hasRole') && $user->hasRole('user')) {
+        return redirect()->route('user.dashboard');
+    }
+
+    // fallback for authenticated users without those roles
+    return redirect()->route('user.dashboard');
+})->name('home');
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard')->name('admin.home');
