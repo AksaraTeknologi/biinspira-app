@@ -15,46 +15,67 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const schema = z.object({
-  name: z.string().min(2, 'Nama event minimal 2 karakter'),
+  name: z.string().min(2, 'Nama minimal 2 karakter'),
   email: z.string().email('Format email tidak valid'),
+  avatar: z.any().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-interface AddUserModalProps {
-  onSuccess?: () => void;
-}
-
-export function AddUserModal({ onSuccess }: AddUserModalProps) {
+export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       email: '',
+      avatar: null,
     },
   });
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    form.setValue('avatar', file);
+
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
 
     router.post(route('admin.users.store'), data, {
+      forceFormData: true,
       onSuccess: () => {
         toast.success('User berhasil ditambahkan');
         setOpen(false);
         form.reset();
+        setPreview(null);
         setIsLoading(false);
         onSuccess?.();
       },
       onError: (errors) => {
-        toast.error(errors.name || 'Gagal menambahkan user');
+        toast.error(
+          errors?.name || errors?.email || 'Gagal menambahkan user'
+        );
         setIsLoading(false);
       },
     });
@@ -63,11 +84,11 @@ export function AddUserModal({ onSuccess }: AddUserModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary hover:bg-blue-700 
-              dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
+        <Button
+          className="gap-2 bg-primary hover:bg-blue-700
+            dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
         >
-          <Plus className="h-4 w-4" />
-          Tambah User
+          <Plus className="h-4 w-4" /> Tambah User
         </Button>
       </DialogTrigger>
 
@@ -77,7 +98,12 @@ export function AddUserModal({ onSuccess }: AddUserModalProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 mt-4"
+            encType="multipart/form-data"
+          >
+            {/* NAMA */}
             <FormField
               control={form.control}
               name="name"
@@ -91,6 +117,8 @@ export function AddUserModal({ onSuccess }: AddUserModalProps) {
                 </FormItem>
               )}
             />
+
+            {/* EMAIL */}
             <FormField
               control={form.control}
               name="email"
@@ -98,17 +126,54 @@ export function AddUserModal({ onSuccess }: AddUserModalProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan email" {...field} type='email' />
+                    <Input
+                      type="email"
+                      placeholder="Masukkan email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* AVATAR */}
+            <FormField
+              control={form.control}
+              name="avatar"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Avatar (opsional)</FormLabel>
+
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </FormControl>
+
+                  {preview && (
+                    <img
+                      src={preview}
+                      className="w-24 h-24 rounded-full mt-3 object-cover border"
+                    />
+                  )}
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Batal
               </Button>
+
               <Button
                 type="submit"
                 disabled={isLoading}

@@ -148,6 +148,7 @@ export default function MarketingEval() {
                                             <Input
                                                 type='text'
                                                 inputMode='numeric'
+                                                required
                                                 value={formatRupiah(data.current_checkout)}
                                                 onChange={(e) =>
                                                     setData('current_checkout', toPlainNumber(e.target.value))
@@ -160,6 +161,7 @@ export default function MarketingEval() {
                                             <Textarea
                                                 placeholder="Tuliskan performa iklan saat ini"
                                                 rows={3}
+                                                required
                                                 value={data.current_ad_performance}
                                                 onChange={(e) =>
                                                     setData('current_ad_performance', e.target.value)
@@ -172,6 +174,7 @@ export default function MarketingEval() {
                                             <Textarea
                                                 placeholder="Tuliskan performa lain"
                                                 rows={3}
+                                                required
                                                 value={data.current_other_performance}
                                                 onChange={(e) =>
                                                     setData('current_other_performance', e.target.value)
@@ -203,6 +206,7 @@ export default function MarketingEval() {
                                             <Input
                                                 value={formatRupiah(data.previous_checkout)}
                                                 readOnly={isPrevLocked}
+                                                required
                                                 onChange={(e) =>
                                                     setData('previous_checkout', toPlainNumber(e.target.value))
                                                 }
@@ -214,6 +218,7 @@ export default function MarketingEval() {
                                             <Textarea
                                                 readOnly={isPrevLocked}
                                                 rows={3}
+                                                required
                                                 value={data.previous_ad_performance}
                                                 onChange={(e) =>
                                                     setData('previous_ad_performance', e.target.value)
@@ -226,6 +231,7 @@ export default function MarketingEval() {
                                             <Textarea
                                                 readOnly={isPrevLocked}
                                                 rows={3}
+                                                required
                                                 value={data.previous_other_performance}
                                                 onChange={(e) =>
                                                     setData('previous_other_performance', e.target.value)
@@ -242,6 +248,7 @@ export default function MarketingEval() {
                                 <Textarea
                                     rows={4}
                                     value={data.next_ad_strategy}
+                                    required
                                     onChange={(e) =>
                                         setData('next_ad_strategy', e.target.value)
                                     }
