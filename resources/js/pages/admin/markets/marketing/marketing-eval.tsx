@@ -149,6 +149,7 @@ export default function MarketingEval() {
                                                 type='text'
                                                 inputMode='numeric'
                                                 required
+                                                maxLength={13}
                                                 value={formatRupiah(data.current_checkout)}
                                                 onChange={(e) =>
                                                     setData('current_checkout', toPlainNumber(e.target.value))
@@ -204,6 +205,9 @@ export default function MarketingEval() {
                                         <div>
                                             <Label>Checkout Sebelumnya</Label>
                                             <Input
+                                                type='text'
+                                                inputMode='numeric'
+                                                maxLength={13}
                                                 value={formatRupiah(data.previous_checkout)}
                                                 readOnly={isPrevLocked}
                                                 required

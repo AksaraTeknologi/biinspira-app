@@ -114,6 +114,8 @@ export default function MarketingForm2() {
                 folows: m.folows || '',
                 direct_messages: m.direct_messages || '',
                 external_link_clicks: m.external_link_clicks || '',
+                click_whatsapp: m.click_whatsapp || '',
+                chat_admin: m.chat_admin || '',
             };
         });
 
@@ -309,6 +311,28 @@ export default function MarketingForm2() {
                                                                 />
                                                             </div>
                                                         ))}
+                                                    <div>
+                                                        <Label>Chat Whatsapp</Label>
+                                                        <Input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            maxLength={10}
+                                                            placeholder={'Masukkan jumlah Chat whatsapp'}
+                                                            value={formatNol(platformData[p.id]?.click_whatsapp) || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'click_whatsapp', toPlainNumber(e.target.value))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label>Chat Whatsapp Admin</Label>
+                                                        <Input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            maxLength={10}
+                                                            placeholder={'Masukkan jumlah Chat whatsapp admin'}
+                                                            value={formatNol(platformData[p.id]?.chat_admin) || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'chat_admin', toPlainNumber(e.target.value))}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

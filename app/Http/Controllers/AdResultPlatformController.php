@@ -70,6 +70,8 @@ class AdResultPlatformController extends Controller
             'platforms.*.folows'          => 'nullable|integer|min:0',
             'platforms.*.direct_messages' => 'nullable|integer|min:0',
             'platforms.*.external_link_clicks' => 'nullable|integer|min:0',
+            'platforms.*.click_whatsapp'  => 'nullable|integer|min:0',
+            'platforms.*.chat_admin'  => 'nullable|integer|min:0',
         ]);
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -111,6 +113,8 @@ class AdResultPlatformController extends Controller
                     'direct_messages'       => $platformData['direct_messages'] ?? 0,
                     'external_link_clicks'  => $platformData['external_link_clicks'] ?? 0,
                     'result_ads'            => $platformData['result_ads'] ?? 0,
+                    'click_whatsapp'        => $platformData['click_whatsapp'] ?? 0,
+                    'chat_admin'        => $platformData['chat_admin'] ?? 0,
                 ]
             );
         }

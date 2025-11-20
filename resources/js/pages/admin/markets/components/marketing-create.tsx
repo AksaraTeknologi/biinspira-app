@@ -193,7 +193,8 @@ export default function PerencanaanIklan() {
                                 <Label>Umur (Targeted)</Label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <Input
-                                        type="number"
+                                        type="text"
+                                        inputMode='numeric'
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[0] || ''}
@@ -204,7 +205,8 @@ export default function PerencanaanIklan() {
                                         }}
                                     />
                                     <Input
-                                        type="number"
+                                        type="text"
+                                        inputMode='numeric'
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[1] || ''}
@@ -284,7 +286,8 @@ export default function PerencanaanIklan() {
                                 <Label>Umur (Broad)</Label>
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <Input
-                                        type="number"
+                                        type="text"
+                                        inputMode='numeric'
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[0] || ''}
@@ -295,7 +298,8 @@ export default function PerencanaanIklan() {
                                         }}
                                     />
                                     <Input
-                                        type="number"
+                                        type="text"
+                                        inputMode='numeric'
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[1] || ''}

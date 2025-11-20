@@ -52,6 +52,41 @@
         margin-bottom: 4px;
     }
 
+    .metrics-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .metrics-column {
+        flex: 1;
+    }
+
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .metrics-table th {
+        background: #e9ecef;
+        font-weight: bold;
+        text-align: center;
+        padding: 4px;
+        font-size: 10px;
+    }
+
+    .metrics-table td {
+        text-align: center;
+        padding: 4px;
+        font-size: 10px;
+        border: 1px solid #444;
+    }
+
+    .metric-header {
+        background: #f8f9fa !important;
+        font-weight: bold;
+    }
+
 </style>
 </head>
 
@@ -182,45 +217,66 @@
                 </tr>
             </table>
 
-            {{-- METRICS --}}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Reach</th>
-                        <th>Impressions</th>
-                        <th>CPR</th>
-                        <th>Clicks</th>
-                        <th>Likes</th>
-                        <th>Saves</th>
-                        <th>Shares</th>
-                        <th>Profile Visits</th>
-                        <th>Follows</th>
-                        <th>DMs</th>
-                        <th>External Clicks</th>
-                        <th>Result Ads</th>
-                    </tr>
-                </thead>
+            {{-- METRICS - 7 KOLOM DIBAGI 2 BARIS --}}
+            @foreach($rp['metrics'] as $m)
+            <div class="metrics-row">
+                {{-- KOLOM 1-7 --}}
+                <div class="metrics-column">
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Reach</th>
+                                <th>Impressions</th>
+                                <th>CPR</th>
+                                <th>Clicks</th>
+                                <th>Likes</th>
+                                <th>Saves</th>
+                                <th>Shares</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ $m['reach'] }}</td>
+                                <td>{{ $m['impressions'] }}</td>
+                                <td>{{ $m['cpr'] }}</td>
+                                <td>{{ $m['clicks'] }}</td>
+                                <td>{{ $m['likes'] }}</td>
+                                <td>{{ $m['saves'] }}</td>
+                                <td>{{ $m['shares'] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                <tbody>
-                    @foreach($rp['metrics'] as $m)
-                        <tr>
-                            <td>{{ $m['reach'] }}</td>
-                            <td>{{ $m['impressions'] }}</td>
-                            <td>{{ $m['cpr'] }}</td>
-                            <td>{{ $m['clicks'] }}</td>
-                            <td>{{ $m['likes'] }}</td>
-                            <td>{{ $m['saves'] }}</td>
-                            <td>{{ $m['shares'] }}</td>
-                            <td>{{ $m['profile_visits'] }}</td>
-                            <td>{{ $m['follows'] }}</td>
-                            <td>{{ $m['direct_messages'] }}</td>
-                            <td>{{ $m['external_link_clicks'] }}</td>
-                            <td>{{ $m['result_ads'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-
-            </table>
+                {{-- KOLOM 8-14 --}}
+                <div class="metrics-column">
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Profile Visits</th>
+                                <th>Follows</th>
+                                <th>Direct Message</th>
+                                <th>External Clicks</th>
+                                <th>Result Ads</th>
+                                <th>Click Whatsapp</th>
+                                <th>Chat Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ $m['profile_visits'] }}</td>
+                                <td>{{ $m['follows'] }}</td>
+                                <td>{{ $m['direct_messages'] }}</td>
+                                <td>{{ $m['external_link_clicks'] }}</td>
+                                <td>{{ $m['result_ads'] }}</td>
+                                <td>{{ $m['click_whatsapp'] }}</td>
+                                <td>{{ $m['chat_admin'] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endforeach
         @endforeach
 
     @endforeach
