@@ -129,6 +129,18 @@ export default function PerencanaanIklan() {
             .reduce(
                 (acc, [key, value]) => {
                     const audienceDetails = value.audience_details || [];
+
+                    // Perbaikan: ambil type dan name dari setiap audience detail
+                    const type_audience_targeted = audienceDetails
+                        .map((ad: any) => ad.type) // Langsung ambil string type
+                        .filter(Boolean)
+                        .join(';');
+
+                    const name_audience_targeted = audienceDetails
+                        .map((ad: any) => ad.name) // Langsung ambil string name
+                        .filter(Boolean)
+                        .join(';');
+
                     const { audience_details, ...restOfValue } = value;
                     acc[key] = {
                         ...restOfValue,
@@ -137,15 +149,8 @@ export default function PerencanaanIklan() {
                         event_id: selectedEvent || null,
                         platform_id: platformMap[key],
                         user_id: isAdmin ? value?.user_id : auth?.user?.id,
-                        type_audience_targeted: audienceDetails
-                            .map((ad: any) => ad.type)
-                            .filter(Boolean)
-                            .join(','),
-
-                        name_audience_targeted: audienceDetails
-                            .map((ad: any) => ad.name)
-                            .filter(Boolean)
-                            .join(','),
+                        type_audience_targeted: type_audience_targeted,
+                        name_audience_targeted: name_audience_targeted,
                     };
                     return acc;
                 },
@@ -340,7 +345,21 @@ export default function PerencanaanIklan() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
-                                    <Calendar mode="range" numberOfMonths={2} selected={range} onSelect={handleDateChange} />
+                                    <Calendar
+                                        mode="range"
+                                        numberOfMonths={2}
+                                        selected={range}
+                                        onSelect={handleDateChange}
+                                        className={cn(
+                                            'rounded-xl p-2 text-sm',
+                                            '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                                            '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                                            '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                                            '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                            '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
+                                            '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+                                        )}
+                                    />
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -363,7 +382,11 @@ export default function PerencanaanIklan() {
 
                         <div className="space-y-3">
                             <Label>Jenis Target Audiens</Label>
-                            <Select required value={currentData.audience_type || 'targeted'} onValueChange={(val) => handleInputChange('audience_type', val)}>
+                            <Select
+                                required
+                                value={currentData.audience_type || 'targeted'}
+                                onValueChange={(val) => handleInputChange('audience_type', val)}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Pilih jenis audiens" />
                                 </SelectTrigger>
@@ -398,7 +421,7 @@ export default function PerencanaanIklan() {
                             <Label>Target Audiens (jumlah)</Label>
                             <Input
                                 type="text"
-                                inputMode='numeric'
+                                inputMode="numeric"
                                 maxLength={10}
                                 required
                                 placeholder="Masukkan jumlah target audiens"
@@ -493,7 +516,7 @@ export default function PerencanaanIklan() {
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                     </Button>
-                                    <div className="flex flex-row gap-2 justify-between md:justify-end">
+                                    <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         <Button
                                             type="submit"
                                             disabled={processing}

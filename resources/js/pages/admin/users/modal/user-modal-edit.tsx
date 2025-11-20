@@ -28,27 +28,37 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+// VALIDASI FILE
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const schema = z
   .object({
     name: z.string().min(2, 'Nama user minimal 2 karakter'),
     email: z.string().email('Format email tidak valid'),
     password: z.string().optional(),
     confirm_password: z.string().optional(),
-    avatar: z.any().optional(),
+    avatar: z
+      .any()
+      .optional()
+      .refine(
+        (file) => !file || file.size <= MAX_FILE_SIZE,
+        "Ukuran file maksimal 2MB"
+      )
+      .refine(
+        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+        "Format file harus berupa gambar JPG, PNG, atau WEBP"
+      ),
   })
   .refine((data) => {
-    if (data.password && data.password.length < 8) {
-      return false;
-    }
+    if (data.password && data.password.length < 8) return false;
     return true;
   }, {
     message: "Password minimal 8 karakter",
     path: ["password"],
   })
   .refine((data) => {
-    if (data.password !== data.confirm_password) {
-      return false;
-    }
+    if (data.password !== data.confirm_password) return false;
     return true;
   }, {
     message: "Konfirmasi password tidak cocok",
@@ -79,7 +89,9 @@ export function EditUserModal({ user, onSuccess }) {
     const payload = new FormData();
     payload.append("name", data.name);
     payload.append("email", data.email);
+
     if (data.password) payload.append("password", data.password);
+
     if (data.avatar instanceof File) {
       payload.append("avatar", data.avatar);
     }
@@ -112,6 +124,7 @@ export function EditUserModal({ user, onSuccess }) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+
             {/* Nama */}
             <FormField
               control={form.control}
@@ -172,7 +185,7 @@ export function EditUserModal({ user, onSuccess }) {
               )}
             />
 
-                        {/* Avatar + Preview */}
+            {/* Avatar + Preview */}
             <FormField
               control={form.control}
               name="avatar"
@@ -186,12 +199,25 @@ export function EditUserModal({ user, onSuccess }) {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         field.onChange(file);
+
+                        // CEK VALIDASI DI FRONTEND
                         if (file) {
+                          if (file.size > MAX_FILE_SIZE) {
+                            toast.error("Ukuran file maksimal 2MB");
+                            return;
+                          }
+
+                          if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                            toast.error("Format file harus JPG, PNG, atau WEBP");
+                            return;
+                          }
+
                           setPreview(URL.createObjectURL(file));
                         }
                       }}
                     />
                   </FormControl>
+
                   {preview && (
                     <img
                       src={preview}
@@ -199,6 +225,7 @@ export function EditUserModal({ user, onSuccess }) {
                       className="w-24 h-24 rounded-full mt-2 object-cover border"
                     />
                   )}
+
                   <FormMessage />
                 </FormItem>
               )}

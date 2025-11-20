@@ -28,10 +28,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+// VALIDASI FILE
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   email: z.string().email('Format email tidak valid'),
-  avatar: z.any().optional(),
+  avatar: z
+    .any()
+    .optional()
+    .refine(
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      "Ukuran file maksimal 2MB"
+    )
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      "Format file harus JPG, JPEG, PNG, atau WEBP"
+    ),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -52,17 +66,39 @@ export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    // CEK VALIDASI FRONTEND
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Ukuran file maksimal 2MB");
+      return;
+    }
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("Format file harus JPG, JPEG, PNG, atau WEBP");
+      return;
+    }
+
+    // Set value ke form
     form.setValue('avatar', file);
 
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    }
+    // Preview
+    setPreview(URL.createObjectURL(file));
   };
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
 
-    router.post(route('admin.users.store'), data, {
+    const payload = new FormData();
+    payload.append("name", data.name);
+    payload.append("email", data.email);
+
+    if (data.avatar instanceof File) {
+      payload.append("avatar", data.avatar);
+    }
+
+    router.post(route('admin.users.store'), payload, {
       forceFormData: true,
       onSuccess: () => {
         toast.success('User berhasil ditambahkan');
@@ -73,9 +109,7 @@ export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
         onSuccess?.();
       },
       onError: (errors) => {
-        toast.error(
-          errors?.name || errors?.email || 'Gagal menambahkan user'
-        );
+        toast.error(errors?.name || errors?.email || 'Gagal menambahkan user');
         setIsLoading(false);
       },
     });
@@ -126,11 +160,7 @@ export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Masukkan email"
-                      {...field}
-                    />
+                    <Input type="email" placeholder="Masukkan email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,7 +174,6 @@ export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
               render={() => (
                 <FormItem>
                   <FormLabel>Avatar (opsional)</FormLabel>
-
                   <FormControl>
                     <Input
                       type="file"

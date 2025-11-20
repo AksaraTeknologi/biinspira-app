@@ -163,7 +163,7 @@ class AdPlanPlatformController extends Controller
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
             $q->where('name', 'admin');
         })->get();
-
+        // dd($adPlan);
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,
             'events' => $events,
