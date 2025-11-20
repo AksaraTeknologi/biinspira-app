@@ -66,6 +66,8 @@ export interface MetricsData {
     direct_messages: number;
     external_link_clicks: number;
     result_ads: number;
+    click_whatsapp: number;
+    chat_admin: number;
 }
 
 export interface EvaluationData {
@@ -84,6 +86,7 @@ export interface AdPlanProps {
 }
 
 export default function MarketingShow({ data }: AdPlanProps) {
+    console.log('MarketingShow data:', data);
     const [openPlan, setOpenPlan] = useState(true);
     const [openResult, setOpenResult] = useState(true);
     const [openEvaluation, setOpenEvaluation] = useState(true);
@@ -114,6 +117,36 @@ export default function MarketingShow({ data }: AdPlanProps) {
     const [resultTab, setResultTab] = useState<string>(() => {
         return resultList.length ? getPlatformKey(resultPlatformList[0].platform_name ?? undefined, 0) : 'platforms';
     });
+
+    function renderAlphabetList(value: string | null | undefined) {
+        if (!value) return <div className="mt-1">-</div>;
+
+        const parts = value.split(";").map(v => v.trim());
+
+        if (parts.length <= 1) {
+            return (
+                <div className="mt-1">
+                    - {parts[0]}
+                </div>
+            );
+        }
+
+        return (
+            <ul className="mt-1 space-y-1">
+                {parts.map((item, idx) => {
+                    const label = String.fromCharCode(97 + idx); // 97 = 'a'
+                    return (
+                        <li key={idx} className="flex gap-2">
+                            <span>{label}.</span>
+                            <span>{item}</span>
+                        </li>
+                    );
+                })}
+            </ul>
+        );
+    }
+
+
 
     const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') }];
 
@@ -234,11 +267,12 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                             </div>
                                                             <div>
                                                                 <Label>Type Audiens (targeted)</Label>
-                                                                <div className="mt-1">{p.type_targeted || '-'}</div>
+                                                                {renderAlphabetList(p.type_targeted)}
                                                             </div>
+
                                                             <div>
                                                                 <Label>Detail Audiens (targeted)</Label>
-                                                                <div className="mt-1">{p.name_targeted || '-'}</div>
+                                                                {renderAlphabetList(p.name_targeted)}
                                                             </div>
                                                         </div>
                                                     )}
@@ -384,6 +418,14 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                             <div>
                                                                 <Label>External Link Clicks</Label>
                                                                 <div className="mt-1">{metrics?.external_link_clicks ?? '-'}</div>
+                                                            </div>
+                                                            <div>
+                                                                <Label>Click WhatsApp</Label>
+                                                                <div className="mt-1">{metrics?.click_whatsapp ?? '-'}</div>
+                                                            </div>
+                                                            <div>
+                                                                <Label>Chat Admin</Label>
+                                                                <div className="mt-1">{metrics?.chat_admin ?? '-'}</div>
                                                             </div>
                                                         </div>
                                                     </TabsContent>
