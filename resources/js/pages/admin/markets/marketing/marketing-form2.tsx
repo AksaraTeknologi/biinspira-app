@@ -232,6 +232,7 @@ export default function MarketingForm2() {
                                                         type="text"
                                                         inputMode="numeric"
                                                         placeholder="Rp. 0"
+                                                        maxLength={13}
                                                         value={formatRupiah(platformData[p.id]?.total_cost) || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'total_cost', toPlainNumber(e.target.value))}
                                                     />
@@ -243,11 +244,12 @@ export default function MarketingForm2() {
                                                 <div>
                                                     <Label>Reach</Label>
                                                     <Input
-                                                        type="number"
+                                                        type="text"
+                                                        inputMode="numeric"
                                                         required
                                                         placeholder="Masukkan reach"
                                                         maxLength={10}
-                                                        value={platformData[p.id]?.reach || ''}
+                                                        value={formatNol(platformData[p.id]?.reach) || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'reach', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
@@ -255,6 +257,7 @@ export default function MarketingForm2() {
                                                     <Label>Cost Per Result</Label>
                                                     <Input
                                                         type="text"
+                                                        inputMode="numeric"
                                                         required
                                                         placeholder="Rp. 0"
                                                         maxLength={13}
@@ -266,12 +269,13 @@ export default function MarketingForm2() {
                                                 <div className="md:col-span-2">
                                                     <Label>Impression</Label>
                                                     <Input
-                                                        type="number"
+                                                        type="text"
+                                                        inputMode="numeric"
                                                         required
                                                         maxLength={10}
                                                         placeholder="Masukkan Impression"
-                                                        value={platformData[p.id]?.impressions || ''}
-                                                        onChange={(e) => handleFieldChange(p.id, 'impressions', e.target.value)}
+                                                        value={formatNol(platformData[p.id]?.impressions) || ''}
+                                                        onChange={(e) => handleFieldChange(p.id, 'impressions', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
                                             </div>
@@ -296,11 +300,12 @@ export default function MarketingForm2() {
                                                             <div key={field}>
                                                                 <Label>{capitalizeWords(field)}</Label>
                                                                 <Input
-                                                                    type="number"
+                                                                    type="text"
+                                                                    inputMode="numeric"
                                                                     maxLength={10}
                                                                     placeholder={'Masukkan ' + capitalizeWords(field)}
-                                                                    value={platformData[p.id]?.[field] || ''}
-                                                                    onChange={(e) => handleFieldChange(p.id, field, e.target.value)}
+                                                                    value={formatNol(platformData[p.id]?.[field]) || ''}
+                                                                    onChange={(e) => handleFieldChange(p.id, field, toPlainNumber(e.target.value))}
                                                                 />
                                                             </div>
                                                         ))}

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,13 +30,33 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $data = $request->validated();
+
+        // HANDLE AVATAR UPLOAD
+        if ($request->hasFile('avatar')) {
+
+            // Hapus avatar lama jika ada
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            // Simpan avatar baru → storage/app/public/avatars/xxxxx.jpg
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            // Simpan hanya folder/filename → "avatars/xxxx.jpg"
+            $data['avatar'] = $path;
         }
 
-        $request->user()->save();
+        // UPDATE DATA TANPA PASSWORD
+        $user->fill($data);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return to_route('profile.edit');
     }

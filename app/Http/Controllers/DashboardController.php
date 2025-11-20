@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($tableData);
+        // dd($dataHistoris);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
@@ -151,7 +151,7 @@ class DashboardController extends Controller
             'result.plan:id,created_at,event_id,user_id',
             'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'result.plan.event:id,name',
-            'result.plan.user:id,name',
+            'result.plan.user:id,name,avatar',
             'platform:id,name',
         ])
             ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
@@ -185,7 +185,7 @@ class DashboardController extends Controller
                     'event_name' => optional($item->result->plan->event)->name,
                     'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
                     'amount' => $item->total_cost,
-                    'avatar' => "https://i.pravatar.cc/100?img=" . rand(1, 70),
+                    'avatar' => optional($item->result->plan->user)->avatar ? optional($item->result->plan->user)->avatar : null,
                     'time' => optional($item->result->plan)->created_at->format('H:i:s'),
                     'color' => (function () use ($item) {
                         $type = optional($item->platform)->name;

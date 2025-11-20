@@ -22,21 +22,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 type ProfileForm = {
     name: string;
     email: string;
+    avatar?: File | null;
 };
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
-        name: auth.user.name,
-        email: auth.user.email,
+    const { data, setData, post, errors, processing, recentlySuccessful } = useForm<ProfileForm>({
+        name: auth.user.name || '',
+        email: auth.user.email || '',
+        avatar: null,
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        console.log('Data sebelum submit:', data);
 
-        patch(route('profile.update'), {
+        post(route('profile.update'), {
             preserveScroll: true,
+            forceFormData: true,
         });
     };
 
@@ -49,6 +53,20 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     <HeadingSmall title="Profile information" description="Update your name and email address" />
 
                     <form onSubmit={submit} className="space-y-6">
+                        <div className="flex items-center gap-3 h-35 w-35">
+                            {auth.user.avatar ? (
+                                <img
+                                    src={`/storage/${auth.user.avatar}`}
+                                    alt="Avatar"
+                                    className="w-full h-full rounded-full border"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white text-lg font-bold">
+                                    {auth.user.name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
 
@@ -80,6 +98,19 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             />
 
                             <InputError className="mt-2" message={errors.email} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="avatar">Avatar</Label>
+
+                            <Input
+                                id="avatar"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setData("avatar", e.target.files?.[0] ?? null)}
+                            />
+
+                            <InputError className="mt-1" message={errors.avatar} />
                         </div>
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (

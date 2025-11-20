@@ -28,8 +28,6 @@ interface HistorisProps {
 
 export default function History({ className, dataHistoris }: HistorisProps) {
 
-    console.log(dataHistoris);
-
     // ---------------------------------------------------
     // 🧠 State utama
     // ---------------------------------------------------
@@ -216,11 +214,30 @@ export default function History({ className, dataHistoris }: HistorisProps) {
                                                 </p>
                                             </div>
                                         </div>
-                                        <img
-                                            src={h.avatar}
-                                            alt={h.user_name}
-                                            className="w-10 h-10 mt-3 rounded-full border-2 border-white mb-2"
-                                        />
+                                        {h.avatar ? (
+                                            // Jika ADA avatar → tampilkan gambar (pakai wrapper untuk memastikan lingkaran)
+                                            <div className="w-10 h-10 mt-3 mb-2 rounded-full ring-2 ring-white overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={`/storage/${h.avatar}`}
+                                                    alt={h.user_name}
+                                                    className="w-full h-full object-cover object-center block"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : (
+                                            // Jika TIDAK ada avatar → tampilkan initial
+                                            <div
+                                                className="
+                                                    w-10 h-10 mt-3 mb-2 rounded-full flex-shrink-0
+                                                    flex items-center justify-center bg-gray-700 text-white
+                                                    ring-2 ring-white text-base font-semibold overflow-hidden
+                                                "
+                                            >
+                                                <span className="select-none">
+                                                    {h.user_name ? h.user_name.charAt(0).toUpperCase() : "?"}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                     <p className="text-[11px] text-center text-gray-400 py-2">
                                         {h.time}
