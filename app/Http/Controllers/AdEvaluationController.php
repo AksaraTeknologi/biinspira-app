@@ -196,7 +196,6 @@ class AdEvaluationController extends Controller
         ]);
 
         if ($validator->fails()) {
-            dd($validator->errors());
             return back()->withErrors($validator)->withInput();
         }
 

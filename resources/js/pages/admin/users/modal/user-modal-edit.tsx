@@ -15,54 +15,97 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const schema = z.object({
-  name: z.string().min(2, 'Nama user minimal 2 karakter'),
-  email: z.string().email('Format email tidak valid'),
-  password: z.string().min(8, 'Password minimal 8 karakter').optional(),
-});
+// VALIDASI FILE
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+const schema = z
+  .object({
+    name: z.string().min(2, 'Nama user minimal 2 karakter'),
+    email: z.string().email('Format email tidak valid'),
+    password: z.string().optional(),
+    confirm_password: z.string().optional(),
+    avatar: z
+      .any()
+      .optional()
+      .refine(
+        (file) => !file || file.size <= MAX_FILE_SIZE,
+        "Ukuran file maksimal 2MB"
+      )
+      .refine(
+        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+        "Format file harus berupa gambar JPG, PNG, atau WEBP"
+      ),
+  })
+  .refine((data) => {
+    if (data.password && data.password.length < 8) return false;
+    return true;
+  }, {
+    message: "Password minimal 8 karakter",
+    path: ["password"],
+  })
+  .refine((data) => {
+    if (data.password !== data.confirm_password) return false;
+    return true;
+  }, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm_password"],
+  });
 
 type FormData = z.infer<typeof schema>;
-type UserType = {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-};
 
-interface EditUserModalProps {
-  user: UserType;
-  onSuccess?: () => void;
-}
-
-export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
+export function EditUserModal({ user, onSuccess }) {
   const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState(user.avatar_url ?? null);
   const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: user.name,
       email: user.email,
-      password: user.password,
+      password: '',
+      confirm_password: '',
+      avatar: null,
     },
   });
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
 
-    router.post(route('admin.users.update', { id: user.id }), data, {
+    const payload = new FormData();
+    payload.append("name", data.name);
+    payload.append("email", data.email);
+
+    if (data.password) payload.append("password", data.password);
+
+    if (data.avatar instanceof File) {
+      payload.append("avatar", data.avatar);
+    }
+
+    router.post(route("admin.users.update", { id: user.id }), payload, {
+      forceFormData: true,
       onSuccess: () => {
-        toast.success('user berhasil diperbarui');
+        toast.success("User berhasil diperbarui");
         setOpen(false);
         setIsLoading(false);
         onSuccess?.();
-        form.reset(data);
       },
       onError: (errors) => {
-        toast.error(errors.name || 'Gagal memperbarui user');
+        toast.error(errors.name || "Gagal memperbarui user");
         setIsLoading(false);
       },
     });
@@ -71,17 +114,18 @@ export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Pencil className="h-4 w-4" />
+        <Pencil className="h-4 w-4 cursor-pointer" />
       </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit user Baru</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            {/* Nama user */}
+
+            {/* Nama */}
             <FormField
               control={form.control}
               name="name"
@@ -95,6 +139,8 @@ export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
                 </FormItem>
               )}
             />
+
+            {/* Email */}
             <FormField
               control={form.control}
               name="email"
@@ -102,21 +148,84 @@ export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama user" {...field} type='email'/>
+                    <Input type="email" placeholder="Masukkan email user" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Password */}
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password Baru (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan password" {...field} type='password' />
+                    <Input type="password" placeholder="Masukkan password baru" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Confirm Password */}
+            <FormField
+              control={form.control}
+              name="confirm_password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Konfirmasi Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Ulangi password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Avatar + Preview */}
+            <FormField
+              control={form.control}
+              name="avatar"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Avatar</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        field.onChange(file);
+
+                        // CEK VALIDASI DI FRONTEND
+                        if (file) {
+                          if (file.size > MAX_FILE_SIZE) {
+                            toast.error("Ukuran file maksimal 2MB");
+                            return;
+                          }
+
+                          if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                            toast.error("Format file harus JPG, PNG, atau WEBP");
+                            return;
+                          }
+
+                          setPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </FormControl>
+
+                  {preview && (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-full mt-2 object-cover border"
+                    />
+                  )}
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -126,14 +235,11 @@ export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Batal
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                {isLoading ? 'Menyimpan...' : 'Simpan'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Menyimpan..." : "Simpan"}
               </Button>
             </div>
+
           </form>
         </Form>
       </DialogContent>

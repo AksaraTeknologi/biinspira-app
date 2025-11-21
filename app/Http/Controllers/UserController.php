@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -38,31 +39,35 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+
         $data = $validator->validated();
         $data['password'] = bcrypt('12345678');
-        
+
         $user = User::create($data);
 
+        if ($request->hasFile('avatar')) {
+            $filename = time() . '_' . $request->file('avatar')->getClientOriginalName();
+            $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
+            $user->update(['avatar' => $path]);
+        }
         $user->assignRole('user');
-
         event(new Registered($user));
-
-        // Auth::login($user);
-
-        // dd($user);
-
         return redirect()->route('admin.users.index');
     }
+
     public function update(Request $request, String $id)
     {
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -73,6 +78,16 @@ class UserController extends Controller
             $data['password'] = bcrypt($data['password']);
         } else {
             unset($data['password']);
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            $filename = time() . '_' . $request->file('avatar')->getClientOriginalName();
+            $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
+            $data['avatar'] = $path;
         }
 
         $user->update($data);

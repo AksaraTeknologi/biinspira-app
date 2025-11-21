@@ -85,6 +85,8 @@ class FormController extends Controller
                                         'direct_messages'     => $m->direct_messages !== null ? number_format((float)$m->direct_messages, 0, ',', '.') : null,
                                         'external_link_clicks' => $m->external_link_clicks !== null ? number_format((float)$m->external_link_clicks, 0, ',', '.') : null,
                                         'result_ads'          => $m->result_ads !== null ? number_format((float)$m->result_ads, 0, ',', '.') : null,
+                                        'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp,0,',','.') : null,
+                                        'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin,0,',','.') : null,
                                     ];
                                 }),
                             ];
@@ -170,6 +172,8 @@ class FormController extends Controller
                                     'direct_messages'     => $m->direct_messages !== null ? number_format((float)$m->direct_messages, 0, ',', '.') : null,
                                     'external_link_clicks' => $m->external_link_clicks !== null ? number_format((float)$m->external_link_clicks, 0, ',', '.') : null,
                                     'result_ads'          => $m->result_ads !== null ? number_format((float)$m->result_ads, 0, ',', '.') : null,
+                                    'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp,0,',','.') : null,
+                                    'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin,0,',','.') : null,
                                 ];
                             }),
                         ];
@@ -197,59 +201,4 @@ class FormController extends Controller
         return $pdf->download('marketing-report-' . $id . '.pdf');
     }
 
-    /*
-    public function planForm()
-    {
-        $events = MasterEvent::query()
-            ->select('master_events.id as event_id', 'master_events.name as event_name')
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->event_id,
-                'name' => $item->event_name,
-            ]);
-
-        $platforms = MasterPlatform::query()
-            ->select('master_platforms.id as platform_id', 'master_platforms.name as platform_name')
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->platform_id,
-                'name' => $item->platform_name,
-            ]);
-
-        $goals = MasterAdGoal::all();
-
-        // dd($events, $platforms);
-
-        return Inertia::render('user/adsForm', [
-            'title_pages' => 'Add Advertise',
-            'events' => $events,
-            'platforms' => $platforms,
-            'goals' => $goals,
-        ]);
-    }
-    public function AdPlanStore(Request $request)
-    {
-        dd($request->all());
-
-        return response()->json([
-            'message' => 'Ad plan platform berhasil disimpan',
-        ]);
-    }
-    public function AdResultStore(Request $request)
-    {
-        dd($request->all());
-
-        return response()->json([
-            'message' => 'REsult Iklan berhasil disimpan!',
-        ]);
-    }
-    public function AdEvalStore(Request $request)
-    {
-        dd($request->all());
-
-        return response()->json([
-            'message' => 'Evaluasi Iklan berhasil disimpan!',
-        ]);
-    }
-*/
 }

@@ -3,6 +3,8 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import GraphCustom from '@/components/custom/graph';
 import ReportCard from '@/components/custom/report';
+import FinancialDataTable from '@/components/custom/financial-data-table';
+import History from '@/components/custom/history';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin/dashboard' }];
 
@@ -13,9 +15,30 @@ interface DashboardProps {
         pengeluaran: number;
         pendapatan: number;
     }[];
+    tableData: {
+        no: number;
+        user: string;
+        status: string;
+        cost: string; // formatted as "x.xxx.xxx"
+    }[];
+    dataHistoris: {
+        id: number;
+        date: string;
+        user_name: string;
+        event_name: string;
+        amount: string;
+        avatar: string;
+        time: string;
+        color: string;
+    }[];
 }
 
-export default function Dashboard({ dashboard_item, rawDataGraphic = [] }: DashboardProps) {
+export default function Dashboard({
+    dashboard_item,
+    rawDataGraphic = [],
+    tableData = [],
+    dataHistoris = [],
+}: DashboardProps) {
 
     const { auth } = usePage<{ auth?: { user?: { name?: string } } }>().props;
     const user = auth?.user;
@@ -39,6 +62,14 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = [] }: Dashb
         })
     );
 
+    const tableColoms = [
+        { header: "No", accessor: "no" },
+        { header: 'User', accessor: 'user' },
+        // { header: 'Top Up Dana', accessor: 'top_up_dana' },
+        { header: 'Tipe Iklan', accessor: 'status' },
+        { header: 'Pengeluaran Iklan', accessor: 'cost' },
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={dashboard_item} />
@@ -60,8 +91,13 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = [] }: Dashb
                 <div className="grid grid-cols-1 md:grid-cols-24 gap-y-4">
                     <div className="col-span-14 flex flex-col gap-y-5">
                         <GraphCustom RawData={rawDataGraphic} />
+                        <FinancialDataTable
+                            tableColoms={tableColoms}
+                            tableData={tableData}
+                        />
                     </div>
                     <div className="md:col-start-16 md:col-span-9 flex flex-col gap-y-5">
+                        <History dataHistoris={dataHistoris} />
                         <ReportCard />
                     </div>
                 </div>

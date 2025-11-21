@@ -30,9 +30,15 @@ class DashboardController extends Controller
     public function dashboardUser()
     {
         $rawDataGraphic = $this->getRawDataGraphic();
+        $tableData = $this->getTableData();
+        $dataHistoris = $this->getDataHistories();
+
+        // dd($tableData);
 
         return Inertia::render('user/dashboard', [
             'rawDataGraphic' => $rawDataGraphic,
+            'tableData' => $tableData,
+            'dataHistoris' => $dataHistoris,
             'dashboard_item' => 'Dashboard',
         ]);
     }
@@ -43,7 +49,7 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($rawDataGraphic, $tableData, $dataHistoris);
+        // dd($dataHistoris);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
@@ -65,8 +71,6 @@ class DashboardController extends Controller
             $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
-
-        // dd($userName);
 
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {
@@ -116,8 +120,6 @@ class DashboardController extends Controller
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
 
-        // dd($userName);
-
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {
                 $q->where('id', Auth::user()->id);
@@ -149,7 +151,7 @@ class DashboardController extends Controller
             'result.plan:id,created_at,event_id,user_id',
             'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'result.plan.event:id,name',
-            'result.plan.user:id,name',
+            'result.plan.user:id,name,avatar',
             'platform:id,name',
         ])
             ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
@@ -161,8 +163,6 @@ class DashboardController extends Controller
             $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
-
-        // dd($userName);
 
         if ($userName !== 'admin') {
             $query->whereHas('result.plan.user', function ($q) {
@@ -185,7 +185,7 @@ class DashboardController extends Controller
                     'event_name' => optional($item->result->plan->event)->name,
                     'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
                     'amount' => $item->total_cost,
-                    'avatar' => "https://i.pravatar.cc/100?img=" . rand(1, 70),
+                    'avatar' => optional($item->result->plan->user)->avatar ? optional($item->result->plan->user)->avatar : null,
                     'time' => optional($item->result->plan)->created_at->format('H:i:s'),
                     'color' => (function () use ($item) {
                         $type = optional($item->platform)->name;
