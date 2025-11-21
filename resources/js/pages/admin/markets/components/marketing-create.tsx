@@ -194,7 +194,7 @@ export default function PerencanaanIklan() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[0] || ''}
@@ -206,7 +206,7 @@ export default function PerencanaanIklan() {
                                     />
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[1] || ''}
@@ -287,7 +287,7 @@ export default function PerencanaanIklan() {
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[0] || ''}
@@ -299,7 +299,7 @@ export default function PerencanaanIklan() {
                                     />
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[1] || ''}
@@ -444,7 +444,7 @@ export default function PerencanaanIklan() {
 
     return (
         <AppLayout>
-            <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
+            <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
                 <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
 
                 <form onSubmit={handleSubmit}>
