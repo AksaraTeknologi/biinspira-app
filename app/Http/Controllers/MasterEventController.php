@@ -11,7 +11,7 @@ class MasterEventController extends Controller
 {
     public function index()
     {
-        $events = MasterEvent::select('id', 'name', 'batch', 'end_date')->get();
+        $events = MasterEvent::select('id', 'name', 'batch', 'end_date')->orderBy('end_date', 'asc')->get();
 
         return Inertia::render('admin/events/event', [
             'events' => $events,
