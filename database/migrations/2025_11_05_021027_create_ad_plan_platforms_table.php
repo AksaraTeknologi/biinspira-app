@@ -23,10 +23,10 @@ return new class extends Migration
             $table->enum('audience_type', ['targeted', 'broad', 'combined']);
             $table->string('age_targeted')->nullable();
             $table->string('age_broad')->nullable();
-            $table->string('location_targeted')->nullable();
-            $table->string('location_broad')->nullable();
+            $table->longText('location_targeted')->nullable();
+            $table->longText('location_broad')->nullable();
             $table->string('type_audience_targeted')->nullable();
-            $table->string('name_audience_targeted')->nullable();
+            $table->longText('name_audience_targeted')->nullable();
             $table->timestamps();
         });
     }

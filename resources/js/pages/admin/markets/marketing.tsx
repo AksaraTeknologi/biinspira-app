@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil } from 'lucide-react';
+import { useState } from 'react';
 
 interface Event {
     id: number;
@@ -59,6 +60,37 @@ export default function Marketing() {
         const date = new Date(dateString);
         return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     };
+    const { filters } = usePage().props as any;
+
+    const [startDate, setStartDate] = useState(filters?.start_date || '');
+    const [endDate, setEndDate] = useState(filters?.end_date || '');
+
+    const applyFilter = () => {
+        router.get(
+            route('admin.marketing.index'),
+            {
+                start_date: startDate,
+                end_date: endDate,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    const resetFilter = () => {
+        setStartDate('');
+        setEndDate('');
+        router.get(
+            route('admin.marketing.index'),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -74,7 +106,7 @@ export default function Marketing() {
                         </Button>
                     )}
                 </div>
-
+                
                 <div className="overflow-hidden rounded-lg border shadow-sm">
                     <Table>
                         <TableHeader className="bg-border">

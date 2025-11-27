@@ -29,6 +29,28 @@ export default function MarketingForm2() {
 
         return rupiah ? 'Rp ' + rupiah : '';
     };
+    const cleanNumberFromDB = (value: string | number) => {
+        if (value === null || value === undefined) return '';
+        let num = parseFloat(value.toString());
+        if (isNaN(num)) return '';
+        num = Math.floor(num);
+        return num.toString();
+    };
+    const formatRupiah1 = (value: string | number) => {
+        if (!value) return '';
+        value = cleanNumberFromDB(value);
+        if (!value) return '';
+        const numberString = value.replace(/[^,\d]/g, '');
+        const integerPart = numberString;
+        const remainder = integerPart.length % 3;
+        let rupiah = integerPart.substr(0, remainder);
+        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
+        if (thousands) {
+            rupiah += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return rupiah ? 'Rp ' + rupiah : '';
+    };
 
     const toPlainNumber = (value: string) => {
         if (!value) return '';
@@ -169,7 +191,7 @@ export default function MarketingForm2() {
                             {/* EVENT */}
                             <div>
                                 <Label>Nama Event</Label>
-                                <Input value={event.name || ''} disabled />
+                                <Input value={event.name || ''} readOnly />
                             </div>
 
                             {/* CHECKOUT & REVENUE */}
@@ -235,7 +257,7 @@ export default function MarketingForm2() {
                                                         inputMode="numeric"
                                                         placeholder="Rp. 0"
                                                         maxLength={13}
-                                                        value={formatRupiah(platformData[p.id]?.total_cost) || ''}
+                                                        value={formatRupiah1(platformData[p.id]?.total_cost) || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'total_cost', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>

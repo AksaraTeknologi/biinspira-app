@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { Minus, Plus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -145,7 +147,8 @@ export default function MarketingShow({ data }: AdPlanProps) {
         );
     }
 
-
+    const { auth } = usePage<SharedData>().props;
+    const userRole = auth.role[0];
 
     const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') }];
 
@@ -158,7 +161,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                         onClick={() => {
                             const id = data?.id;
                             if (!id) return;
-                            const url = route('admin.marketing.print', id);
+                            const url = userRole === 'admin' ? route('admin.marketing.print', id) : route('user.marketing.print', id);
                             window.open(url, '_blank');
                         }}
                     >
@@ -470,7 +473,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                         <div className="flex flex-col gap-y-3">
                                             <div>
                                                 <Label>Checkout Event Sekarang</Label>
-                                                <div className="mt-1">Rp {firstEvaluation?.current_checkout ?? '-'}</div>
+                                                <div className="mt-1">{firstEvaluation?.current_checkout ?? '-'}</div>
                                             </div>
                                             <div>
                                                 <Label>Kinerja Iklan Sekarang</Label>
@@ -484,7 +487,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                         <div className="flex flex-col gap-y-3">
                                             <div>
                                                 <Label>Checkout Event Sebelumnya</Label>
-                                                <div className="mt-1">Rp {firstEvaluation?.previous_checkout ?? '-'}</div>
+                                                <div className="mt-1">{firstEvaluation?.previous_checkout ?? '-'}</div>
                                             </div>
                                             <div>
                                                 <Label>Kinerja Iklan Sebelumnya</Label>
