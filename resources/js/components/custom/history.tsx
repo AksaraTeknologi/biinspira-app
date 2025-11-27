@@ -207,7 +207,15 @@ export default function History({ className, dataHistoris }: HistorisProps) {
                                         <div className="relative h-50 w-full">
                                             <div className="transform rotate-270 text-sm font-medium absolute bottom-12.5 -right-13.5 w-40">
                                                 <p className="text-base font-semibold">{h.user_name}</p>
-                                                <p className="text-[11px] font-light">{h.event_name}</p>
+                                                <p className="text-[11px] font-light">
+                                                    {(() => {
+                                                        const text = h.event_name ?? "";
+                                                        return text.length > 30
+                                                            ? text.slice(0, 27) + "..."
+                                                            : text;
+                                                    })()}
+                                                </p>
+                                                {/* <p className="text-[11px] font-light">abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz</p> */}
                                                 <p className="text-[13px] font-semibold">
                                                     Rp {(parseInt(h.amount.replace(/\D/g, ''), 10) || 0).toLocaleString('id-ID')}
                                                 </p>
