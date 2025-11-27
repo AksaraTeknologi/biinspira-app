@@ -11,7 +11,7 @@ interface HistoryItem {
     date: string; // format YYYY-MM-DD
     user_name: string;
     event_name: string;
-    amount: number;
+    amount: string;
     avatar: string;
     time: string;
     color: string;
@@ -27,11 +27,8 @@ interface HistorisProps {
 }
 
 export default function History({ className, dataHistoris }: HistorisProps) {
-
-    // console.log("dataHistoris:", dataHistoris);
-
     // ---------------------------------------------------
-    // 🧠 State utama
+    //  State utama
     // ---------------------------------------------------
     const today = new Date();
 

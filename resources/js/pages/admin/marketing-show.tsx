@@ -86,7 +86,6 @@ export interface AdPlanProps {
 }
 
 export default function MarketingShow({ data }: AdPlanProps) {
-    console.log('MarketingShow data:', data);
     const [openPlan, setOpenPlan] = useState(true);
     const [openResult, setOpenResult] = useState(true);
     const [openEvaluation, setOpenEvaluation] = useState(true);
