@@ -50,6 +50,8 @@ const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') 
 export default function Marketing() {
     const { adPlans = [], isAdmin } = usePage<{ adPlans?: AdPlan[]; isAdmin?: boolean }>().props;
 
+    console.log({ adPlans });
+
     const handleAddAd = () => {
         router.visit(route(isAdmin ? 'admin.marketing.create' : 'user.marketing.create'));
     };
