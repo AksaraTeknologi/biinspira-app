@@ -117,6 +117,12 @@ export default function PerencanaanIklan() {
     const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
+        const current = formState[tab];
+        if (!current?.goals_id) {
+            toast.error('Tujuan iklan wajib dipilih!');
+            return;
+        }
+
         const filteredData = Object.entries(formState)
             .filter(([_, value]) => {
                 const entries = Object.entries(value || {});
@@ -194,7 +200,7 @@ export default function PerencanaanIklan() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[0] || ''}
@@ -206,7 +212,7 @@ export default function PerencanaanIklan() {
                                     />
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_targeted?.split('-')[1] || ''}
@@ -287,7 +293,7 @@ export default function PerencanaanIklan() {
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Min"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[0] || ''}
@@ -299,7 +305,7 @@ export default function PerencanaanIklan() {
                                     />
                                     <Input
                                         type="text"
-                                        inputMode='numeric'
+                                        inputMode="numeric"
                                         placeholder="Max"
                                         maxLength={3}
                                         value={platformData?.age_broad?.split('-')[1] || ''}
@@ -523,7 +529,7 @@ export default function PerencanaanIklan() {
                                     <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            disabled={processing || !formState[tab]?.goals_id}
                                             className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={(e) => handleSubmit(e, 'draft')}
                                         >
@@ -531,7 +537,7 @@ export default function PerencanaanIklan() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            disabled={processing || !formState[tab]?.goals_id}
                                             className="bg-primary text-white hover:bg-blue-700"
                                             onClick={(e) => handleSubmit(e, 'next')}
                                         >
