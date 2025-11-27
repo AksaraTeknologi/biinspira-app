@@ -20,6 +20,7 @@ interface DashboardProps {
         user: string;
         status: string;
         cost: string; // formatted as "x.xxx.xxx"
+        omset: string;
     }[];
     dataHistoris: {
         id: number;
@@ -67,7 +68,8 @@ export default function Dashboard({
         { header: 'User', accessor: 'user' },
         // { header: 'Top Up Dana', accessor: 'top_up_dana' },
         { header: 'Tipe Iklan', accessor: 'status' },
-        { header: 'Pengeluaran Iklan', accessor: 'cost' },
+        { header: 'Pengeluaran', accessor: 'cost' },
+        { header: 'Omset', accessor: 'omset' },
     ];
 
     return (

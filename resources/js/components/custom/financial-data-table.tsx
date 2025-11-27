@@ -25,6 +25,8 @@ export default function FinancialDataTable({
     className,
 }: FinanceProps) {
 
+    console.log("tableData:", tableData);
+
     const page = usePage<SharedData>().props;
     const role = page.auth.role[0];
     const isAdmin = role === 'admin';

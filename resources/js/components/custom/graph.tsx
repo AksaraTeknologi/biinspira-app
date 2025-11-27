@@ -17,6 +17,8 @@ interface GrafikPendapatanProps {
 
 export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
 
+    // console.log("RawData:", RawData);
+
     const [mode, setMode] = useState<"bulanan" | "mingguan">("bulanan");
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
