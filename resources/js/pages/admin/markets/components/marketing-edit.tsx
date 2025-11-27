@@ -6,13 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -20,6 +14,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function MarketingEdit() {
     const { props } = usePage();
@@ -87,11 +82,23 @@ export default function MarketingEdit() {
             return existingDetails.map((a: any) => ({
                 id: a.id || genId(),
                 type: a.type || '',
-                names: Array.isArray(a.names) ? a.names : (a.name ? String(a.name).split(',').map((s: string) => s.trim()).filter(Boolean) : []),
+                names: Array.isArray(a.names)
+                    ? a.names
+                    : a.name
+                      ? String(a.name)
+                            .split(',')
+                            .map((s: string) => s.trim())
+                            .filter(Boolean)
+                      : [],
             }));
         }
 
-        const types = typeStr ? typeStr.split(';').map((s) => s.trim()).filter(Boolean) : [];
+        const types = typeStr
+            ? typeStr
+                  .split(';')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+            : [];
         const groups = nameStr ? nameStr.split(';').map((g) => g.trim()) : [];
 
         const maxLen = Math.max(types.length, groups.length);
@@ -100,7 +107,12 @@ export default function MarketingEdit() {
         for (let i = 0; i < maxLen; i++) {
             const t = types[i] || '';
             const g = groups[i] || '';
-            const names = g ? g.split(',').map((s) => s.trim()).filter(Boolean) : [];
+            const names = g
+                ? g
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                : [];
             result.push({ id: genId(), type: t, names });
         }
 
@@ -111,11 +123,7 @@ export default function MarketingEdit() {
     // Build merged platforms for UI initial state, parse audience strings properly
     const mergedPlatforms = platforms.map((platform: any) => {
         const existing = planPlatforms.find((p: any) => Number(p.platform_id) === Number(platform.id)) || {};
-        const audience_details = parseAudienceFromDb(
-            existing.type_audience_targeted,
-            existing.name_audience_targeted,
-            existing.audience_details,
-        );
+        const audience_details = parseAudienceFromDb(existing.type_audience_targeted, existing.name_audience_targeted, existing.audience_details);
 
         return {
             ...existing,
@@ -191,28 +199,33 @@ export default function MarketingEdit() {
 
     // helpers to update platforms array in form state by platform_id
     const updateActivePlatformField = (field: string, value: any) => {
-        setData('platforms', data.platforms.map((p: any) =>
-            (Number(p.platform_id) === Number(activePlatformId) ? { ...p, [field]: value } : p)
-        ));
+        setData(
+            'platforms',
+            data.platforms.map((p: any) => (Number(p.platform_id) === Number(activePlatformId) ? { ...p, [field]: value } : p)),
+        );
     };
 
     const handleDateChange = (rangeValue: { from?: Date; to?: Date } | undefined) => {
         setRange(rangeValue || {});
-        setData('platforms', data.platforms.map((p: any) =>
-            Number(p.platform_id) === Number(activePlatformId)
-                ? {
-                      ...p,
-                      start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
-                      end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
-                  }
-                : p,
-        ));
+        setData(
+            'platforms',
+            data.platforms.map((p: any) =>
+                Number(p.platform_id) === Number(activePlatformId)
+                    ? {
+                          ...p,
+                          start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
+                          end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
+                      }
+                    : p,
+            ),
+        );
     };
 
     // Audience handlers use stable id
     const addAudience = () => {
         const newItem = { id: genId(), type: '', names: [] as string[] };
-        setData('platforms',
+        setData(
+            'platforms',
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
@@ -225,7 +238,8 @@ export default function MarketingEdit() {
     };
 
     const handleAudienceChange = (id: string, field: 'type' | 'names', value: string) => {
-        setData('platforms',
+        setData(
+            'platforms',
             data.platforms.map((p: any) => {
                 if (Number(p.platform_id) !== Number(activePlatformId)) return p;
                 const audience = (p.audience_details || []).map((a: any) => {
@@ -243,8 +257,14 @@ export default function MarketingEdit() {
                 });
 
                 // Build DB strings: types separated by ';' and name-groups separated by ';' (names in group joined by ',')
-                const typeString = audience.map((x: any) => x.type || '').filter(Boolean).join(';');
-                const nameString = audience.map((x: any) => ((x.names || []).join(',') || '')).filter(Boolean).join(';');
+                const typeString = audience
+                    .map((x: any) => x.type || '')
+                    .filter(Boolean)
+                    .join(';');
+                const nameString = audience
+                    .map((x: any) => (x.names || []).join(',') || '')
+                    .filter(Boolean)
+                    .join(';');
 
                 return {
                     ...p,
@@ -257,12 +277,19 @@ export default function MarketingEdit() {
     };
 
     const removeAudience = (id: string) => {
-        setData('platforms',
+        setData(
+            'platforms',
             data.platforms.map((p: any) => {
                 if (Number(p.platform_id) !== Number(activePlatformId)) return p;
                 const audience = (p.audience_details || []).filter((a: any) => a.id !== id);
-                const typeString = audience.map((x: any) => x.type || '').filter(Boolean).join(';');
-                const nameString = audience.map((x: any) => (x.names || []).join(',')).filter(Boolean).join(';');
+                const typeString = audience
+                    .map((x: any) => x.type || '')
+                    .filter(Boolean)
+                    .join(';');
+                const nameString = audience
+                    .map((x: any) => (x.names || []).join(','))
+                    .filter(Boolean)
+                    .join(';');
                 return {
                     ...p,
                     audience_details: audience,
@@ -275,10 +302,20 @@ export default function MarketingEdit() {
 
     // Submit handler
     const handleSubmit = (submitMode: 'draft' | 'next') => {
+        if (!activePlatform?.goals_id) {
+            toast.error('Tujuan iklan wajib dipilih');
+            return;
+        }
         const filteredPlatforms = data.platforms.filter((p: any) => {
-            return Boolean(p.platform_id) && Boolean(p.start_date) && Boolean(p.end_date)
-                && p.daily_budget !== '' && p.daily_budget !== null
-                && p.audience_target !== '' && p.audience_target !== null;
+            return (
+                Boolean(p.platform_id) &&
+                Boolean(p.start_date) &&
+                Boolean(p.end_date) &&
+                p.daily_budget !== '' &&
+                p.daily_budget !== null &&
+                p.audience_target !== '' &&
+                p.audience_target !== null
+            );
         });
 
         const updateRoute = isAdmin
@@ -464,11 +501,8 @@ export default function MarketingEdit() {
 
                     <div className="mt-4">
                         <Label>Tujuan Iklan</Label>
-                        <Select
-                            value={String(activePlatform?.goals_id || '')}
-                            onValueChange={(val) => updateActivePlatformField('goals_id', val)}
-                        >
-                            <SelectTrigger>
+                        <Select required value={String(activePlatform?.goals_id || '')} onValueChange={(val) => updateActivePlatformField('goals_id', val)}>
+                            <SelectTrigger className={!activePlatform?.goals_id ? 'border-red-500' : ''}>
                                 <SelectValue placeholder="Pilih tujuan iklan" />
                             </SelectTrigger>
                             <SelectContent>
@@ -478,6 +512,7 @@ export default function MarketingEdit() {
                                     </SelectItem>
                                 ))}
                             </SelectContent>
+                            {!activePlatform?.goals_id && <p className="mt-1 text-sm text-red-500">Tujuan iklan wajib dipilih</p>}
                         </Select>
                     </div>
 
@@ -587,7 +622,7 @@ export default function MarketingEdit() {
                                     <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         <Button
                                             type="button"
-                                            disabled={processing}
+                                            disabled={processing || !activePlatform?.goals_id}
                                             className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={() => handleSubmit('draft')}
                                         >
@@ -596,7 +631,7 @@ export default function MarketingEdit() {
 
                                         <Button
                                             type="button"
-                                            disabled={!isButtonActive || processing}
+                                            disabled={!isButtonActive || processing || !activePlatform?.goals_id}
                                             className={cn(
                                                 'bg-primary text-white hover:bg-blue-700',
                                                 (!isButtonActive || processing) && 'cursor-not-allowed opacity-50',

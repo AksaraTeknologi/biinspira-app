@@ -16,7 +16,6 @@ interface GrafikPendapatanProps {
 }
 
 export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
-
     const [mode, setMode] = useState<"bulanan" | "mingguan">("bulanan");
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -31,7 +30,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
 
         return map[s.slice(0, 3)] || input;
     }
-    
+
     function toMonthName(input: string) {
         if (!input) return '';
         const s = input.toString().trim().toLowerCase();

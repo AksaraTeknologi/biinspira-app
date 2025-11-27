@@ -21,7 +21,6 @@ export default function MarketingEval() {
         adEvaluation,
     } = props;
 
-    // checkout now
     const currentCheckout = adResult?.checkout_count || 0;
     const previousCheckoutFromResult = previousAdResult?.checkout_count || 0;
 
@@ -150,7 +149,7 @@ export default function MarketingEval() {
                                                 inputMode='numeric'
                                                 required
                                                 maxLength={13}
-                                                value={formatRupiah(data.current_checkout)}
+                                                value={data.current_checkout}
                                                 onChange={(e) =>
                                                     setData('current_checkout', toPlainNumber(e.target.value))
                                                 }
@@ -208,7 +207,7 @@ export default function MarketingEval() {
                                                 type='text'
                                                 inputMode='numeric'
                                                 maxLength={13}
-                                                value={formatRupiah(data.previous_checkout)}
+                                                value={data.previous_checkout}
                                                 readOnly={isPrevLocked}
                                                 required
                                                 onChange={(e) =>

@@ -108,6 +108,7 @@ class DashboardController extends Controller
     private function getTableData()
     {
         $query = AdResultPlatform::with([
+            'result:id,ad_plan_id,revenue',
             'result.plan.user:id,name',
             'platform:id,name',
         ])->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at')->orderByDesc('created_at');
@@ -136,6 +137,7 @@ class DashboardController extends Controller
                     'user' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
                     'status' => optional($item->platform)->name,
                     'cost' => 'Rp ' . number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
+                    'omset' => 'Rp ' . number_format((int) round(optional($item->result)->revenue ?? 0), 0, ',', '.'),
                     'date' => $item->created_at->format('F'),
                 ];
             })  // 🔥 SORT berdasarkan tanggal asli
@@ -184,7 +186,7 @@ class DashboardController extends Controller
                     'date' => optional($item->result->plan)->created_at ? optional($item->result->plan)->created_at->format('d M Y') : null,
                     'event_name' => optional($item->result->plan->event)->name,
                     'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
-                    'amount' => $item->total_cost,
+                    'amount' => (string) number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
                     'avatar' => optional($item->result->plan->user)->avatar ? optional($item->result->plan->user)->avatar : null,
                     'time' => optional($item->result->plan)->created_at->format('H:i:s'),
                     'color' => (function () use ($item) {

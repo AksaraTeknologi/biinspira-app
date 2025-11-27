@@ -27,9 +27,8 @@ interface HistorisProps {
 }
 
 export default function History({ className, dataHistoris }: HistorisProps) {
-
     // ---------------------------------------------------
-    // 🧠 State utama
+    //  State utama
     // ---------------------------------------------------
     const today = new Date();
 

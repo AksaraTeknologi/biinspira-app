@@ -117,6 +117,12 @@ export default function PerencanaanIklan() {
     const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
+        const current = formState[tab];
+        if (!current?.goals_id) {
+            toast.error('Tujuan iklan wajib dipilih!');
+            return;
+        }
+
         const filteredData = Object.entries(formState)
             .filter(([_, value]) => {
                 const entries = Object.entries(value || {});
@@ -523,7 +529,7 @@ export default function PerencanaanIklan() {
                                     <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            disabled={processing || !formState[tab]?.goals_id}
                                             className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={(e) => handleSubmit(e, 'draft')}
                                         >
@@ -531,7 +537,7 @@ export default function PerencanaanIklan() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            disabled={processing || !formState[tab]?.goals_id}
                                             className="bg-primary text-white hover:bg-blue-700"
                                             onClick={(e) => handleSubmit(e, 'next')}
                                         >
