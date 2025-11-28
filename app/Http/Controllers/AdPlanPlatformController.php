@@ -15,10 +15,11 @@ use Inertia\Inertia;
 
 class AdPlanPlatformController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
-        $today = now()->toDateString();
+        $start = $request->query('start_date');
+        $end   = $request->query('end_date');
         $query = AdPlan::with([
             'user',
             'event',
@@ -26,12 +27,17 @@ class AdPlanPlatformController extends Controller
             'planPlatforms.goal',
             'results'
         ])
-            ->whereHas('event', function ($q) use ($today) {
-                $q->where('end_date', '>=', $today);
-            })
             ->orderBy("created_at", "desc");
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id)->latest();
+        }
+        if ($start && $end) {
+            $query->whereHas('planPlatforms', function ($q) use ($start, $end) {
+                $q->where(function ($sub) use ($start, $end) {
+                    $sub->where('start_date', '<=', $end)
+                        ->where('end_date', '>=', $start);
+                });
+            });
         }
         $adPlans = $query->get();
         return Inertia::render(
@@ -39,6 +45,10 @@ class AdPlanPlatformController extends Controller
             [
                 'adPlans' => $adPlans,
                 'isAdmin' => $user->hasRole('admin'),
+                'filter' => [
+                    'start_date' => $start,
+                    'end_date' => $end,
+                ],
             ]
         );
     }
@@ -69,6 +79,40 @@ class AdPlanPlatformController extends Controller
             return back()->withErrors(['message' => 'Tidak ada data platform yang diisi.']);
         }
         $firstPlatform = reset($platformDataList);
+        foreach ($platformDataList as $platformKey => $platformData) {
+            $rules = [
+                'user_id' => 'required|exists:users,id',
+                'platform_id' => 'required|exists:master_platforms,id',
+                'goals_id' => $mode === 'draft'
+                    ? 'nullable|exists:master_ad_goals,id'
+                    : 'required|exists:master_ad_goals,id',
+                'start_date' => $mode === 'draft' ? 'nullable|date' : 'required|date',
+                'end_date' => $mode === 'draft'
+                    ? 'nullable|date'
+                    : 'required|date|after_or_equal:start_date',
+                'daily_budget' => 'nullable|numeric|min:0',
+                'audience_target' => 'nullable|numeric|min:0',
+                'audience_type' => 'nullable|in:targeted,broad,combined',
+                'type_audience_targeted' => 'nullable|string',
+                'name_audience_targeted' => 'nullable|string',
+                'age_targeted' => 'nullable|string',
+                'location_targeted' => 'nullable|string',
+                'age_broad' => 'nullable|string',
+                'location_broad' => 'nullable|string',
+                'event_id' => 'required|exists:master_events,id',
+            ];
+
+            $validator = Validator::make($platformData, $rules);
+
+            if ($validator->fails()) {
+                dd($validator->errors());
+                return back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('error', "Validasi gagal untuk platform: {$platformKey}");
+            }
+            $validatedData[$platformKey] = $validator->validated();
+        }
         $event = MasterEvent::findOrFail($firstPlatform['event_id']);
         $adPlan = AdPlan::create([
             'event_id' => $event->id,
@@ -79,45 +123,15 @@ class AdPlanPlatformController extends Controller
         if ($adPlan->wasRecentlyCreated) {
             $event->increment('batch');
         }
-        foreach ($platformDataList as $platformKey => $platformData) {
-            $rules = [
-                'user_id' => 'required|exists:users,id',
-                'platform_id' => 'required|exists:master_platforms,id',
-                'goals_id' => $mode === 'draft' ? 'nullable|exists:master_ad_goals,id' : 'required|exists:master_ad_goals,id',
-                'start_date' => $mode === 'draft' ? 'nullable|date' : 'required|date',
-                'end_date' => $mode === 'draft' ? 'nullable|date' : 'required|date|after_or_equal:start_date',
-                'daily_budget' => $mode === 'draft' ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
-                'audience_target' => $mode === 'draft' ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
-                'audience_type' => $mode === 'draft' ? 'nullable|in:targeted,broad,combined' : 'required|in:targeted,broad,combined',
-                'type_audience_targeted' => 'nullable|string',
-                'name_audience_targeted' => 'nullable|string|max:255',
-                'age_targeted' => 'nullable|string|max:255',
-                'location_targeted' => 'nullable|string|max:255',
-                'age_broad' => 'nullable|string|max:255',
-                'location_broad' => 'nullable|string|max:255',
-                'event_id' => 'required|exists:master_events,id',
-            ];
-
-            $validator = Validator::make($platformData, $rules);
-
-            if ($validator->fails()) {
-                return back()
-                    ->withErrors($validator)
-                    ->withInput()
-                    ->with('error', "Validasi gagal untuk platform: {$platformKey}");
-            }
-
-            $validated = $validator->validated();
-
+        foreach ($validatedData as $data) {
             AdPlanPlatform::updateOrCreate(
                 [
                     'ad_plan_id' => $adPlan->id,
-                    'platform_id' => $validated['platform_id'],
+                    'platform_id' => $data['platform_id'],
                 ],
-                $validated
+                $data
             );
         }
-
         $isAdmin = auth()->user()->hasRole('admin');
 
         if ($mode === 'draft') {
@@ -163,7 +177,7 @@ class AdPlanPlatformController extends Controller
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
             $q->where('name', 'admin');
         })->get();
-        // dd($adPlan);
+        // dd($platforms);
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,
             'events' => $events,
@@ -202,14 +216,15 @@ class AdPlanPlatformController extends Controller
             'platforms.*.audience_target' => 'required|numeric|min:0',
             'platforms.*.audience_type' => 'required|in:targeted,broad,combined',
             'platforms.*.type_audience_targeted' => 'nullable|string',
-            'platforms.*.name_audience_targeted' => 'nullable|string|max:255',
-            'platforms.*.age_targeted' => 'nullable|string|max:255',
-            'platforms.*.location_targeted' => 'nullable|string|max:255',
-            'platforms.*.age_broad' => 'nullable|string|max:255',
-            'platforms.*.location_broad' => 'nullable|string|max:255',
+            'platforms.*.name_audience_targeted' => 'nullable|string',
+            'platforms.*.age_targeted' => 'nullable|string|max:100',
+            'platforms.*.location_targeted' => 'nullable|string',
+            'platforms.*.age_broad' => 'nullable|string|max:100',
+            'platforms.*.location_broad' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
+            dd($validator->errors());
             return back()->withErrors($validator)->withInput();
         }
 
@@ -243,14 +258,12 @@ class AdPlanPlatformController extends Controller
                     'location_broad' => $platformData['location_broad'] ?? null,
                 ]
             );
-
-            // update tanggal terakhir
             $currentEndDate = Carbon::parse($platformData['end_date']);
             if (!$latestEndDate || $currentEndDate->greaterThan($latestEndDate)) {
                 $latestEndDate = $currentEndDate;
             }
         }
-
+        dd($platformData);
         $user = auth()->user();
         if ($mode === 'draft') {
             $route = $user->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index';

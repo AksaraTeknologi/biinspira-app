@@ -246,7 +246,7 @@ export default function PerencanaanIklan() {
                                                     <SelectValue placeholder="Jenis audiens" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain-lain'].map(
+                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - lain'].map(
                                                         (item) => (
                                                             <SelectItem key={item} value={item}>
                                                                 {item}

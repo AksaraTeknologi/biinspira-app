@@ -74,11 +74,8 @@ export default function MarketingEdit() {
         return value.replace(/[^0-9]/g, '');
     };
 
-    // parse DB strings into audience_details array of { id, type, names: string[] }
     function parseAudienceFromDb(typeStr?: string, nameStr?: string, existingDetails?: any[]) {
-        // If backend already supplied audience_details array (structured), prefer it
         if (Array.isArray(existingDetails) && existingDetails.length > 0) {
-            // Normalize to {id, type, names}
             return existingDetails.map((a: any) => ({
                 id: a.id || genId(),
                 type: a.type || '',
@@ -116,7 +113,6 @@ export default function MarketingEdit() {
             result.push({ id: genId(), type: t, names });
         }
 
-        // if both empty, return empty array
         return result;
     }
 
@@ -130,7 +126,6 @@ export default function MarketingEdit() {
             platform_id: existing.platform_id ?? platform.id,
             platform: platform,
             audience_details,
-            // keep other fields in existing (start_date, end_date, etc.)
         };
     });
 
@@ -138,8 +133,6 @@ export default function MarketingEdit() {
     const [isButtonActive, setIsButtonActive] = useState(false);
 
     const formatDate = (isoDate?: string) => (isoDate ? format(parseISO(isoDate), 'yyyy-MM-dd') : '');
-
-    // Inertia form initial data: map platforms to expected shape; audience_details contains {id,type,names}
     const { data, setData, post, processing } = useForm({
         event_id: adPlan.event?.id || '',
         ad_plan_id: adPlan.id,
@@ -153,7 +146,6 @@ export default function MarketingEdit() {
             daily_budget: toNumberOnly(p.daily_budget) || '',
             audience_target: p.audience_target || '',
             audience_type: p.audience_type || 'targeted',
-            // store DB-format strings too for compatibility but we'll keep audience_details authoritative
             type_audience_targeted: p.type_audience_targeted || '',
             name_audience_targeted: p.name_audience_targeted || '',
             audience_details: p.audience_details || [],
@@ -164,11 +156,8 @@ export default function MarketingEdit() {
         })),
     });
 
-    // activePlatform derived helper
     const activePlatform = data.platforms.find((p) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
     const tab = mergedPlatforms.find((p) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
-
-    // Keep date picker range in sync when switching platform
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({
         from: activePlatform?.start_date ? parseISO(activePlatform.start_date) : undefined,
         to: activePlatform?.end_date ? parseISO(activePlatform.end_date) : undefined,
@@ -181,7 +170,6 @@ export default function MarketingEdit() {
         });
     }, [activePlatform?.start_date, activePlatform?.end_date, activePlatformId]);
 
-    // Check if end date has passed to enable/disable next button
     useEffect(() => {
         if (!activePlatform?.end_date) {
             setIsButtonActive(false);
@@ -197,7 +185,6 @@ export default function MarketingEdit() {
         if (selected) setActivePlatformId(selected.platform_id);
     };
 
-    // helpers to update platforms array in form state by platform_id
     const updateActivePlatformField = (field: string, value: any) => {
         setData(
             'platforms',
@@ -221,7 +208,6 @@ export default function MarketingEdit() {
         );
     };
 
-    // Audience handlers use stable id
     const addAudience = () => {
         const newItem = { id: genId(), type: '', names: [] as string[] };
         setData(
@@ -384,13 +370,13 @@ export default function MarketingEdit() {
                                         <div key={audience.id} className="grid grid-cols-[1fr,1fr,auto] gap-3">
                                             <Select
                                                 value={audience.type || ''}
-                                                onValueChange={(value) => handleAudienceChange(audience.id, 'type', value)}
+                                                onValueChange={(value) => { handleAudienceChange(audience.id, 'type', value) }}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Jenis audiens" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map(
+                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - lain'].map(
                                                         (item) => (
                                                             <SelectItem key={item} value={item}>
                                                                 {item}

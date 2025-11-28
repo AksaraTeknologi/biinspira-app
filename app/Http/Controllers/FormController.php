@@ -31,7 +31,7 @@ class FormController extends Controller
             'evaluations'
         ])
             ->where('id', $id)
-            ->first(); // gunakan first, bukan get()
+            ->first();
 
         return Inertia::render('admin/marketing-show', [
             'data' => [

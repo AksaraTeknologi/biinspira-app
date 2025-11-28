@@ -2,10 +2,17 @@
 
 import DeleteButton from '@/components/delete-button';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Eye, Pencil } from 'lucide-react';
+import { format } from 'date-fns';
+import { CalendarIcon, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import { DateRange } from 'react-day-picker';
 
 interface Event {
     id: number;
@@ -49,6 +56,17 @@ const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') 
 
 export default function Marketing() {
     const { adPlans = [], isAdmin } = usePage<{ adPlans?: AdPlan[]; isAdmin?: boolean }>().props;
+    const { filters } = usePage().props as any;
+
+    const [date, setDate] = useState<DateRange | undefined>(() => {
+        if (filters?.start_date && filters?.end_date) {
+            return {
+                from: new Date(filters.start_date),
+                to: new Date(filters.end_date),
+            };
+        }
+        return undefined;
+    });
 
     const handleAddAd = () => {
         router.visit(route(isAdmin ? 'admin.marketing.create' : 'user.marketing.create'));
@@ -58,6 +76,32 @@ export default function Marketing() {
         if (!dateString) return '-';
         const date = new Date(dateString);
         return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const applyFilter = () => {
+        router.get(
+            route('admin.marketing.index'),
+            {
+                start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+                end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : '',
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    const resetFilter = () => {
+        setDate(undefined);
+        router.get(
+            route('admin.marketing.index'),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
     };
 
     return (
@@ -72,6 +116,100 @@ export default function Marketing() {
                         >
                             + Tambah Iklan
                         </Button>
+                    )}
+                </div>
+
+                {/* Filter Section */}
+                <div className="rounded-lg border bg-white p-4 shadow-sm dark:bg-gray-900">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                        <div className="grid gap-2">
+                            <Label htmlFor="date-range" className="text-sm font-medium">
+                                Rentang Tanggal
+                            </Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        id="date-range"
+                                        variant={'outline'}
+                                        className={cn(
+                                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                                            'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
+                                            !date && 'text-muted-foreground',
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {date?.from ? (
+                                            date.to ? (
+                                                <>
+                                                    {format(date.from, 'dd MMM yyyy')} - {format(date.to, 'dd MMM yyyy')}
+                                                </>
+                                            ) : (
+                                                format(date.from, 'dd MMM yyyy')
+                                            )
+                                        ) : (
+                                            <span>Pilih rentang tanggal</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
+                                    <div className="bg-white dark:bg-gray-900">
+                                        <Calendar
+                                            mode="range"
+                                            selected={date}
+                                            onSelect={setDate}
+                                            numberOfMonths={2}
+                                            className={cn(
+                                                'rounded-xl p-2 text-sm',
+                                                '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
+                                                '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
+                                                '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
+                                                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
+                                                '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
+                                            )}
+                                            components={{
+                                                IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+                                                IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+                                            }}
+                                            formatters={{
+                                                formatCaption: (date, options) => {
+                                                    return (
+                                                        <div className="flex items-center justify-center">
+                                                            <span className="font-medium">
+                                                                {format(date, 'MMMM yyyy', { locale: options?.locale })}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                },
+                                            }}
+                                        />
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button onClick={applyFilter} disabled={!date?.from || !date?.to} className="bg-primary hover:bg-primary/90">
+                                Terapkan Filter
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={resetFilter}
+                                className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
+                            >
+                                Reset
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Selected Date Info */}
+                    {date?.from && date?.to && (
+                        <div className="mt-3 text-sm text-muted-foreground">
+                            Menampilkan iklan dengan periode:{' '}
+                            <strong>
+                                {format(date.from, 'dd MMM yyyy')} - {format(date.to, 'dd MMM yyyy')}
+                            </strong>
+                        </div>
                     )}
                 </div>
 

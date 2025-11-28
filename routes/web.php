@@ -96,7 +96,7 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
     Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
-    Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('admin.marketing.print');
+    Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('marketing.print');
 
     Route::controller(AdPlanPlatformController::class)->group(function () {
         Route::get('/marketing/list', 'index')->name('marketing.index');
