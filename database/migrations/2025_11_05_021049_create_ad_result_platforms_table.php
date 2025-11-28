@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('ad_result_id')->constrained('ad_results')->cascadeOnDelete();
             $table->foreignId('platform_id')->constrained('master_platforms')->cascadeOnDelete();
-            $table->longText('result')->nullable(); // tergantung goalnya apa
+            $table->integer('result')->nullable(); // tergantung goalnya apa
             $table->decimal('total_cost', 10, 2);
             $table->timestamps();
         });
