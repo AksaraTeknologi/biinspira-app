@@ -263,7 +263,7 @@ class AdPlanPlatformController extends Controller
                 $latestEndDate = $currentEndDate;
             }
         }
-        dd($platformData);
+        // dd($platformData);
         $user = auth()->user();
         if ($mode === 'draft') {
             $route = $user->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index';
