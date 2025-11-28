@@ -242,10 +242,10 @@ export default function MarketingForm2() {
                                                         <Label>Hasil Iklan</Label>
                                                         <Input
                                                             type="text"
-                                                            inputMode="numeric"
-                                                            placeholder="Rp.0"
-                                                            value={formatRupiah(platformData[p.id]?.result_ads) || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', toPlainNumber(e.target.value))}
+                                                            inputMode="text"
+                                                            placeholder="Masukkan hasil iklan"
+                                                            value={platformData[p.id]?.result_ads || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', e.target.value)}
                                                         />
                                                     </div>
                                                 )}

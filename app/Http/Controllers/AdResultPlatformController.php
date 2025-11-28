@@ -61,7 +61,7 @@ class AdResultPlatformController extends Controller
             'platforms.*.reach'           => 'required|integer|min:0',
             'platforms.*.impressions'     => 'required|integer|min:0',
             'platforms.*.cost_per_result' => 'required|integer|min:0',
-            'platforms.*.result_ads'      => 'nullable|integer|min:0',
+            'platforms.*.result_ads'      => 'nullable|string|min:0',
             'platforms.*.clicks'          => 'nullable|integer|min:0',
             'platforms.*.likes'           => 'nullable|integer|min:0',
             'platforms.*.saves'           => 'nullable|integer|min:0',
@@ -112,7 +112,7 @@ class AdResultPlatformController extends Controller
                     'folows'                => $platformData['folows'] ?? 0,
                     'direct_messages'       => $platformData['direct_messages'] ?? 0,
                     'external_link_clicks'  => $platformData['external_link_clicks'] ?? 0,
-                    'result_ads'            => $platformData['result_ads'] ?? 0,
+                    'result_ads'            => $platformData['result_ads'] ?? '',
                     'click_whatsapp'        => $platformData['click_whatsapp'] ?? 0,
                     'chat_admin'        => $platformData['chat_admin'] ?? 0,
                 ]
