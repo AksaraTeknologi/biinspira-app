@@ -93,13 +93,13 @@
 <body>
 
 <div class="title">Marketing Report</div>
-<div class="sub">Generated: {{ date('d M Y') }}</div>
+<div class="sub">Dibuat: {{ date('d M Y') }}</div>
 
 {{-- ======================= --}}
 {{-- EVENT / GENERAL INFO --}}
 {{-- ======================= --}}
 <div class="section">
-    <h2>General Information</h2>
+    <h2>Informasi Umum</h2>
     <table>
         <tr>
             <th>User</th>
@@ -122,15 +122,15 @@
 {{-- PLATFORM DETAILS --}}
 {{-- ======================= --}}
 <div class="section">
-    <h2>Platform Details</h2>
+    <h2>Detail Platform</h2>
 
     @foreach($data['platforms'] as $pf)
         <table style="margin-bottom: 15px;">
             <tr>
-                <th>Start Date</th>
+                <th>Tanggal Mulai</th>
                 <td>{{ $pf['start_date'] }}</td>
 
-                <th>End Date</th>
+                <th>Tanggal Selesai</th>
                 <td>{{ $pf['end_date'] }}</td>
             </tr>
 
@@ -138,44 +138,44 @@
                 <th>Platform</th>
                 <td>{{ $pf['platform_name'] }}</td>
 
-                <th>Goal</th>
+                <th>Tujuan Iklan</th>
                 <td>{{ $pf['goal_name'] }}</td>
             </tr>
 
             <tr>
-                <th>Audience Type</th>
+                <th>Tipe Audiens</th>
                 <td>{{ $pf['targetType'] }}</td>
 
-                <th>Audience Target</th>
+                <th>Target Audiens</th>
                 <td>{{ $pf['targetValue'] }}</td>
             </tr>
 
             <tr>
-                <th>Daily Budget</th>
-                <td>{{ $pf['daily_budget'] }}</td>
+                <th>Budget Harian</th>
+                <td>Rp. {{ $pf['daily_budget'] }}</td>
 
-                <th>Age Broad</th>
+                <th>Usia Broad</th>
                 <td>{{ $pf['age_broad'] }}</td>
             </tr>
 
             <tr>
-                <th>Location Broad</th>
+                <th>Lokasi Broad</th>
                 <td>{{ $pf['location_broad'] }}</td>
 
-                <th>Age Targeted</th>
+                <th>Usia Targeted</th>
                 <td>{{ $pf['age_targeted'] }}</td>
             </tr>
 
             <tr>
-                <th>Location Targeted</th>
+                <th>Lokasi Targeted</th>
                 <td>{{ $pf['location_targeted'] }}</td>
 
-                <th>Targeted Type</th>
+                <th>Tipe Targeted</th>
                 <td>{{ $pf['type_targeted'] }}</td>
             </tr>
 
             <tr>
-                <th>Targeted Name</th>
+                <th>Nama Targeted</th>
                 <td colspan="3">{{ $pf['name_targeted'] }}</td>
             </tr>
         </table>
@@ -193,11 +193,11 @@
     @foreach($data['result'] as $result)
         <table style="margin-bottom: 10px;">
             <tr>
-                <th>Checkout Count</th>
+                <th>Jumlah Checkout</th>
                 <td>{{ $result['checkout_count'] }}</td>
 
-                <th>Revenue</th>
-                <td>{{ $result['revenue'] }}</td>
+                <th>Omset Per Event</th>
+                <td>Rp. {{ $result['revenue'] }}</td>
             </tr>
         </table>
 
@@ -209,11 +209,8 @@
 
             <table style="margin-bottom: 10px;">
                 <tr>
-                    <th>Result</th>
-                    <td>{{ $rp['result'] }}</td>
-
-                    <th>Total Cost</th>
-                    <td>{{ $rp['total_cost'] }}</td>
+                    <th>Total Biaya Iklan</th>
+                    <td>Rp. {{$rp['total_cost'] }}</td>
                 </tr>
             </table>
 
@@ -227,7 +224,7 @@
                             <tr>
                                 <th>Reach</th>
                                 <th>Impressions</th>
-                                <th>CPR</th>
+                                <th>Cost Per Result</th>
                                 <th>Clicks</th>
                                 <th>Likes</th>
                                 <th>Saves</th>
@@ -238,7 +235,7 @@
                             <tr>
                                 <td>{{ $m['reach'] }}</td>
                                 <td>{{ $m['impressions'] }}</td>
-                                <td>{{ $m['cpr'] }}</td>
+                                <td>Rp. {{ $m['cpr'] }}</td>
                                 <td>{{ $m['clicks'] }}</td>
                                 <td>{{ $m['likes'] }}</td>
                                 <td>{{ $m['saves'] }}</td>

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('folows')->nullable();
             $table->integer('direct_messages')->nullable();
             $table->integer('external_link_clicks')->nullable();
-            $table->longText('result_ads')->nullable();
+            $table->integer('result_ads')->nullable();
             $table->integer('click_whatsapp')->nullable();
             $table->integer('chat_admin')->nullable();
             $table->timestamps();

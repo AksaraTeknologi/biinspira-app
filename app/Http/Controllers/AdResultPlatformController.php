@@ -61,7 +61,7 @@ class AdResultPlatformController extends Controller
             'platforms.*.reach'           => 'required|integer|min:0',
             'platforms.*.impressions'     => 'required|integer|min:0',
             'platforms.*.cost_per_result' => 'required|integer|min:0',
-            'platforms.*.result_ads'      => 'nullable|string|min:0',
+            'platforms.*.result_ads'      => 'nullable|integer|min:0',
             'platforms.*.clicks'          => 'nullable|integer|min:0',
             'platforms.*.likes'           => 'nullable|integer|min:0',
             'platforms.*.saves'           => 'nullable|integer|min:0',

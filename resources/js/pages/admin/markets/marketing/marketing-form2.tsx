@@ -244,8 +244,8 @@ export default function MarketingForm2() {
                                                             type="text"
                                                             inputMode="text"
                                                             placeholder="Masukkan hasil iklan"
-                                                            value={platformData[p.id]?.result_ads || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', e.target.value)}
+                                                            value={formatNol(platformData[p.id]?.result_ads) || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'result_ads', toPlainNumber(e.target.value))}
                                                         />
                                                     </div>
                                                 )}

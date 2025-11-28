@@ -105,7 +105,7 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
-                dd($validator->errors());
+                // dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()
@@ -224,7 +224,7 @@ class AdPlanPlatformController extends Controller
         ]);
 
         if ($validator->fails()) {
-            dd($validator->errors());
+            // dd($validator->errors());
             return back()->withErrors($validator)->withInput();
         }
 
@@ -263,7 +263,7 @@ class AdPlanPlatformController extends Controller
                 $latestEndDate = $currentEndDate;
             }
         }
-        dd($platformData);
+        // dd($platformData);
         $user = auth()->user();
         if ($mode === 'draft') {
             $route = $user->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index';
