@@ -96,11 +96,11 @@ export default function EventPage() {
       header: 'Nama',
       cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
     },
-    {
-      accessorKey: 'batch',
-      header: 'Batch',
-      cell: ({ row }) => <div className="font-medium">{row.original.batch}</div>,
-    },
+    // {
+    //   accessorKey: 'batch',
+    //   header: 'Batch',
+    //   cell: ({ row }) => <div className="font-medium">{row.original.batch}</div>,
+    // },
     {
       accessorKey: 'end_date',
       header: 'Tanggal Berakhir',

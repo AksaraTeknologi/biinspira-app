@@ -219,7 +219,7 @@ export default function Marketing() {
                             <TableRow>
                                 <TableHead>Aksi</TableHead>
                                 <TableHead>Event</TableHead>
-                                <TableHead>Batch</TableHead>
+                                {/* <TableHead>Batch</TableHead> */}
                                 <TableHead>Platform</TableHead>
                                 <TableHead>Goal</TableHead>
                                 <TableHead>Tipe Audiens</TableHead>
@@ -268,7 +268,7 @@ export default function Marketing() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plan.event?.name || '-'}</TableCell>
-                                            <TableCell>{plan.event?.batch || '-'}</TableCell>
+                                            {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
                                             <TableCell>{platforms || '-'}</TableCell>
                                             <TableCell>{goals || '-'}</TableCell>
                                             <TableCell>{audienceTypes || '-'}</TableCell>
