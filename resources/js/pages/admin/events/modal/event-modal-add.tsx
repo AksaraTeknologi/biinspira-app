@@ -41,7 +41,7 @@ export function AddEventModal({ onSuccess }: AddEventModalProps) {
         resolver: zodResolver(schema),
         defaultValues: {
             name: '',
-            batch: '',
+            batch: '0',
             end_date: '',
         },
     });
