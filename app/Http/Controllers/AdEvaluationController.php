@@ -53,11 +53,9 @@ class AdEvaluationController extends Controller
 
     public function evaluationForm($id)
     {
-        // --- 1. Ambil rencana sekarang
         $currentPlan = AdPlan::with('event')->findOrFail($id);
-
-        // --- 2. Cari evaluasi sebelumnya berdasarkan event & status
         $previousEvaluation = AdEvaluation::with(['plan.event'])
+            ->where('created_at', '<', $currentPlan->created_at)
             ->whereHas('plan', function ($q) use ($currentPlan) {
                 $q->where('event_id', $currentPlan->event_id)
                     ->where('status', 'completed');
@@ -118,7 +116,6 @@ class AdEvaluationController extends Controller
             ->first();
 
         $platforms = MasterPlatform::select('id', 'name')->get();
-
         return Inertia::render('admin/markets/marketing/marketing-eval', [
             'currentPlan'        => $currentPlan,
             'previousPlan'       => $previousPlan,

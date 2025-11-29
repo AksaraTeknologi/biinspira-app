@@ -12,71 +12,39 @@ import { ArrowLeft, Save } from 'lucide-react';
 export default function MarketingEval() {
     const { props }: any = usePage();
     const { isAdmin } = props;
-    const {
-        currentPlan,
-        prevEvaluation,
-        previousPlan,
-        adResult,
-        previousAdResult,
-        adEvaluation,
-    } = props;
+    const { currentPlan, prevEvaluation, previousPlan, adResult, previousAdResult, adEvaluation } = props;
 
     const currentCheckout = adResult?.checkout_count || 0;
     const previousCheckoutFromResult = previousAdResult?.checkout_count || 0;
 
     // === Determine CASE ===
-    const isFirstBatch = !!prevEvaluation; // TRUE = event 0 → 1
+    const isFirstBatch = prevEvaluation === null;
 
     // === Choose previous event name ===
-    const previousEventName = isFirstBatch
-        ? prevEvaluation?.plan?.event?.name
-        : previousPlan?.event?.name;
-
-    // === Choose previous checkout value ===
-    const previousCheckoutValue = isFirstBatch
-        ? prevEvaluation?.previous_checkout ?? previousCheckoutFromResult
-        : previousCheckoutFromResult;
+    const previousEventName = isFirstBatch ? prevEvaluation?.plan?.event?.name : previousPlan?.event?.name;
+    const previousCheckoutValue = isFirstBatch ? (adEvaluation?.previous_checkout ?? previousCheckoutFromResult) : previousCheckoutFromResult;
 
     // === Previous performance ===
-    const prevAdPerf = isFirstBatch
-        ? prevEvaluation?.previous_ad_performance
-        : prevEvaluation?.previous_ad_performance || '';
-
-    const prevOtherPerf = isFirstBatch
-        ? prevEvaluation?.previous_other_performance
-        : prevEvaluation?.previous_other_performance || '';
+    const previousAdPerfValue = isFirstBatch ? adEvaluation?.previous_ad_performance : prevEvaluation?.current_ad_performance;
+    const previousOtherPerfValue = isFirstBatch ? adEvaluation?.previous_other_performance : prevEvaluation?.current_other_performance;
 
     // === form ===
     const { data, setData, post, processing } = useForm({
         ad_plan_id: currentPlan.id,
         current_event_name: currentPlan.event.name,
-
-        // AUTO from backend
-        previous_event_name: previousEventName || currentPlan.event.name ||'-',
-
+        previous_event_name: previousEventName || currentPlan.event.name || '-',
         current_checkout: adEvaluation?.current_checkout ?? currentCheckout,
-        previous_checkout: adEvaluation?.previous_checkout ?? previousCheckoutValue,
-
-        previous_ad_performance:
-            adEvaluation?.previous_ad_performance ?? prevAdPerf,
-
-        current_ad_performance:
-            adEvaluation?.current_ad_performance || '',
-
-        previous_other_performance:
-            adEvaluation?.previous_other_performance ?? prevOtherPerf,
-
-        current_other_performance:
-            adEvaluation?.current_other_performance || '',
-
+        previous_checkout: previousCheckoutValue,
+        previous_ad_performance: previousAdPerfValue,
+        current_ad_performance: adEvaluation?.current_ad_performance || '',
+        previous_other_performance: previousOtherPerfValue,
+        current_other_performance: adEvaluation?.current_other_performance || '',
         next_ad_strategy: adEvaluation?.next_ad_strategy || '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const submitRoute = isAdmin
-            ? route('admin.marketing.evaluation.storeOrUpdate')
-            : route('user.marketing.evaluation.storeOrUpdate');
+        const submitRoute = isAdmin ? route('admin.marketing.evaluation.storeOrUpdate') : route('user.marketing.evaluation.storeOrUpdate');
 
         post(submitRoute);
     };
@@ -87,11 +55,7 @@ export default function MarketingEval() {
     ];
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
-
-        // Hapus semua selain angka dan koma
         let numberString = value.toString().replace(/[^,\d]/g, '');
-
-        // Hapus decimal jika ada, contoh: "10000.50" → "10000"
         numberString = numberString.split(',')[0].split('.')[0];
 
         const remainder = numberString.length % 3;
@@ -101,7 +65,6 @@ export default function MarketingEval() {
         if (thousands) {
             rupiah += (remainder ? '.' : '') + thousands.join('.');
         }
-
         return rupiah ? 'Rp ' + rupiah : '';
     };
 
@@ -115,7 +78,7 @@ export default function MarketingEval() {
         value = value.split('.')[0].split(',')[0];
         return value.replace(/[^0-9]/g, '');
     };
-    const isPrevLocked = isFirstBatch;
+    const isPrevLocked = !isFirstBatch;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -131,12 +94,10 @@ export default function MarketingEval() {
                         <CardContent className="space-y-8">
                             {/* === Event Sekarang & Sebelumnya === */}
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
                                 {/* === Event Sekarang === */}
                                 <div>
                                     <h3 className="mb-2 font-semibold text-foreground">Event Sekarang</h3>
                                     <div className="space-y-3">
-
                                         <div>
                                             <Label>Nama Event</Label>
                                             <Input value={data.current_event_name} readOnly />
@@ -145,14 +106,12 @@ export default function MarketingEval() {
                                         <div>
                                             <Label>Checkout</Label>
                                             <Input
-                                                type='text'
-                                                inputMode='numeric'
+                                                type="text"
+                                                inputMode="numeric"
                                                 required
                                                 maxLength={13}
                                                 value={data.current_checkout}
-                                                onChange={(e) =>
-                                                    setData('current_checkout', toPlainNumber(e.target.value))
-                                                }
+                                                onChange={(e) => setData('current_checkout', toPlainNumber(e.target.value))}
                                             />
                                         </div>
 
@@ -163,9 +122,7 @@ export default function MarketingEval() {
                                                 rows={3}
                                                 required
                                                 value={data.current_ad_performance}
-                                                onChange={(e) =>
-                                                    setData('current_ad_performance', e.target.value)
-                                                }
+                                                onChange={(e) => setData('current_ad_performance', e.target.value)}
                                             />
                                         </div>
 
@@ -176,9 +133,7 @@ export default function MarketingEval() {
                                                 rows={3}
                                                 required
                                                 value={data.current_other_performance}
-                                                onChange={(e) =>
-                                                    setData('current_other_performance', e.target.value)
-                                                }
+                                                onChange={(e) => setData('current_other_performance', e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -188,31 +143,25 @@ export default function MarketingEval() {
                                 <div>
                                     <h3 className="mb-2 font-semibold text-foreground">Event Sebelumnya</h3>
                                     <div className="space-y-3">
-
                                         <div>
                                             <Label>Nama Event</Label>
                                             <Input
                                                 value={data.previous_event_name}
                                                 readOnly={isPrevLocked}
-                                                onChange={(e) =>
-                                                    !isPrevLocked &&
-                                                    setData('previous_event_name', e.target.value)
-                                                }
+                                                onChange={(e) => !isPrevLocked && setData('previous_event_name', e.target.value)}
                                             />
                                         </div>
 
                                         <div>
                                             <Label>Checkout Sebelumnya</Label>
                                             <Input
-                                                type='text'
-                                                inputMode='numeric'
+                                                type="text"
+                                                inputMode="numeric"
                                                 maxLength={13}
                                                 value={data.previous_checkout}
                                                 readOnly={isPrevLocked}
                                                 required
-                                                onChange={(e) =>
-                                                    setData('previous_checkout', toPlainNumber(e.target.value))
-                                                }
+                                                onChange={(e) => setData('previous_checkout', toPlainNumber(e.target.value))}
                                             />
                                         </div>
 
@@ -223,9 +172,7 @@ export default function MarketingEval() {
                                                 rows={3}
                                                 required
                                                 value={data.previous_ad_performance}
-                                                onChange={(e) =>
-                                                    setData('previous_ad_performance', e.target.value)
-                                                }
+                                                onChange={(e) => setData('previous_ad_performance', e.target.value)}
                                             />
                                         </div>
 
@@ -236,9 +183,7 @@ export default function MarketingEval() {
                                                 rows={3}
                                                 required
                                                 value={data.previous_other_performance}
-                                                onChange={(e) =>
-                                                    setData('previous_other_performance', e.target.value)
-                                                }
+                                                onChange={(e) => setData('previous_other_performance', e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -252,9 +197,7 @@ export default function MarketingEval() {
                                     rows={4}
                                     value={data.next_ad_strategy}
                                     required
-                                    onChange={(e) =>
-                                        setData('next_ad_strategy', e.target.value)
-                                    }
+                                    onChange={(e) => setData('next_ad_strategy', e.target.value)}
                                 />
                             </div>
 
@@ -269,16 +212,11 @@ export default function MarketingEval() {
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                 </Button>
 
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="bg-blue-600 text-white hover:bg-blue-700"
-                                >
+                                <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
                                     {processing ? 'Menyimpan...' : 'Simpan Evaluasi'}
                                     <Save className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
-
                         </CardContent>
                     </Card>
                 </form>
