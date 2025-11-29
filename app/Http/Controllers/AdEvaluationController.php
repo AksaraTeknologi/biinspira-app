@@ -188,10 +188,10 @@ class AdEvaluationController extends Controller
             'current_event_name' => ['required', 'string', 'max:255'],
             'previous_checkout' => ['required', 'integer', 'min:0'],
             'current_checkout' => ['required', 'integer', 'min:0'],
-            'previous_ad_performance' => ['nullable', 'string', 'max:255'],
-            'current_ad_performance' => ['required', 'string', 'max:255'],
-            'previous_other_performance' => ['nullable', 'string', 'max:255'],
-            'current_other_performance' => ['required', 'string', 'max:255'],
+            'previous_ad_performance' => ['nullable', 'string'],
+            'current_ad_performance' => ['required', 'string'],
+            'previous_other_performance' => ['nullable', 'string'],
+            'current_other_performance' => ['required', 'string'],
             'next_ad_strategy' => ['required', 'string'],
         ]);
 
