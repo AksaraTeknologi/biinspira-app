@@ -129,7 +129,9 @@ export default function MarketingEdit() {
         };
     });
 
-    const [activePlatformId, setActivePlatformId] = useState(mergedPlatforms[0]?.platform_id || '');
+    const [activePlatformId, setActivePlatformId] = useState(
+        mergedPlatforms.find((p: any) => p.id)?.platform_id || mergedPlatforms[0]?.platform_id || '',
+    );
     const [isButtonActive, setIsButtonActive] = useState(false);
 
     const formatDate = (isoDate?: string) => (isoDate ? format(parseISO(isoDate), 'yyyy-MM-dd') : '');
@@ -370,7 +372,9 @@ export default function MarketingEdit() {
                                         <div key={audience.id} className="grid grid-cols-[1fr,1fr,auto] gap-3">
                                             <Select
                                                 value={audience.type || ''}
-                                                onValueChange={(value) => { handleAudienceChange(audience.id, 'type', value) }}
+                                                onValueChange={(value) => {
+                                                    handleAudienceChange(audience.id, 'type', value);
+                                                }}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Jenis audiens" />
@@ -487,7 +491,11 @@ export default function MarketingEdit() {
 
                     <div className="mt-4">
                         <Label>Tujuan Iklan</Label>
-                        <Select required value={String(activePlatform?.goals_id || '')} onValueChange={(val) => updateActivePlatformField('goals_id', val)}>
+                        <Select
+                            required
+                            value={String(activePlatform?.goals_id || '')}
+                            onValueChange={(val) => updateActivePlatformField('goals_id', val)}
+                        >
                             <SelectTrigger className={!activePlatform?.goals_id ? 'border-red-500' : ''}>
                                 <SelectValue placeholder="Pilih tujuan iklan" />
                             </SelectTrigger>
