@@ -123,21 +123,21 @@ export default function MarketingForm2() {
             const r = existingData.adResultPlatform || {};
 
             newPlatformData[p.id] = {
-                total_cost: r.total_cost || '',
-                reach: m.reach || '',
-                impressions: m.impressions || '',
-                cost_per_result: m.cost_per_result || '',
-                result_ads: m.result_ads || '',
-                clicks: m.clicks || '',
-                likes: m.likes || '',
-                saves: m.saves || '',
-                shares: m.shares || '',
-                profile_visits: m.profile_visits || '',
-                folows: m.folows || '',
-                direct_messages: m.direct_messages || '',
-                external_link_clicks: m.external_link_clicks || '',
-                click_whatsapp: m.click_whatsapp || '',
-                chat_admin: m.chat_admin || '',
+                total_cost: r.total_cost || 0,
+                reach: m.reach || 0,
+                impressions: m.impressions || 0,
+                cost_per_result: m.cost_per_result || 0,
+                result_ads: m.result_ads,
+                clicks: m.clicks || 0,
+                likes: m.likes || 0,
+                saves: m.saves || 0,
+                shares: m.shares || 0,
+                profile_visits: m.profile_visits || 0,
+                folows: m.folows || 0,
+                direct_messages: m.direct_messages || 0,
+                external_link_clicks: m.external_link_clicks || 0,
+                click_whatsapp: m.click_whatsapp || 0,
+                chat_admin: m.chat_admin || 0,
             };
         });
 

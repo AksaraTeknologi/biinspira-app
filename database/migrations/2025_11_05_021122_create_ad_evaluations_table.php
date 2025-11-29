@@ -17,11 +17,11 @@ return new class extends Migration
             $table->string('previous_event_name'); // integrasi dengan data dari event batch sebelumnya
             $table->integer('previous_checkout');
             $table->integer('current_checkout'); // integrasi dengan data dari data event batch sebelumnya
-            $table->string('previous_ad_performance');
-            $table->string('current_ad_performance');
-            $table->string('previous_other_performance');
-            $table->string('current_other_performance');
-            $table->string('next_ad_strategy');
+            $table->longText('previous_ad_performance');
+            $table->longText('current_ad_performance');
+            $table->longText('previous_other_performance');
+            $table->longText('current_other_performance');
+            $table->longText('next_ad_strategy');
             $table->timestamps();
         });
     }

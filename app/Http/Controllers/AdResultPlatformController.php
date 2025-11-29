@@ -112,7 +112,7 @@ class AdResultPlatformController extends Controller
                     'folows'                => $platformData['folows'] ?? 0,
                     'direct_messages'       => $platformData['direct_messages'] ?? 0,
                     'external_link_clicks'  => $platformData['external_link_clicks'] ?? 0,
-                    'result_ads'            => $platformData['result_ads'] ?? '',
+                    'result_ads'            => $platformData['result_ads'] ?? 0,
                     'click_whatsapp'        => $platformData['click_whatsapp'] ?? 0,
                     'chat_admin'        => $platformData['chat_admin'] ?? 0,
                 ]
