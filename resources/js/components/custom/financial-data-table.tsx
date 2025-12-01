@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import TableCustom from "../table-custom";
+import { Fragment, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import {
     Select, SelectTrigger, SelectValue,
@@ -9,21 +8,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { usePage } from '@inertiajs/react';
 import { SharedData } from "@/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 interface FinanceProps {
-    tableColoms: {
-        header: string;
-        accessor: string;
-    }[];
     tableData: any[];
     className?: string;
 }
 
 export default function FinancialDataTable({
-    tableColoms,
     tableData,
     className,
 }: FinanceProps) {
+
     const page = usePage<SharedData>().props;
     const role = page.auth.role[0];
     const isAdmin = role === 'admin';
@@ -92,6 +88,40 @@ export default function FinancialDataTable({
     }, [tableData, selectedMonth, selectedUser]);
 
 
+
+    // -----------------------------
+    // 🔹 GROUPING DATA BERDASARKAN plan_id
+    // -----------------------------
+    const data = useMemo(() => {
+        const grouped: {
+            plan_id: string;
+            user: string;
+            omset: number;
+            rows: any[];
+        }[] = [];
+
+        filteredData.forEach((item) => {
+            const existingGroup = grouped.find(g => g.plan_id === item.plan_id);
+
+            const omsetNumber =
+                Number(item.omset.toString().replace(/[^0-9]/g, "")) || 0;
+
+            if (existingGroup) {
+                existingGroup.omset += omsetNumber;
+                existingGroup.rows.push(item);
+            } else {
+                grouped.push({
+                    plan_id: item.plan_id,
+                    user: item.user,
+                    omset: omsetNumber,
+                    rows: [item],
+                });
+            }
+        });
+
+        return grouped;
+    }, [filteredData]);
+
     return (
         <Card className={className}>
             <CardHeader>
@@ -158,31 +188,94 @@ export default function FinancialDataTable({
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        {/* 🔹 Filter User */}
-                        {/* <Select defaultValue={selectedUser} onValueChange={setSelectedUser}>
-                            <SelectTrigger className="w-fit">
-                                <SelectValue placeholder="Pilih User" />
-                            </SelectTrigger>
-                            <SelectContent className="h-40" align="end">
-                                {availableUsers.map((u) => (
-                                    <SelectItem key={u} value={u}>{u}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select> */}
-
                     </div>
-
                 </div>
             </CardHeader>
 
             <CardContent>
-                <TableCustom
-                    columns={tableColoms}
-                    data={filteredData}
-                    className="max-h-60 w-full"
-                    body="max-h-57 overflow-y-auto"
-                />
+                <div className="rounded-lg border dark:border-muted-foreground shadow-sm max-h-57 overflow-y-auto" style={{ scrollbarWidth:"none" }}>
+                    <Table className="w-full">
+                        <TableHeader>
+                            <TableRow className="bg-gray-100">
+                                <TableHead>No</TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Pengeluaran</TableHead>
+                                <TableHead>Omset</TableHead>
+                            </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                            {data.map((row, index) => {
+                                const rowSpan = row.rows.length;
+
+                                return (
+                                    <Fragment key={index}>
+                                        {/* ROW PERTAMA */}
+                                        <TableRow className="bg-input text-start">
+                                            <TableCell
+                                                rowSpan={rowSpan}
+                                                className="text-center align-middle font-semibold"
+                                            >
+                                                {index + 1}
+                                            </TableCell>
+
+                                            <TableCell
+                                                rowSpan={rowSpan}
+                                                className="text-center align-middle font-semibold"
+                                            >
+                                                {row.user}
+                                            </TableCell>
+
+                                            {/* ITEM PERTAMA */}
+                                            <TableCell>
+                                                <div className={`text-center text-white px-4 py-1 rounded-full w-full
+                                                    ${row.rows[0].status === "Business Suite"
+                                                        ? "bg-chart-1"
+                                                        : row.rows[0].status === "Boost Post"
+                                                            ? "bg-chart-3" : "bg-chart-2"
+                                                    }`}
+                                                >
+                                                    {row.rows[0].status}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{row.rows[0].cost}</TableCell>
+
+                                            {/* OMSET */}
+                                            <TableCell
+                                                rowSpan={rowSpan}
+                                                className="text-center align-middle font-semibold"
+                                            >
+                                                {row.omset.toLocaleString('id-ID', {
+                                                    style: 'currency',
+                                                    currency: 'IDR'
+                                                }).replace(/,00$/, '')}
+                                            </TableCell>
+                                        </TableRow>
+
+                                        {/* SISA ROW */}
+                                        {row.rows.slice(1).map((item, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell>
+                                                    <div className={`text-center text-white px-4 py-1 rounded-full w-full
+                                                        ${item.status === "Business Suite"
+                                                            ? "bg-chart-1"
+                                                            : item.status === "Boost Post"
+                                                                ? "bg-chart-3" : "bg-chart-2"
+                                                        }`}
+                                                    >
+                                                        {item.status}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{item.cost}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </Fragment>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
         </Card>
     );
