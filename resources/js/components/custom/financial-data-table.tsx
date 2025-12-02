@@ -121,7 +121,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
         });
 
         return grouped;
-    }, [filteredData]); 
+    }, [filteredData]);
 
     return (
         <Card className={className}>
@@ -206,7 +206,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                 <div className="max-h-57 overflow-y-auto rounded-lg border shadow-sm dark:border-muted-foreground" style={{ scrollbarWidth: 'none' }}>
                     <Table className="w-full">
                         <TableHeader>
-                            <TableRow className="bg-gray-100">
+                            <TableRow className="bg-border">
                                 <TableHead>No</TableHead>
                                 <TableHead>User</TableHead>
                                 <TableHead>Type</TableHead>
@@ -222,7 +222,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                                 return (
                                     <Fragment key={index}>
                                         {/* ROW PERTAMA */}
-                                        <TableRow className="bg-input text-start">
+                                        <TableRow className="border-b-2 bg-input dark:border-muted-foreground">
                                             <TableCell rowSpan={rowSpan} className="text-center align-middle font-semibold">
                                                 {index + 1}
                                             </TableCell>
@@ -260,7 +260,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
 
                                         {/* SISA ROW */}
                                         {row.rows.slice(1).map((item, i) => (
-                                            <TableRow key={i}>
+                                            <TableRow key={i} className="border-b-2 bg-input dark:border-muted-foreground">
                                                 <TableCell>
                                                     <div
                                                         className={`w-full rounded-full px-4 py-1 text-center text-white ${
