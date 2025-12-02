@@ -64,7 +64,7 @@ class DashboardController extends Controller
         $query = AdResultPlatform::with([
             'result:id,ad_plan_id,revenue',
             'result.plan.user:id,name',
-            'result.plan.planPlatforms:id,ad_plan_id,start_date',
+            'result.plan.planPlatforms:id,ad_plan_id,end_date',
         ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
 
         $user = Auth::user();
@@ -83,7 +83,7 @@ class DashboardController extends Controller
 
         // filter hanya mengambi 12 bulan terakhir
         $query->whereHas('result.plan.planPlatforms', function ($q) {
-            $q->whereBetween('start_date', [
+            $q->whereBetween('end_date', [
                 now()->subMonths(11)->startOfMonth(),
                 now()->endOfMonth()
             ]);
@@ -94,9 +94,9 @@ class DashboardController extends Controller
                 'pendapatan' => (int) round(optional($item->result)->revenue ?? 0),
                 'pengeluaran' => (int) round($item->total_cost ?? 0),
                 // 'month' => $item->created_at->format('Y-m') ?? null,
-                'month' => optional($item->result->plan->planPlatforms->first())->start_date ? optional($item->result->plan->planPlatforms->first())->start_date->format('Y-m') : null,
+                'month' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('Y-m') : null,
                 // 'label' => $item->created_at->format('M') ?? null,
-                'label' => optional($item->result->plan->planPlatforms->first())->start_date ? optional($item->result->plan->planPlatforms->first())->start_date->format('M') : null,
+                'label' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('M') : null,
                 'user' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
             ];
         })
@@ -117,7 +117,7 @@ class DashboardController extends Controller
         $query = AdResultPlatform::with([
             'result:id,ad_plan_id,revenue',
             'result.plan.user:id,name',
-            'result.plan.planPlatforms:id,ad_plan_id,start_date',
+            'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'platform:id,name',
         ])
         ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
@@ -138,7 +138,7 @@ class DashboardController extends Controller
 
         // filter hanya mengambi 6 bulan terakhir
         $query->whereHas('result.plan.planPlatforms', function ($q) {
-            $q->whereBetween('start_date', [
+            $q->whereBetween('end_date', [
                 now()->subMonths(5)->startOfMonth(),
                 now()->endOfMonth()
             ]);
@@ -155,8 +155,8 @@ class DashboardController extends Controller
                     'cost' => 'Rp ' . number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
                     'omset' => (int) round(optional($item->result)->revenue ?? 0),
                     // 'date' => $item->created_at->format('F'),
-                    'date' => optional($item->result->plan->planPlatforms->first())->start_date ? optional($item->result->plan->planPlatforms->first())->start_date->format('F') : null,
-                    'ordinal' => optional($item->result->plan->planPlatforms->first())->start_date ? optional($item->result->plan->planPlatforms->first())->start_date->format('Y-m-d') : null,
+                    'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('F') : null,
+                    'ordinal' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('Y-m-d') : null,
                 ];
             })  // 🔥 SORT berdasarkan tanggal asli
             ->sortByDesc('ordinal')
@@ -170,7 +170,7 @@ class DashboardController extends Controller
     {
         $query = AdResultPlatform::with([
             'result.plan:id,created_at,event_id,user_id',
-            'result.plan.planPlatforms:id,ad_plan_id,start_date',
+            'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'result.plan.event:id,name',
             'result.plan.user:id,name,avatar',
             'platform:id,name',
@@ -193,7 +193,7 @@ class DashboardController extends Controller
 
         // filter hanya mengambi 11 bulan terakhir
         $query->whereHas('result.plan.planPlatforms', function ($q) {
-            $q->whereBetween('start_date', [
+            $q->whereBetween('end_date', [
                 now()->subMonths(11)->startOfMonth(),
                 now()->endOfMonth()
             ]);
@@ -203,7 +203,7 @@ class DashboardController extends Controller
             ->map(function ($item, $key) {
                 return [
                     'id' => $key + 1,
-                    // 'date' => optional($item->result->plan->planPlatforms->first())->start_date ? optional($item->result->plan->planPlatforms->first())->start_date->format('d M Y') : null,
+                    // 'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('d M Y') : null,
                     'date' => optional($item->result->plan)->created_at ? optional($item->result->plan)->created_at->format('d M Y') : null,
                     'event_name' => optional($item->result->plan->event)->name,
                     'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
