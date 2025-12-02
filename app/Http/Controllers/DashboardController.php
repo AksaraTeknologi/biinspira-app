@@ -120,7 +120,7 @@ class DashboardController extends Controller
             'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'platform:id,name',
         ])
-        ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
+            ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
 
         $user = Auth::user();
         $userName = null;
@@ -192,12 +192,10 @@ class DashboardController extends Controller
         }
 
         // filter hanya mengambi 11 bulan terakhir
-        $query->whereHas('result.plan.planPlatforms', function ($q) {
-            $q->whereBetween('end_date', [
-                now()->subMonths(11)->startOfMonth(),
-                now()->endOfMonth()
-            ]);
-        });
+        $query->whereBetween('created_at', [
+            now()->subMonths(11)->startOfMonth(),
+            now()->endOfMonth()
+        ]);
 
         return $query->get()
             ->map(function ($item, $key) {
