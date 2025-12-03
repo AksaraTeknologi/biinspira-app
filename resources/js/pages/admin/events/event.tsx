@@ -77,7 +77,7 @@ export default function EventPage() {
             enableHiding: false,
         },
         {
-            accessorKey: 'nama',
+            accessorKey: 'name',
             header: 'Nama',
             cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
         },
@@ -87,7 +87,7 @@ export default function EventPage() {
         //   cell: ({ row }) => <div className="font-medium">{row.original.batch}</div>,
         // },
         {
-            accessorKey: 'user',
+            accessorFn: (row) => row.user?.name || '-',
             header: 'User',
             cell: ({ row }) => {
                 const user = row.original.user;
@@ -95,7 +95,15 @@ export default function EventPage() {
             },
         },
         {
-            accessorKey: 'end_date',
+            accessorFn: (row) => {
+                const date = new Date(row.end_date);
+                return date.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                });
+            },
+            // accessorKey: 'end_date',
             header: 'Tanggal Berakhir',
             cell: ({ row }) => {
                 const date = new Date(row.original.end_date);
@@ -130,7 +138,7 @@ export default function EventPage() {
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-2xl font-semibold">Daftar Event</h2>
                     <Button asChild className="text-white">
-                        <AddEventModal users={users}/>
+                        <AddEventModal users={users} />
                     </Button>
                 </div>
 
