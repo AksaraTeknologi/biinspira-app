@@ -55,7 +55,7 @@ class AdPlanPlatformController extends Controller
 
     public function create()
     {
-        $events = MasterEvent::all();
+        $events = MasterEvent::with("user")->get();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
@@ -105,7 +105,6 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
-                // dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()

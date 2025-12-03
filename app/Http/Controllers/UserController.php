@@ -31,7 +31,8 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         return Inertia::render('admin/users/modal/user-modal-edit', [
-            'user' => $user
+            'user' => $user,
+            'users' => $users
         ]);
     }
     public function store(Request $request)

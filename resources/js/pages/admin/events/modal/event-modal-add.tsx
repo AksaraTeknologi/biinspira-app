@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const schema = z.object({
     name: z.string().min(2, 'Nama event minimal 2 karakter'),
@@ -24,15 +25,20 @@ const schema = z.object({
         .string()
         .min(1, 'Tanggal wajib diisi')
         .refine((val) => new Date(val).toString() !== 'Invalid Date', 'Tanggal tidak valid'),
+    user_id: z.string().min(1, 'User wajib dipilih'),
 });
 
 type FormData = z.infer<typeof schema>;
-
+interface User {
+    id: string;
+    name: string;
+}
 interface AddEventModalProps {
+    users: User[];
     onSuccess?: () => void;
 }
 
-export function AddEventModal({ onSuccess }: AddEventModalProps) {
+export function AddEventModal({ users, onSuccess }: AddEventModalProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -43,6 +49,7 @@ export function AddEventModal({ onSuccess }: AddEventModalProps) {
             name: '',
             batch: '0',
             end_date: '',
+            user_id: '',
         },
     });
 
@@ -105,6 +112,37 @@ export function AddEventModal({ onSuccess }: AddEventModalProps) {
                                     <FormControl>
                                         <Input placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="user_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>User</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="-- Pilih User --" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {users?.length > 0 ? (
+                                                users.map((u) => (
+                                                    <SelectItem key={u.id} value={u.id}>
+                                                        <div className="flex items-center gap-2">{u.name}</div>
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <SelectItem value="no-data" disabled>
+                                                    Tidak ada user tersedia
+                                                </SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

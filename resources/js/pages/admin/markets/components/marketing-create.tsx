@@ -36,6 +36,8 @@ export default function PerencanaanIklan() {
         meta: '2',
         business: '3',
     };
+    const [selectedUser, setSelectedUser] = useState<string | null>(null);
+    const [filteredEvents, setFilteredEvents] = useState(events);
 
     const formatNol = (value: string | number) => {
         if (!value) return '';
@@ -79,6 +81,13 @@ export default function PerencanaanIklan() {
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
     const [selectedEvent, setSelectedEvent] = useState('');
     const { post, processing } = useForm({});
+
+    const handleUserChange = (userId: string) => {
+        setSelectedUser(userId);
+        const filtered = events.filter((event) => String(event.user.id) === userId);
+        setFilteredEvents(filtered);
+        setSelectedEvent('');
+    };
 
     const handleTabChange = (val: 'boost' | 'meta' | 'business') => {
         setTab(val);
@@ -473,6 +482,10 @@ export default function PerencanaanIklan() {
                                                         meta: { ...prev.meta, user_id: val },
                                                         business: { ...prev.business, user_id: val },
                                                     }));
+                                                    setSelectedUser(val);
+                                                    const filtered = events.filter((event) => String(event.user.id) === val);
+                                                    setFilteredEvents(filtered);
+                                                    setSelectedEvent('');
                                                 }}
                                             >
                                                 <SelectTrigger>
@@ -490,16 +503,22 @@ export default function PerencanaanIklan() {
                                     )}
 
                                     <Label>Nama Event</Label>
-                                    <Select required value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
+                                    <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Pilih nama event" />
+                                            <SelectValue placeholder="Pilih event" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {events?.map((event) => (
-                                                <SelectItem key={event.id} value={String(event.id)}>
-                                                    {event.name}
+                                            {filteredEvents.length > 0 ? (
+                                                filteredEvents.map((event) => (
+                                                    <SelectItem key={event.id} value={String(event.id)}>
+                                                        {event.name}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <SelectItem value="" disabled>
+                                                    Tidak ada event
                                                 </SelectItem>
-                                            ))}
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>

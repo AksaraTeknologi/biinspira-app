@@ -49,4 +49,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function masterEvents()
+    {
+        return $this->hasMany(MasterEvent::class, 'user_id', 'id');
+    }
 }
