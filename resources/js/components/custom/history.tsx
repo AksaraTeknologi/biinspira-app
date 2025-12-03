@@ -1,10 +1,10 @@
-import { Ellipsis } from "lucide-react";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useEffect, useRef, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Ellipsis } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 interface HistoryItem {
     id: number;
@@ -17,9 +17,9 @@ interface HistoryItem {
     color: string;
 }
 
-const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-const weekNames = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4", "Minggu 5", "Minggu 6"];
+const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const weekNames = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4', 'Minggu 5', 'Minggu 6'];
 
 interface HistorisProps {
     className?: string;
@@ -46,11 +46,7 @@ export default function History({ className, dataHistoris }: HistorisProps) {
     const [weekDays, setWeekDays] = useState<Date[]>([]);
 
     // --- Dapatkan semua bulan yang punya data ---
-    const monthsWithData = Array.from(
-        new Set(
-            dataHistoris.map((e) => new Date(e.date).getMonth())
-        )
-    ).sort((a, b) => a - b);
+    const monthsWithData = Array.from(new Set(dataHistoris.map((e) => new Date(e.date).getMonth()))).sort((a, b) => a - b);
 
     // --- Buat array minggu (1–n) dalam bulan tertentu ---
     const getWeeksInMonth = (year: number, month: number) => {
@@ -90,11 +86,7 @@ export default function History({ className, dataHistoris }: HistorisProps) {
     // --- Filter event sesuai tanggal yang dipilih ---
     const filteredHistoris = dataHistoris.filter((e) => {
         const d = new Date(e.date);
-        return (
-            d.getFullYear() === selectedDate.getFullYear() &&
-            d.getMonth() === selectedDate.getMonth() &&
-            d.getDate() === selectedDate.getDate()
-        );
+        return d.getFullYear() === selectedDate.getFullYear() && d.getMonth() === selectedDate.getMonth() && d.getDate() === selectedDate.getDate();
     });
 
     // --- Jumlah minggu pada bulan aktif ---
@@ -108,26 +100,29 @@ export default function History({ className, dataHistoris }: HistorisProps) {
     return (
         <Card className={`${className}`}>
             <CardHeader>
-                <div className="flex flex-row justify-between items-center">
-                    <div className="flex flex-col ">
+                <div className="flex flex-row items-center justify-between">
+                    <div className="flex flex-col">
                         <p className="0 text-lg font-semibold">Aktifitas Pengguna Terbaru</p>
                         <span className="text-[11px] font-extralight text-gray-400">Pantau aktifitas terbaru dari setiap akun</span>
                     </div>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className="rounded-full h-10 w-10"><Ellipsis /></Button>
+                            <Button variant="outline" className="h-10 w-10 rounded-full">
+                                <Ellipsis />
+                            </Button>
                         </PopoverTrigger>
 
-                        <PopoverContent className="w-auto rounded-2xl border dark:border-muted-foreground bg-background p-4 shadow-lg" align="end">
-                            <div className="flex flex-col gap-2 w-40">
+                        <PopoverContent className="w-auto rounded-2xl border bg-background p-4 shadow-lg dark:border-muted-foreground" align="end">
+                            <div className="flex w-40 flex-col gap-2">
                                 <div>
-                                    <p className="text-xs text-gray-500 mb-1">Bulan</p>
+                                    <p className="mb-1 text-xs text-gray-500">Bulan</p>
                                     <Select
                                         defaultValue={selectedMonth.toString()}
                                         onValueChange={(value) => {
                                             setSelectedMonth(parseInt(value));
                                             setSelectedWeek(0);
-                                        }}>
+                                        }}
+                                    >
                                         <SelectTrigger>{monthNames[selectedMonth]}</SelectTrigger>
                                         <SelectContent>
                                             {monthsWithData.map((m) => (
@@ -139,11 +134,8 @@ export default function History({ className, dataHistoris }: HistorisProps) {
                                     </Select>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 mb-1">Minggu</p>
-                                    <Select
-                                        defaultValue={selectedWeek.toString()}
-                                        onValueChange={(value) => setSelectedWeek(parseInt(value))}
-                                    >
+                                    <p className="mb-1 text-xs text-gray-500">Minggu</p>
+                                    <Select defaultValue={selectedWeek.toString()} onValueChange={(value) => setSelectedWeek(parseInt(value))}>
                                         <SelectTrigger>{weekNames[selectedWeek]}</SelectTrigger>
                                         <SelectContent>
                                             {weeksInMonth.map((w, i) => (
@@ -161,104 +153,83 @@ export default function History({ className, dataHistoris }: HistorisProps) {
             </CardHeader>
             <CardContent>
                 {/* days */}
-                <div className="flex justify-between w-full overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                <div className="flex w-full justify-between overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     {weekDays.map((day) => {
-                        const isSelected =
-                            day.getDate() === selectedDate.getDate() &&
-                            day.getMonth() === selectedDate.getMonth();
+                        const isSelected = day.getDate() === selectedDate.getDate() && day.getMonth() === selectedDate.getMonth();
                         const isCurrentMonth = day.getMonth() === selectedMonth;
 
-                        let variant: "default" | "outline" | "ghost" = "outline";
-                        if (isSelected) variant = "default";
-                        else if (!isCurrentMonth) variant = "ghost";
+                        let variant: 'default' | 'outline' | 'ghost' = 'outline';
+                        if (isSelected) variant = 'default';
+                        else if (!isCurrentMonth) variant = 'ghost';
 
                         return (
-                            <div
-                                key={day.toDateString()}
-                                className="flex flex-col items-center flex-shrink-0 w-12"
-                            >
+                            <div key={day.toDateString()} className="flex w-12 flex-shrink-0 flex-col items-center">
                                 <Button
                                     variant={variant}
-                                    className={`${variant === "ghost" ? "text-gray-300" : ""} rounded-full w-8 h-8`}
+                                    className={`${variant === 'ghost' ? 'text-gray-300' : ''} h-8 w-8 rounded-full`}
                                     onClick={() => setSelectedDate(day)}
                                 >
                                     {day.getDate()}
                                 </Button>
-                                <p className={`${variant === "ghost" ? "text-gray-300" : ""} text-xs mt-1`}>
-                                    {dayNames[day.getDay()]}
-                                </p>
+                                <p className={`${variant === 'ghost' ? 'text-gray-300' : ''} mt-1 text-xs`}>{dayNames[day.getDay()]}</p>
                             </div>
                         );
                     })}
                 </div>
                 {/* detail history */}
-                <div
-                    className="w-full border-t mt-3 overflow-x-auto"
-                    style={{ scrollbarWidth: "none" }}
-                >
-                    <div className="flex flex-row gap-4 min-w-max px-2 pt-2">
+                <div className="mt-3 w-full overflow-x-auto border-t" style={{ scrollbarWidth: 'none' }}>
+                    <div className="flex min-w-max flex-row gap-4 px-2 pt-2">
                         {filteredHistoris.length > 0 ? (
                             filteredHistoris.map((h) => (
                                 <div key={h.id}>
-                                    <div className={cn(
-                                        "flex flex-col items-center rounded-full px-2 py-3 text-white h-63 w-17",
-                                        h.color
-                                    )}>
+                                    <div className={cn('flex h-63 w-17 flex-col items-center rounded-full px-2 py-3 text-white', h.color)}>
                                         <div className="relative h-50 w-full">
-                                            <div className="transform rotate-270 text-sm font-medium absolute bottom-12.5 -right-13.5 w-40">
-                                                <p className="text-base font-semibold">{h.user_name}</p>
+                                            <div className="absolute -right-13.5 bottom-12.5 w-40 rotate-270 transform text-sm font-medium">
+                                                <p className="text-md font-semibold">
+                                                    {(() => {
+                                                        const text = h.user_name ?? '';
+                                                        return text.length > 21 ? text.slice(0, 18) + '...' : text;
+                                                    })()}
+                                                    {/* {h.user_name} */}
+                                                </p>
                                                 <p className="text-[11px] font-light">
                                                     {(() => {
-                                                        const text = h.event_name ?? "";
-                                                        return text.length > 30
-                                                            ? text.slice(0, 27) + "..."
-                                                            : text;
+                                                        const text = h.event_name ?? '';
+                                                        return text.length > 30 ? text.slice(0, 27) + '...' : text;
                                                     })()}
                                                 </p>
                                                 {/* <p className="text-[11px] font-light">abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz</p> */}
-                                                <p className="text-[13px] font-semibold">
+                                                <p className="text-xs font-semibold">
                                                     Rp {(parseInt(h.amount.replace(/\D/g, ''), 10) || 0).toLocaleString('id-ID')}
                                                 </p>
                                             </div>
                                         </div>
                                         {h.avatar ? (
                                             // Jika ADA avatar → tampilkan gambar (pakai wrapper untuk memastikan lingkaran)
-                                            <div className="w-10 h-10 mt-3 mb-2 rounded-full ring-2 ring-white overflow-hidden flex-shrink-0">
+                                            <div className="mt-3 mb-2 h-10 w-10 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-white">
                                                 <img
                                                     src={`/storage/${h.avatar}`}
                                                     alt={h.user_name}
-                                                    className="w-full h-full object-cover object-center block"
+                                                    className="block h-full w-full object-cover object-center"
                                                     loading="lazy"
                                                 />
                                             </div>
                                         ) : (
                                             // Jika TIDAK ada avatar → tampilkan initial
-                                            <div
-                                                className="
-                                                    w-10 h-10 mt-3 mb-2 rounded-full flex-shrink-0
-                                                    flex items-center justify-center bg-gray-700 text-white
-                                                    ring-2 ring-white text-base font-semibold overflow-hidden
-                                                "
-                                            >
-                                                <span className="select-none">
-                                                    {h.user_name ? h.user_name.charAt(0).toUpperCase() : "?"}
-                                                </span>
+                                            <div className="mt-3 mb-2 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-700 text-base font-semibold text-white ring-2 ring-white">
+                                                <span className="select-none">{h.user_name ? h.user_name.charAt(0).toUpperCase() : '?'}</span>
                                             </div>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-center text-gray-400 py-2">
-                                        {h.time}
-                                    </p>
+                                    <p className="py-2 text-center text-[11px] text-gray-400">{h.time}</p>
                                 </div>
                             ))
                         ) : (
-                            <p className="text-sm text-gray-500 italic px-2">
-                                Tidak ada history untuk tanggal ini.
-                            </p>
+                            <p className="px-2 text-sm text-gray-500 italic">Tidak ada history untuk tanggal ini.</p>
                         )}
                     </div>
                 </div>
             </CardContent>
-        </Card >
+        </Card>
     );
 }
