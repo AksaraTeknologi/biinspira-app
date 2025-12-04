@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { Pencil } from 'lucide-react';
+import { Eye, EyeOff, Pencil } from "lucide-react";
 
 import {
   Dialog,
@@ -71,6 +71,8 @@ export function EditUserModal({ user, onSuccess }) {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState(user.avatar_url ?? null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -117,7 +119,7 @@ export function EditUserModal({ user, onSuccess }) {
         <Pencil className="h-4 w-4 cursor-pointer" />
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
@@ -163,7 +165,25 @@ export function EditUserModal({ user, onSuccess }) {
                 <FormItem>
                   <FormLabel>Password Baru (Optional)</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Masukkan password baru" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Masukkan password baru"
+                        {...field}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,7 +198,25 @@ export function EditUserModal({ user, onSuccess }) {
                 <FormItem>
                   <FormLabel>Konfirmasi Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Ulangi password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Ulangi password"
+                        {...field}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
