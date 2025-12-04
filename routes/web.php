@@ -94,7 +94,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
 
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
     Route::redirect('/', 'user/dashboard')->name('home');
-    Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
+    Route::get('marketing/dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
     Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
     Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('marketing.print');
 

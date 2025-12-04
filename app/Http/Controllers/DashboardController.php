@@ -168,7 +168,8 @@ class DashboardController extends Controller
             'event:id,name',
             'results:id,ad_plan_id,created_at',
             'results.resultPlatforms:id,ad_result_id,platform_id,total_cost,created_at',
-            'results.resultPlatforms.platform:id,name',
+            'planPlatforms:id,ad_plan_id,platform_id',
+            'planPlatforms.platform:id,name',
         ])->select('id', 'user_id', 'event_id', 'created_at');
 
         $user = Auth::user();
@@ -190,13 +191,12 @@ class DashboardController extends Controller
             now()->endOfMonth(),
         ]);
 
-        // dd($query->get());
-
         return $query->get()
             ->map(function ($item, $key) {
                 $firstResult = $item->results->first();
                 $firstPlatform = $firstResult ? $firstResult->resultPlatforms->first() : null;
                 $totalCost = $firstPlatform ? $firstPlatform->total_cost : null;
+                $firstPlanPlatform = $item->planPlatforms->first();
 
                 return [
                     'id' => $key + 1,
@@ -206,13 +206,13 @@ class DashboardController extends Controller
                     'amount' => $totalCost === null ? '-' : number_format((int) round($totalCost), 0, ',', '.'),
                     'avatar' => $item->user?->avatar ?: null,
                     'time' => $item->created_at->format('H:i:s'),
-                    'color' => (function () use ($firstPlatform) {
-                       $type = $firstPlatform?->platform?->name;
+                    'color' => (function () use ($firstPlanPlatform) {
+                        $type = $firstPlanPlatform?->platform?->name;
                         return match ($type) {
-                            'Business Suite' => 'bg-primary',
-                            'Boost Post'     => 'bg-destructive',
-                            'Meta Ads'       => 'bg-green-500',
-                            default           => 'bg-gray-400',
+                            'Business Suite' => 'bg-chart-1',
+                            'Boost Post'     => 'bg-chart-3',
+                            'Meta Ads'       => 'bg-chart-2',
+                            default           => 'bg-[#ccb8a5]',
                         };
                     })(),
                     // include created_at for reliable sorting, will be removed before returning to front-end

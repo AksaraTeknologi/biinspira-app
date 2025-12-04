@@ -15,17 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import {
-    CalendarSearch,
-    ChevronRight,
-    CircleUserRound,
-    LaptopMinimal,
-    LayoutGrid,
-    List,
-    MessageSquareQuote,
-    PartyPopper,
-    Target,
-} from 'lucide-react';
+import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGrid, List, PartyPopper, Target } from 'lucide-react';
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
@@ -64,22 +54,15 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
 
     // role: user
     {
-        title: 'Beranda',
-        href: route('user.dashboard'),
-        icon: LayoutGrid,
-        roles: ['user'],
-    },
-    {
         title: 'Marketing',
-        href: route('user.marketing.index'),
-        icon: MessageSquareQuote,
+        href: '',
+        icon: PartyPopper,
         roles: ['user'],
-    },
-    {
-        title: 'Events',
-        href: route('user.events.index'),
-        icon: CalendarSearch,
-        roles: ['user'],
+        children: [
+            { title: 'Dashboard', href: route('user.dashboard'), icon: LayoutGrid },
+            { title: 'Daftar Iklan', href: route('user.marketing.index'), icon: List },
+            { title: 'Event', href: route('user.events.index'), icon: CalendarSearch },
+        ],
     },
 ];
 
