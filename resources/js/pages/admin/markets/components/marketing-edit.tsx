@@ -470,7 +470,7 @@ export default function MarketingEdit() {
                                     : 'Pilih tanggal mulai dan selesai'}
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg" align="start">
+                        <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-background p-4 shadow-lg" align="start">
                             <Calendar
                                 mode="range"
                                 numberOfMonths={2}

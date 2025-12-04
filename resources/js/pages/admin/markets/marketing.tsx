@@ -120,7 +120,7 @@ export default function Marketing() {
                 </div>
 
                 {/* Filter Section */}
-                <div className="rounded-lg border bg-white p-4 shadow-sm dark:bg-gray-900">
+                <div className="rounded-lg border bg-input p-4 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                         <div className="grid gap-2">
                             <Label htmlFor="date-range" className="text-sm font-medium">
