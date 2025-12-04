@@ -70,6 +70,7 @@ class UserController extends Controller
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
         if ($validator->fails()) {
+            dd($validator->errors());
             return redirect()->back()->withErrors($validator)->withInput();
         }
         $user = User::findOrFail($id);
@@ -79,7 +80,6 @@ class UserController extends Controller
         } else {
             unset($data['password']);
         }
-
         if ($request->hasFile('avatar')) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
@@ -89,7 +89,6 @@ class UserController extends Controller
             $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
             $data['avatar'] = $path;
         }
-
         $user->update($data);
     }
     public function destroy(String $id)
