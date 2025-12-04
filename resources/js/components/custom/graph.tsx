@@ -223,10 +223,10 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                 <span className="w-3 h-3 rounded-full bg-blue-700"></span>
                                 <span>Pengeluaran</span>
                             </div>
-                            <div className="flex flex-row items-center gap-2">
+                            {/* <div className="flex flex-row items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-gray-300"></span>
                                 <span>Efisiensi</span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 

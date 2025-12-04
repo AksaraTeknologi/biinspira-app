@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { AddEventModal } from '@/pages/admin/events/modal/event-modal-add';
@@ -40,22 +41,25 @@ interface Event {
 }
 
 export default function EventPage() {
-    const { events, users } = usePage<{ events: Event[]; users: User[] }>().props;
-
+    const { events, users } = usePage<{ events: Event[]; users: User[]; }>().props;
+    const { auth } = usePage().props;
+    const role = auth.user?.roles?.[0]?.name;
+    const isAdmin = role === 'admin'
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+    const [userFilter, setUserFilter] = React.useState<string>('all');
 
-    const breadcrumbs: BreadcrumbItem[] = [{ title: 'Event', href: route('admin.events.index') }];
+    const breadcrumbs: BreadcrumbItem[] = [{ title: 'Event', href: "" }];
     const columns: ColumnDef<Event>[] = [
         {
             id: 'Aksi',
             header: 'Aksi',
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <EditEventModal event={row.original} users={users} onSuccess={() => router.reload()} />
-                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="events" role="admin" />
+                    <EditEventModal event={row.original} users={users} onSuccess={() => router.reload()} authUserRole={isAdmin === true ? "admin" : "user"} authUserId={row.original.user.id}/>
+                    <DeleteButton id={row.original.id} name={row.original.name} routeTable="events" role={isAdmin === true ? "admin" : "user"} />
                 </div>
             ),
             enableSorting: false,
@@ -88,6 +92,11 @@ export default function EventPage() {
         // },
         {
             accessorFn: (row) => row.user?.name || '-',
+            id: 'user',
+            filterFn: (row, columnId, filterValue) => {
+                if (filterValue === 'all') return true;
+                return row.original.user?.id === filterValue;
+            },
             header: 'User',
             cell: ({ row }) => {
                 const user = row.original.user;
@@ -138,7 +147,7 @@ export default function EventPage() {
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-2xl font-semibold">Daftar Event</h2>
                     <Button asChild className="text-white">
-                        <AddEventModal users={users} />
+                        <AddEventModal users={users} authUserRole={role}/>
                     </Button>
                 </div>
 
@@ -150,6 +159,28 @@ export default function EventPage() {
                         onChange={(e) => setGlobalFilter(e.target.value)}
                         className="max-w-sm bg-input"
                     />
+                    {isAdmin && (
+                        <Select
+                            value={userFilter}
+                            onValueChange={(value) => {
+                                setUserFilter(value);
+                                table.getColumn('user')?.setFilterValue(value === 'all' ? '' : value);
+                            }}
+                        >
+                            <SelectTrigger className="w-[200px] bg-input">
+                                <SelectValue placeholder="Filter User" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                <SelectItem value="all">Semua User</SelectItem>
+                                {users.map((u) => (
+                                    <SelectItem key={u.id} value={u.id}>
+                                        {u.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                     <div className="ml-auto">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

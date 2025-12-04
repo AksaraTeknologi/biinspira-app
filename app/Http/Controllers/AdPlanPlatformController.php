@@ -10,6 +10,7 @@ use App\Models\MasterEvent;
 use App\Models\MasterPlatform;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -55,7 +56,11 @@ class AdPlanPlatformController extends Controller
 
     public function create()
     {
-        $events = MasterEvent::with("user")->get();
+        $eventQuery = MasterEvent::with('user');
+        if (!auth()->user()->hasRole('admin')) {
+            $eventQuery->where('user_id', auth()->id());
+        }
+        $events = $eventQuery->get();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
@@ -176,7 +181,6 @@ class AdPlanPlatformController extends Controller
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
             $q->where('name', 'admin');
         })->get();
-        // dd($platforms);
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,
             'events' => $events,
