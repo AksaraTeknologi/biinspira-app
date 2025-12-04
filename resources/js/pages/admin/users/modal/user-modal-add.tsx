@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 
@@ -28,7 +28,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-// VALIDASI FILE
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -48,10 +47,17 @@ const schema = z.object({
     ),
 });
 
+interface User {
+    id: string;
+    name: string;
+    email: string;
+}
+
 type FormData = z.infer<typeof schema>;
 
 export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
+  const { users } = usePage<{ users: User[] }>().props;
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 

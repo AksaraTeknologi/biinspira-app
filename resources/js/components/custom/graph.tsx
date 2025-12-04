@@ -93,7 +93,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                 PengeluaranHeight: d.pengeluaran,
                 Pengeluaran: d.pengeluaran,
                 EfisiensiH: d.pendapatan + d.pengeluaran,
-                Efisiensi: d.pengeluaran - d.pendapatan,
+                Efisiensi: d.pendapatan - d.pengeluaran,
             }));
         }
         return RawData.map((d) => ({
@@ -104,7 +104,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
             Pengeluaran: d.pengeluaran,
             // EfisiensiH: ((d.pendapatan - (d.pendapatan - d.pengeluaran)) + d.pengeluaran) / 2,
             EfisiensiH: d.pendapatan + d.pengeluaran,
-            Efisiensi: d.pengeluaran - d.pendapatan,
+            Efisiensi: d.pendapatan - d.pengeluaran,
         }));
     }, [mode, RawData, weeklyData]);
 
@@ -167,7 +167,11 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                     <p><strong>{payload[0].payload.month}</strong></p>
                     <p>Omset: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
                     <p>Pengeluaran: {Number(payload[0].payload.Pengeluaran).toLocaleString('id-ID')}</p>
-                    <p>Efisiensi: {Number(payload[0].payload.Efisiensi).toLocaleString('id-ID')}</p>
+                    {(() => {
+                        const ef = Number(payload[0].payload.Efisiensi);
+                        const display = ef >= 0 ? `+${ef.toLocaleString('id-ID')}` : ef.toLocaleString('id-ID');
+                        return <p className={ef >= 0 ? 'text-green-500 font-semibold' : 'text-red-500 font-semibold'}>Efisiensi: {display}</p>;
+                    })()}
                 </div>
             );
         }

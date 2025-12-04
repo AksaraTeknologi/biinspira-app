@@ -23,6 +23,12 @@ class DatabaseSeeder extends Seeder
     {
         Role::create(['name' => 'admin']);
         Role::create(['name' => 'user']);
+        User::factory()->create([
+            'name' => 'biinspira',
+            'email' => 'user@gmail.com',
+            'password' => bcrypt('user'),
+            'email_verified_at' => now(),
+        ])->assignRole('user');
 
         User::factory()->create([
             'name' => 'Admin',
