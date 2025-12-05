@@ -94,7 +94,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
 
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
     Route::redirect('/', 'user/dashboard')->name('home');
-    Route::get('dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
+    Route::get('marketing/dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
     Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
     Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('marketing.print');
 
@@ -114,6 +114,14 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
     Route::controller(AdEvaluationController::class)->group(function () {
         Route::get("/marketing/evaluation/{id}", "evaluationForm")->name("marketing.evaluation");
         Route::post("/marketing/evaluation/store", "storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
+    });
+    Route::controller(MasterEventController::class)->group(function () {
+        Route::get('/marketing/event', 'index')->name('events.index');
+        Route::get('/marketing/event/create', 'create')->name('events.create');
+        Route::post('/marketing/event/store', 'store')->name('events.store');
+        Route::get('/marketing/event/edit/{id}', 'edit')->name('events.edit');
+        Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
+        Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
     });
 });
 

@@ -54,14 +54,6 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = [], tableDa
             year: 'numeric',
         }),
     );
-    const tableColoms = [
-        { header: 'No', accessor: 'no' },
-        { header: 'User', accessor: 'user' },
-        // { header: 'Top Up Dana', accessor: 'top_up_dana' },
-        { header: 'Tipe Iklan', accessor: 'status' },
-        { header: 'Pengeluaran', accessor: 'cost' },
-        { header: 'Omset', accessor: 'omset' },
-    ];
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={dashboard_item} />
@@ -80,12 +72,12 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = [], tableDa
                         </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-24">
-                    <div className="col-span-14 flex flex-col gap-y-5">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-24">
+                    <div className="flex flex-col gap-y-6 lg:col-span-15">
                         <GraphCustom RawData={rawDataGraphic} />
-                        <FinancialDataTable tableColoms={tableColoms} tableData={tableData} />
+                        <FinancialDataTable tableData={tableData} />
                     </div>
-                    <div className="flex flex-col gap-y-5 md:col-span-10">
+                    <div className="flex flex-col gap-y-6 lg:col-span-9">
                         <History dataHistoris={dataHistoris} />
                         <ReportCard />
                     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { CalendarIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,9 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const schema = z.object({
     name: z.string().min(2, 'Nama event minimal 2 karakter'),
@@ -35,10 +35,11 @@ interface User {
 }
 interface AddEventModalProps {
     users: User[];
+    authUserRole: string;
     onSuccess?: () => void;
 }
 
-export function AddEventModal({ users, onSuccess }: AddEventModalProps) {
+export function AddEventModal({ users, onSuccess,authUserRole }: AddEventModalProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -49,13 +50,15 @@ export function AddEventModal({ users, onSuccess }: AddEventModalProps) {
             name: '',
             batch: '0',
             end_date: '',
-            user_id: '',
+            user_id: authUserRole === 'admin' ? '' : String(usePage().props.auth.user.id),
         },
     });
 
     const onSubmit = async (data: FormData) => {
         setIsLoading(true);
-        router.post(route('admin.events.store'), data, {
+        const isAdmin = authUserRole === "admin";
+        console.log(isAdmin);
+        router.post(isAdmin ? route('admin.events.store') : route('user.events.store'), data, {
             onSuccess: () => {
                 toast.success('Event berhasil ditambahkan');
                 setOpen(false);
@@ -117,36 +120,38 @@ export function AddEventModal({ users, onSuccess }: AddEventModalProps) {
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="user_id"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>User</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="-- Pilih User --" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {users?.length > 0 ? (
-                                                users.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id}>
-                                                        <div className="flex items-center gap-2">{u.name}</div>
+                        {authUserRole === 'admin' && (
+                            <FormField
+                                control={form.control}
+                                name="user_id"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>User</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="-- Pilih User --" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {users.length > 0 ? (
+                                                    users.map((u) => (
+                                                        <SelectItem key={u.id} value={u.id}>
+                                                            {u.name}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <SelectItem value="no-data" disabled>
+                                                        Tidak ada user tersedia
                                                     </SelectItem>
-                                                ))
-                                            ) : (
-                                                <SelectItem value="no-data" disabled>
-                                                    Tidak ada user tersedia
-                                                </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         {/* Tanggal Berakhir */}
                         <FormField

@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($tableData);
+        // dd($dataHistoris);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
@@ -163,14 +163,14 @@ class DashboardController extends Controller
 
     private function getDataHistories()
     {
-        $query = AdResultPlatform::with([
-            'result.plan:id,created_at,event_id,user_id',
-            'result.plan.planPlatforms:id,ad_plan_id,end_date',
-            'result.plan.event:id,name',
-            'result.plan.user:id,name,avatar',
-            'platform:id,name',
-        ])
-            ->select('id', 'ad_result_id', 'platform_id', 'total_cost', 'created_at');
+        $query = AdPlan::with([
+            'user:id,name,avatar',
+            'event:id,name',
+            'results:id,ad_plan_id,created_at',
+            'results.resultPlatforms:id,ad_result_id,platform_id,total_cost,created_at',
+            'planPlatforms:id,ad_plan_id,platform_id',
+            'planPlatforms.platform:id,name',
+        ])->select('id', 'user_id', 'event_id', 'created_at');
 
         $user = Auth::user();
         $userName = null;
@@ -180,42 +180,52 @@ class DashboardController extends Controller
             $userName = $roles->first() ? strtolower($roles->first()) : null;
         }
 
+        // non-admin users only see their own plans
         if ($userName !== 'admin') {
-            $query->whereHas('result.plan.user', function ($q) {
-                $q->where('id', Auth::user()->id);
-            });
+            $query->where('user_id', Auth::id());
         }
 
-        // filter hanya mengambi 11 bulan terakhir
+        // filter hanya mengambil 11 bulan terakhir
         $query->whereBetween('created_at', [
             now()->subMonths(11)->startOfMonth(),
-            now()->endOfMonth()
+            now()->endOfMonth(),
         ]);
 
         return $query->get()
             ->map(function ($item, $key) {
+                $firstResult = $item->results->first();
+                $firstPlatform = $firstResult ? $firstResult->resultPlatforms->first() : null;
+                $totalCost = $firstPlatform ? $firstPlatform->total_cost : null;
+                $firstPlanPlatform = $item->planPlatforms->first();
+
                 return [
                     'id' => $key + 1,
-                    // 'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('d M Y') : null,
-                    'date' => optional($item->result->plan)->created_at ? optional($item->result->plan)->created_at->format('d M Y') : null,
-                    'event_name' => optional($item->result->plan->event)->name,
-                    'user_name' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
-                    'amount' => (string) number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
-                    'avatar' => optional($item->result->plan->user)->avatar ? optional($item->result->plan->user)->avatar : null,
-                    'time' => optional($item->result->plan)->created_at->format('H:i:s'),
-                    'color' => (function () use ($item) {
-                        $type = optional($item->platform)->name;
+                    'date' => $item->created_at->format('d M Y'),
+                    'event_name' => $item->event?->name,
+                    'user_name' => $item->user?->name ? ucfirst(strtolower($item->user->name)) : null,
+                    'amount' => $totalCost === null ? '-' : number_format((int) round($totalCost), 0, ',', '.'),
+                    'avatar' => $item->user?->avatar ?: null,
+                    'time' => $item->created_at->format('H:i:s'),
+                    'color' => (function () use ($firstPlanPlatform) {
+                        $type = $firstPlanPlatform?->platform?->name;
                         return match ($type) {
-                            'Business Suite' => 'bg-primary',
-                            'Boost Post'     => 'bg-destructive',
-                            'Meta Ads'       => 'bg-green-500',
-                            default           => 'bg-gray-400',
+                            'Business Suite' => 'bg-chart-1',
+                            'Boost Post'     => 'bg-chart-3',
+                            'Meta Ads'       => 'bg-chart-2',
+                            default           => 'bg-[#ccb8a5]',
                         };
                     })(),
+                    // include created_at for reliable sorting, will be removed before returning to front-end
+                    'created_at' => $item->created_at,
                 ];
-            })->sortBy(function ($item) {
-                return $item['date'] ? Carbon::parse($item['date'])->format('Y-m-d') : '9999-99-99';
             })
-            ->values();
+            ->sortByDesc(function ($i) {
+                return $i['created_at'] ?? Carbon::now();
+            })
+            ->values()
+            ->map(function ($item) {
+                unset($item['created_at']);
+                return $item;
+            });
     }
 }

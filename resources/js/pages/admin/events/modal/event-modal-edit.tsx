@@ -12,10 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const schema = z.object({
     name: z.string().min(2, 'Nama event minimal 2 karakter'),
@@ -44,30 +45,31 @@ type EventType = {
 interface EditEventModalProps {
     event: EventType;
     users: User[];
+    authUserRole: string;
+    authUserId: string;
     onSuccess?: () => void;
 }
 
-export function EditEventModal({ event, users, onSuccess }: EditEventModalProps) {
+export function EditEventModal({ event, users, onSuccess, authUserRole, authUserId }: EditEventModalProps) {
     const [open, setOpen] = useState(false);
-    console.log('Event in EditEventModal:', event);
     const [isLoading, setIsLoading] = useState(false);
     const initialDate = event.end_date ? new Date(event.end_date) : undefined;
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
-
+    const currentUser = users.find(u => u.id === (authUserRole === 'admin' ? event.user.id : authUserId));
     const form = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
             name: event.name,
             batch: event.batch,
             end_date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
-            user_id: event.user.id,
+            user_id: authUserRole === 'admin' ? String(event.user.id) : String(authUserId),
         },
     });
 
     const onSubmit = async (data: FormData) => {
         setIsLoading(true);
-
-        router.post(route('admin.events.update', { id: event.id }), data, {
+        const isAdmin = authUserRole === 'admin';
+        router.post(isAdmin ? route('admin.events.update', { id: event.id }) : route('user.events.update', { id: event.id }), data, {
             onSuccess: () => {
                 toast.success('Event berhasil diperbarui');
                 setOpen(false);
@@ -103,7 +105,10 @@ export function EditEventModal({ event, users, onSuccess }: EditEventModalProps)
                                 <FormItem>
                                     <FormLabel>Nama Event</FormLabel>
                                     <FormControl>
-                                        <input type="text" placeholder="Masukkan nama event" {...field} className="input w-full" />
+                                        <Input
+                                            placeholder="Masukkan nama event"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -118,7 +123,10 @@ export function EditEventModal({ event, users, onSuccess }: EditEventModalProps)
                                 <FormItem>
                                     <FormLabel>Batch</FormLabel>
                                     <FormControl>
-                                        <input type="text" placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} className="input w-full" />
+                                        <Input
+                                            placeholder="Masukkan batch event (contoh: 1, 2, 3)"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -131,26 +139,48 @@ export function EditEventModal({ event, users, onSuccess }: EditEventModalProps)
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>User</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="-- Pilih User --" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {users?.length > 0 ? (
-                                                users.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id}>
-                                                        <div className="flex items-center gap-2">{u.name}</div>
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <SelectItem value="no-data" disabled>
-                                                    Tidak ada user tersedia
-                                                </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                    {authUserRole === 'admin' ? (
+                                        <>
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="-- Pilih User --" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {users.map((u) => (
+                                                        <SelectItem key={u.id} value={String(u.id)}>
+                                                            {u.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Admin dapat mengubah user event
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FormControl>
+                                                <Input
+                                                    value={currentUser?.name || "User tidak ditemukan"}
+                                                    readOnly
+                                                    className="bg-white dark:bg-black dark:text-white"
+                                                />
+                                            </FormControl>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Anda tidak dapat mengubah user event
+                                            </p>
+                                            <input
+                                                type="hidden"
+                                                {...field}
+                                                value={String(authUserId)}
+                                            />
+                                        </>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}

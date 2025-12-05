@@ -32,7 +32,6 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         return Inertia::render('admin/users/modal/user-modal-edit', [
             'user' => $user,
-            'users' => $users
         ]);
     }
     public function store(Request $request)
@@ -80,7 +79,6 @@ class UserController extends Controller
         } else {
             unset($data['password']);
         }
-
         if ($request->hasFile('avatar')) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
@@ -90,7 +88,6 @@ class UserController extends Controller
             $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
             $data['avatar'] = $path;
         }
-
         $user->update($data);
     }
     public function destroy(String $id)
