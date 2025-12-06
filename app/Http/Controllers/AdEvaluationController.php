@@ -62,7 +62,6 @@ class AdEvaluationController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->first();
-
         $previousPlan = null;
         $previousAdResult = null;
         $prevEvaluation = null;
@@ -200,9 +199,7 @@ class AdEvaluationController extends Controller
         $currentPlan = AdPlan::with('event')->findOrFail($data['ad_plan_id']);
 
         $previousPlan = AdPlan::with('event')
-            ->whereHas('event', function ($query) use ($currentPlan) {
-                $query->where('name', $currentPlan->event->name);
-            })
+            ->where('event_id', $currentPlan->event_id)
             ->where('created_at', '<', $currentPlan->created_at)
             ->orderBy('created_at', 'desc')
             ->first();
