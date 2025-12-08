@@ -575,19 +575,38 @@ export default function MarketingEdit() {
                         <CardContent>
                             <div className="space-y-8">
                                 <div>
-                                    <Label>Nama Event</Label>
-                                    <Select value={String(data.event_id)} onValueChange={(val) => setData('event_id', Number(val))}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih nama event" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {events.map((event: any) => (
-                                                <SelectItem key={event.id} value={String(event.id)}>
-                                                    {event.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    {isAdmin && (
+                                        <div className="mb-4">
+                                            <Label>User</Label>
+                                            <Select value={String(data.user_id)} onValueChange={(val) => setData('user_id', val)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={'Pilih User'} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {(props.users as any[])?.map((u) => (
+                                                        <SelectItem key={u.id} value={String(u.id)}>
+                                                            {u.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <Label>Nama Event</Label>
+                                        <Select value={String(data.event_id)} onValueChange={(val) => setData('event_id', Number(val))}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih nama event" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {events.map((event: any) => (
+                                                    <SelectItem key={event.id} value={String(event.id)}>
+                                                        {event.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
 
                                 <Tabs value={tab} onValueChange={handleTabChange}>
