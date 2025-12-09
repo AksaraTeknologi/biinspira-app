@@ -19,7 +19,6 @@ import { toast } from 'sonner';
 export default function MarketingEdit() {
     const { props } = usePage();
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
-
     const planPlatforms = adPlan.plan_platforms || [];
 
     // helpers
@@ -157,6 +156,29 @@ export default function MarketingEdit() {
             location_broad: p.location_broad || '',
         })),
     });
+
+    // ================ PERBAIKAN DI SINI ================
+    // Gunakan useState untuk filteredEvents dan useEffect untuk update
+    const [filteredEvents, setFilteredEvents] = useState(events);
+
+    // Filter events berdasarkan user yang dipilih
+    useEffect(() => {
+        if (data.user_id && data.user_id !== '') {
+            const filtered = events.filter((event: any) => String(event.user_id) === String(data.user_id));
+            setFilteredEvents(filtered);
+
+            // Reset event jika event yang dipilih tidak termasuk dalam filtered
+            if (data.event_id) {
+                const currentEventExists = filtered.some((event: any) => String(event.id) === String(data.event_id));
+                if (!currentEventExists) {
+                    setData('event_id', '');
+                }
+            }
+        } else {
+            setFilteredEvents(events);
+        }
+    }, [data.user_id, events, data.event_id]);
+    // ================ AKHIR PERBAIKAN ================
 
     const activePlatform = data.platforms.find((p) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
     const tab = mergedPlatforms.find((p) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
@@ -575,19 +597,47 @@ export default function MarketingEdit() {
                         <CardContent>
                             <div className="space-y-8">
                                 <div>
-                                    <Label>Nama Event</Label>
-                                    <Select value={String(data.event_id)} onValueChange={(val) => setData('event_id', Number(val))}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih nama event" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {events.map((event: any) => (
-                                                <SelectItem key={event.id} value={String(event.id)}>
-                                                    {event.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    {isAdmin && (
+                                        <div className="mb-4">
+                                            <Label>User</Label>
+                                            <Select
+                                                value={String(data.user_id)}
+                                                onValueChange={(value) => setData('user_id', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={'Pilih User'} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {(props.users as any[])?.map((u) => (
+                                                        <SelectItem key={u.id} value={String(u.id)}>
+                                                            {u.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <Label>Nama Event</Label>
+                                        <Select value={String(data.event_id)} onValueChange={(val) => setData('event_id', Number(val))}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih nama event" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {filteredEvents.length > 0 ? (
+                                                    filteredEvents.map((event: any) => (
+                                                        <SelectItem key={event.id} value={String(event.id)}>
+                                                            {event.name}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <SelectItem value="no-event" disabled>
+                                                        Tidak ada event
+                                                    </SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
 
                                 <Tabs value={tab} onValueChange={handleTabChange}>

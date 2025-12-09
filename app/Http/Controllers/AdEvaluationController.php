@@ -13,43 +13,6 @@ use SebastianBergmann\Environment\Console;
 
 class AdEvaluationController extends Controller
 {
-    // public function evaluationForm($id)
-    // {
-    //     $currentPlan = AdPlan::with('event')->findOrFail($id);
-
-    //     $basePlan = AdPlan::where('id', $currentPlan->id)->where('status', 'completed')->first();
-    //     $previousPlan = AdPlan::with('event')->where('event_id', $currentPlan->event_id)
-    //         ->where('status', 'completed')
-    //         ->where('created_at', '<', $currentPlan->created_at)
-    //         ->orderBy('created_at', 'desc')
-    //         ->first();
-
-    //     $previousAdResult = null;
-    //     $prevEvaluation = null;
-    //     if ($previousPlan) {
-    //         $previousAdResult = AdResult::where('ad_plan_id', $previousPlan->id)
-    //             ->with(['resultPlatforms.platform'])
-    //             ->first();
-
-    //         $prevEvaluation = AdEvaluation::where('ad_plan_id', $previousPlan->id)->first();
-    //     }
-    //     $adResult = AdResult::where('ad_plan_id', $currentPlan->id)
-    //         ->with(['resultPlatforms.platform'])
-    //         ->first();
-    //     $adEvaluation = AdEvaluation::where('ad_plan_id', $currentPlan->id)->first();
-    //     $platforms = MasterPlatform::select('id', 'name')->get();
-    //     $user = auth()->user();
-    //     return Inertia::render('admin/markets/marketing/marketing-eval', [
-    //         'currentPlan' => $currentPlan,
-    //         'previousPlan' => $previousPlan,
-    //         'adResult' => $adResult,
-    //         'prevEvaluation' => $prevEvaluation,
-    //         'previousAdResult' => $previousAdResult,
-    //         'adEvaluation' => $adEvaluation,
-    //         'platforms' => $platforms,
-    //         'isAdmin' => $user->hasRole('admin'),
-    //     ]);
-    // }
 
     public function evaluationForm($id)
     {
@@ -58,6 +21,7 @@ class AdEvaluationController extends Controller
             ->where('created_at', '<', $currentPlan->created_at)
             ->whereHas('plan', function ($q) use ($currentPlan) {
                 $q->where('event_id', $currentPlan->event_id)
+                  ->where('user_id',$currentPlan->user_id)
                     ->where('status', 'completed');
             })
             ->orderBy('created_at', 'desc')
@@ -94,6 +58,7 @@ class AdEvaluationController extends Controller
             $previousPlan = AdPlan::with('event')
                 ->where('event_id', $currentPlan->event_id)
                 ->where('status', 'completed')
+                ->where('user_id',$currentPlan->user_id)
                 ->where('created_at', '<', $currentPlan->created_at)
                 ->orderBy('created_at', 'desc')
                 ->first();
@@ -103,7 +68,9 @@ class AdEvaluationController extends Controller
                     ->where('ad_plan_id', $previousPlan->id)
                     ->first();
 
-                $prevEvaluation = AdEvaluation::where('ad_plan_id', $previousPlan->id)->first();
+                $prevEvaluation = AdEvaluation::where('ad_plan_id', $previousPlan->id)
+                                ->where('user_id',$currentPlan->user_id)
+                                ->first();
             }
         }
 
@@ -126,55 +93,6 @@ class AdEvaluationController extends Controller
             'isAdmin'            => auth()->user()->hasRole('admin'),
         ]);
     }
-
-
-    // public function evaluationForm($id)
-    // {
-    //     // --- 1. Ambil rencana sekarang (ad_plan)
-    //     $currentPlan = AdPlan::with('event')->findOrFail($id);
-
-    //     // !! Jika di AdPlan id nya sudah pernah di pakai pada ad_eval sebelum nya maka
-    //     // !! gunakan current dari event 1 ad_plan sebelum nya
-    //     // !! Jika di adPlan id nya tidak di temukan maka menggunakan previousEvaluation.
-    //     // --- 2. Ambil evaluasi sebelumnya berdasarkan relasi plan
-    //     $previousEvaluation = AdEvaluation::with(['plan.event'])
-    //         ->whereHas('plan', function ($q) use ($currentPlan) {
-    //             $q->where('event_id', $currentPlan->event_id)
-    //                 ->where('status', 'completed');
-    //             // ->where('created_at', '<', $currentPlan->created_at);
-    //         })
-    //         ->orderBy('created_at', 'desc')
-    //         ->first();
-    //     // --- 3. Jika previousEvaluation ditemukan → ambil previousPlan
-    //     $previousPlan = $previousEvaluation?->plan ?? null;
-
-    //     // --- 4. Ambil result sebelumnya
-    //     $previousAdResult = $previousPlan
-    //         ? AdResult::with(['resultPlatforms.platform'])
-    //         ->where('ad_plan_id', $previousPlan->id)
-    //         ->first()
-    //         : null;
-
-    //     // --- 5. Ambil evaluation & result sekarang
-    //     $currentEvaluation = AdEvaluation::where('ad_plan_id', $currentPlan->id)->first();
-
-    //     $adResult = AdResult::with(['resultPlatforms.platform'])
-    //         ->where('ad_plan_id', $currentPlan->id)
-    //         ->first();
-
-    //     $platforms = MasterPlatform::select('id', 'name')->get();
-
-    //     return Inertia::render('admin/markets/marketing/marketing-eval', [
-    //         'currentPlan'        => $currentPlan,
-    //         'previousPlan'       => $previousPlan,
-    //         'prevEvaluation'     => $previousEvaluation,
-    //         'adEvaluation'       => $currentEvaluation,
-    //         'adResult'           => $adResult,
-    //         'previousAdResult'   => $previousAdResult,
-    //         'platforms'          => $platforms,
-    //         'isAdmin'            => auth()->user()->hasRole('admin'),
-    //     ]);
-    // }
 
     public function storeOrUpdate(Request $request)
     {
@@ -200,6 +118,7 @@ class AdEvaluationController extends Controller
 
         $previousPlan = AdPlan::with('event')
             ->where('event_id', $currentPlan->event_id)
+            ->where('user_id', $currentPlan->user_id)
             ->where('created_at', '<', $currentPlan->created_at)
             ->orderBy('created_at', 'desc')
             ->first();

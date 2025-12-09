@@ -174,8 +174,7 @@ class AdPlanPlatformController extends Controller
             'planPlatforms.platform',
             'planPlatforms.goal',
         ]);
-
-        $events = MasterEvent::all();
+        $events = MasterEvent::with('user:id,name')->get();
         $goals = MasterAdGoal::all();
         $platforms = $masterPlatforms;
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
