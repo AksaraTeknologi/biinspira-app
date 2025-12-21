@@ -63,7 +63,7 @@ class DashboardController extends Controller
     private function getRawDataGraphic()
     {
         $query = AdResultPlatform::with([
-            'result:id,ad_plan_id,revenue',
+            'result:id,ad_plan_id,checkout_count,revenue',
             'result.plan.user:id,name',
             'result.plan.planPlatforms:id,ad_plan_id,end_date,audience_target',
         ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
@@ -102,7 +102,8 @@ class DashboardController extends Controller
                 'month_label' => optional($platforms->first()?->end_date)->format('M'),
                 'pendapatan'  => (int) $item->result?->revenue,
                 'pengeluaran' => (int) $item->total_cost,
-                'audience'    => $platforms->sum('audience_target'),
+                'audience'    => (int) $item->result?->sum('checkout_count'),
+                // 'audience'    => $platforms->sum('audience_target'),
                 'user'        => ucfirst(strtolower($item->result->plan->user?->name)),
             ];
         });

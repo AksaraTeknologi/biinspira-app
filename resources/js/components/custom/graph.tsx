@@ -157,7 +157,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                     {d.Efisiensi >= 0 ? "+" : ""}
                     {d.Efisiensi.toLocaleString("id-ID")}
                 </p>
-                <p>Audience: {d.Audience.toLocaleString("id-ID")}</p>
+                <p>Jumlah Peserta: {d.Audience.toLocaleString("id-ID")}</p>
             </div>
         );
     };
@@ -207,10 +207,10 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                 <span className="w-3 h-3 rounded-full bg-blue-700"></span>
                                 <span>Pengeluaran</span>
                             </div>
-                            {/* <div className="flex flex-row items-center gap-2">
+                            <div className="flex flex-row items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-[#CDE9DC]"></span>
-                                <span>Audience</span>
-                            </div> */}
+                                <span>Jumlah Peserta</span>
+                            </div>
                         </div>
                     </div>
 
@@ -254,7 +254,8 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                         axisLine={false}
                                         tick={{ fill: "#9ca3af", fontSize: 12 }}
                                     />
-                                    <YAxis hide />
+                                    <YAxis yAxisId="left" hide />
+                                    <YAxis yAxisId="right" hide />
                                     <Tooltip
                                         content={<CustomTooltip />}
                                         cursor={{ fill: "rgba(0,0,0,0.05)" }}
@@ -266,6 +267,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     <Bar
                                         dataKey="PengeluaranHeight"
                                         stackId="a"
+                                        yAxisId="left"
                                         fill="#3b82f6"
                                         radius={[50, 50, 50, 50]}
                                         barSize={35}
@@ -275,23 +277,26 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     <Bar
                                         dataKey="PendapatanHeight"
                                         stackId="a"
+                                        yAxisId="left"
                                         fill="#facc15"
                                         radius={[50, 50, 50, 50]}
                                         barSize={35}
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
                                     />
-                                    {/* <Bar
+                                    <Bar
                                         dataKey="Audience"
+                                        yAxisId="right"
                                         fill="#CDE9DC"
                                         radius={[50, 50, 50, 50]}
                                         barSize={35}
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
-                                    /> */}
+                                    />
                                     <Line
                                         type="monotone"
                                         dataKey="EfisiensiH"
+                                        yAxisId="left"
                                         stroke="#9ca3af"
                                         strokeWidth={2}
                                         dot={false}
