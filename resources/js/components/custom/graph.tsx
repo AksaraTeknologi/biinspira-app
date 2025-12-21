@@ -4,15 +4,26 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCallback, useMemo, useState } from "react";
 
-interface RawData {
+interface RawDataMonthly {
     month: string;
     pengeluaran: number;
     pendapatan: number;
+    audience: number;
+}
+
+interface RawDataWeekly {
+    week: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
 }
 
 interface GrafikPendapatanProps {
     className?: string;
-    RawData: RawData[];
+    RawData: {
+        bulanan: RawDataMonthly[];
+        mingguan: RawDataWeekly[];
+    };
 }
 
 export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
@@ -32,81 +43,51 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
     }
 
     function toMonthName(input: string) {
-        if (!input) return '';
-        const s = input.toString().trim().toLowerCase();
-        const map: Record<string, string> = {
-            jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May',
-            jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct',
-            nov: 'Nov', dec: 'Dec'
-        };
-
-        return map[s.slice(0, 3)] || input;
+        if (!input) return "";
+        return input.slice(0, 3);
     }
+
+    const activeSource =
+        mode === "mingguan" ? RawData.mingguan : RawData.bulanan;
 
     // Hitung kenaikan default (bulan terakhir)
     // rumus perhitungan: ((pendapatan bulan ini - pendapatan bulan lalu) / pendapatan bulan lalu) * 100
     const defaultIncrease =
-        RawData.length > 1
-            ? parseFloat((
-                ((RawData[RawData.length - 1].pendapatan -
-                    RawData[RawData.length - 2].pendapatan) /
-                    RawData[RawData.length - 2].pendapatan) *
-                100
-            ).toFixed(2))
+        activeSource.length > 1
+            ? parseFloat(
+                (
+                    ((activeSource[activeSource.length - 1].pendapatan -
+                        activeSource[activeSource.length - 2].pendapatan) /
+                        activeSource[activeSource.length - 2].pendapatan) *
+                    100
+                ).toFixed(2)
+            )
             : 0;
 
     // ambil data bulan terakhir dari rawData
-    const lastRaw = RawData.length > 0 ? RawData[RawData.length - 1].month : "";
-    const lastMonth = toFullMonthName(lastRaw);
+    // const lastRaw = RawData.length > 0 ? RawData[RawData.length - 1].month : "";
+    // const lastMonth = toFullMonthName(lastRaw);
 
     // ===============================
     // 🔁 Transformasi data mingguan
-    // ===============================
-    const weeklyData = useMemo(() => {
-        if (RawData.length === 0) return [];
-
-        // Ambil bulan terakhir
-        const last = RawData[RawData.length - 1];
-
-        // Simulasi 4 minggu (contoh: total dibagi 4 minggu)
-        // nanti bisa disesuaikan kalau backend sudah support mingguan
-        const avgPendapatan = last.pendapatan / 4;
-        const avgPengeluaran = last.pengeluaran / 4;
-
-        return Array.from({ length: 4 }).map((_, i) => ({
-            week: `Minggu ke-${i + 1}`,
-            pendapatan: Math.round(avgPendapatan * (0.8 + Math.random() * 0.4)), // variasi acak kecil biar realistis
-            pengeluaran: Math.round(avgPengeluaran * (0.8 + Math.random() * 0.4)),
-        }));
-    }, [RawData]);
-
+    // ==============================
 
     // ===============================
     // 🔄 Tentukan data final untuk grafik
     // ===============================
     const data = useMemo(() => {
-        if (mode === "mingguan") {
-            return weeklyData.map((d) => ({
-                month: d.week,
-                PendapatanHeight: d.pendapatan,
-                Pendapatan: d.pendapatan,
-                PengeluaranHeight: d.pengeluaran,
-                Pengeluaran: d.pengeluaran,
-                EfisiensiH: d.pendapatan + d.pengeluaran,
-                Efisiensi: d.pendapatan - d.pengeluaran,
-            }));
-        }
-        return RawData.map((d) => ({
-            month: toMonthName(d.month),
+        return activeSource.map((d) => ({
+            month:
+                mode === "mingguan"
+                    ? (d as RawDataWeekly).week
+                    : toMonthName((d as RawDataMonthly).month),
             PendapatanHeight: d.pendapatan,
-            Pendapatan: d.pendapatan,
             PengeluaranHeight: d.pengeluaran,
-            Pengeluaran: d.pengeluaran,
-            // EfisiensiH: ((d.pendapatan - (d.pendapatan - d.pengeluaran)) + d.pengeluaran) / 2,
             EfisiensiH: d.pendapatan + d.pengeluaran,
             Efisiensi: d.pendapatan - d.pengeluaran,
+            Audience: d.audience,
         }));
-    }, [mode, RawData, weeklyData]);
+    }, [mode, RawData]);
 
     // 🧠 fungsi untuk menghitung persentase berdasarkan klik
     const handleBarClick = useCallback(
@@ -121,21 +102,17 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
     const selectedData =
         selectedIndex !== null && selectedIndex > 0
             ? {
-                current:
-                    mode === "mingguan"
-                        ? weeklyData[selectedIndex]
-                        : RawData[selectedIndex],
-                previous:
-                    mode === "mingguan"
-                        ? weeklyData[selectedIndex - 1]
-                        : RawData[selectedIndex - 1],
+                current: activeSource[selectedIndex],
+                previous: activeSource[selectedIndex - 1],
             }
             : null;
 
+    // hitung persentase kenaikan berdasarkan data yang dipilih
     const percentageIncrease = selectedData
         ? parseFloat(
             (
-                ((selectedData.current.pendapatan - selectedData.previous.pendapatan) /
+                ((selectedData.current.pendapatan -
+                    selectedData.previous.pendapatan) /
                     selectedData.previous.pendapatan) *
                 100
             ).toFixed(2)
@@ -143,39 +120,46 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         : defaultIncrease;
 
     const currentLabel = (() => {
+        if (!activeSource.length) return "";
+
         if (!selectedData) {
-            if (mode === "mingguan") {
-                return weeklyData.length ? weeklyData[weeklyData.length - 1].week : "";
-            }
-            return lastMonth;
+            const last = activeSource[activeSource.length - 1];
+            return mode === "mingguan"
+                ? (last as RawDataWeekly).week
+                : toFullMonthName((last as RawDataMonthly).month);
         }
 
-        if (mode === "mingguan") {
-            // when mode is "mingguan", current comes from weeklyData and has a 'week' property
-            return (selectedData.current as { week: string }).week;
-        }
-
-        // otherwise current is RawData and has a 'month' property
-        return toFullMonthName((selectedData.current as RawData).month);
+        return mode === "mingguan"
+            ? (selectedData.current as RawDataWeekly).week
+            : toFullMonthName(
+                (selectedData.current as RawDataMonthly).month
+            );
     })();
 
     const CustomTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-            const efisiensi = payload.find((p: any) => p.dataKey === "EfisiensiNilai");
-            return (
-                <div className="p-2 rounded-md shadow-md border border-foreground bg-background">
-                    <p><strong>{payload[0].payload.month}</strong></p>
-                    <p>Omset: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
-                    <p>Pengeluaran: {Number(payload[0].payload.Pengeluaran).toLocaleString('id-ID')}</p>
-                    {(() => {
-                        const ef = Number(payload[0].payload.Efisiensi);
-                        const display = ef >= 0 ? `+${ef.toLocaleString('id-ID')}` : ef.toLocaleString('id-ID');
-                        return <p className={ef >= 0 ? 'text-green-500 font-semibold' : 'text-red-500 font-semibold'}>Efisiensi: {display}</p>;
-                    })()}
-                </div>
-            );
-        }
-        return null;
+        if (!active || !payload?.length) return null;
+
+        const d = payload[0].payload;
+
+        return (
+            <div className="p-2 rounded-md shadow-md border bg-background">
+                <p className="font-semibold">{mode === "mingguan" ? d.month : toFullMonthName(d.month)}</p>
+                <p>Omset: {d.PendapatanHeight.toLocaleString("id-ID")}</p>
+                <p>Pengeluaran: {d.PengeluaranHeight.toLocaleString("id-ID")}</p>
+                <p
+                    className={
+                        d.Efisiensi >= 0
+                            ? "text-green-500 font-semibold"
+                            : "text-red-500 font-semibold"
+                    }
+                >
+                    Efisiensi:{" "}
+                    {d.Efisiensi >= 0 ? "+" : ""}
+                    {d.Efisiensi.toLocaleString("id-ID")}
+                </p>
+                <p>Audience: {d.Audience.toLocaleString("id-ID")}</p>
+            </div>
+        );
     };
 
     return (
@@ -224,8 +208,8 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                 <span>Pengeluaran</span>
                             </div>
                             {/* <div className="flex flex-row items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                                <span>Efisiensi</span>
+                                <span className="w-3 h-3 rounded-full bg-[#CDE9DC]"></span>
+                                <span>Audience</span>
                             </div> */}
                         </div>
                     </div>
@@ -238,6 +222,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     barCategoryGap="12%"
                                     barGap={8}
                                     style={{ minHeight: 50 }}
+                                    onClick={handleBarClick}
                                 >
                                     <defs>
                                         <filter id="barShadow" x="-20%" y="-20%" width="200%" height="140%">
@@ -296,6 +281,14 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
                                     />
+                                    {/* <Bar
+                                        dataKey="Audience"
+                                        fill="#CDE9DC"
+                                        radius={[50, 50, 50, 50]}
+                                        barSize={35}
+                                        filter="url(#barShadow)"
+                                        onClick={handleBarClick}
+                                    /> */}
                                     <Line
                                         type="monotone"
                                         dataKey="EfisiensiH"

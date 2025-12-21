@@ -10,6 +10,7 @@ use App\Models\MasterEvent;
 use App\Models\AdPlan;
 use App\Models\AdResultPlatform;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -49,7 +50,7 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($dataHistoris);
+        // dd($rawDataGraphic);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
@@ -64,9 +65,10 @@ class DashboardController extends Controller
         $query = AdResultPlatform::with([
             'result:id,ad_plan_id,revenue',
             'result.plan.user:id,name',
-            'result.plan.planPlatforms:id,ad_plan_id,end_date',
+            'result.plan.planPlatforms:id,ad_plan_id,end_date,audience_target',
         ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
 
+        // role filtering
         $user = Auth::user();
         $userName = null;
         if ($user) {
@@ -81,35 +83,67 @@ class DashboardController extends Controller
             });
         }
 
-        // filter hanya mengambi 12 bulan terakhir
-        $query->whereHas('result.plan.planPlatforms', function ($q) {
+        // 📅 12 bulan terakhir
+        $query->whereHas(
+            'result.plan.planPlatforms',
+            fn($q) =>
             $q->whereBetween('end_date', [
                 now()->subMonths(11)->startOfMonth(),
                 now()->endOfMonth()
-            ]);
+            ])
+        );
+
+        $raw = $query->get()->map(function ($item) {
+            $platforms = $item->result->plan->planPlatforms;
+
+            return [
+                'date'        => optional($platforms->first()?->end_date)->toDateString(),
+                'month_key'   => optional($platforms->first()?->end_date)->format('Y-m'),
+                'month_label' => optional($platforms->first()?->end_date)->format('M'),
+                'pendapatan'  => (int) $item->result?->revenue,
+                'pengeluaran' => (int) $item->total_cost,
+                'audience'    => $platforms->sum('audience_target'),
+                'user'        => ucfirst(strtolower($item->result->plan->user?->name)),
+            ];
         });
 
-        return $query->get()->map(function ($item) {
-            return [
-                'pendapatan' => (int) round(optional($item->result)->revenue ?? 0),
-                'pengeluaran' => (int) round($item->total_cost ?? 0),
-                // 'month' => $item->created_at->format('Y-m') ?? null,
-                'month' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('Y-m') : null,
-                // 'label' => $item->created_at->format('M') ?? null,
-                'label' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('M') : null,
-                'user' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
-            ];
-        })
-            ->groupBy('month')->map(function ($i, $mK) {
+        // ======================
+        // 📊 BULANAN
+        // ======================
+        $bulanan = $raw
+            ->groupBy('month_key')
+            ->map(fn($i) => [
+                'user'        => $i->first()['user'],
+                'month'       => $i->first()['month_label'],
+                'pendapatan'  => $i->sum('pendapatan'),
+                'pengeluaran' => $i->sum('pengeluaran'),
+                'audience'    => $i->sum('audience'),
+            ])
+            ->sortKeys()
+            ->values();
+
+        // ======================
+        // 📈 MINGGUAN (ASLI)
+        // ======================
+        $mingguan = $this->groupByWeek($raw)
+            ->map(function ($items, $weekKey) {
+                $firstDate = Carbon::parse($items->first()['date']);
+
                 return [
-                    'user' => $i->first()['user'],
-                    'month'      => $i->first()['label'],
-                    'pendapatan' => $i->sum('pendapatan'),
-                    'pengeluaran' => $i->sum('pengeluaran'),
+                    'week'        => 'Minggu ' . $firstDate->weekOfMonth,
+                    'month'       => $firstDate->format('M'),
+                    'year'        => $firstDate->year,
+                    'pendapatan'  => $items->sum('pendapatan'),
+                    'pengeluaran' => $items->sum('pengeluaran'),
+                    'audience'    => $items->sum('audience'),
                 ];
-            })->sortBy(function ($item, $key) {  // <<< SORT DI SINI
-                return $key;                   // key = "Y-m" format → auto ascending
-            })->values();
+            })
+            ->values();
+
+        return [
+            'bulanan'  => $bulanan,
+            'mingguan' => $mingguan,
+        ];
     }
 
     private function getTableData()
@@ -227,5 +261,14 @@ class DashboardController extends Controller
                 unset($item['created_at']);
                 return $item;
             });
+    }
+
+    private function groupByWeek(Collection $items)
+    {
+        return $items->groupBy(function ($item) {
+            $date = Carbon::parse($item['date']);
+
+            return $date->format('Y-m') . '-W' . $date->weekOfMonth;
+        });
     }
 }
