@@ -116,8 +116,6 @@
     </table>
 </div>
 
-
-
 {{-- ======================= --}}
 {{-- PLATFORM DETAILS --}}
 {{-- ======================= --}}
@@ -182,7 +180,24 @@
     @endforeach
 </div>
 
+@if(!empty($data['image_flayer']) && file_exists($data['image_flayer']))
+<div class="section">
+    <h2>Flayer Iklan</h2>
 
+    <div style="text-align:center; margin-top:10px;">
+        <img
+            src="{{ $data['image_flayer'] }}"
+            style="max-width: 100%; max-height: 300px; border:1px solid #ccc; padding:5px;"
+            alt="Flayer Image"
+        >
+        @if(!empty($data['title_flayer']))
+            <div style="margin-top:5px; font-size:12px; font-weight:bold;">
+                {{ $data['title_flayer'] }}
+            </div>
+        @endif
+    </div>
+</div>
+@endif
 
 {{-- ======================= --}}
 {{-- RESULT DATA --}}
@@ -279,52 +294,40 @@
     @endforeach
 </div>
 
-
-
-
 {{-- ======================= --}}
 {{-- EVALUATION --}}
 {{-- ======================= --}}
 <div class="section">
-    <h2>Evaluation</h2>
+    <h2>Evaluasi Iklan</h2>
 
     @foreach($data['evaluation'] as $ev)
-        <table style="margin-bottom: 10px;">
-
+        <table style="margin-bottom: 10px; width: 100%; border-collapse: collapse;">
             <tr>
-                <th>Previous Event</th>
-                <td colspan="3">{{ $ev['previous_event'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Event</th>
+                <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">{{ $ev['previous_event'] }}</td>
             </tr>
-
             <tr>
-                <th>Previous Checkout</th>
-                <td>{{ $ev['previous_checkout'] }}</td>
-
-                <th>Current Checkout</th>
-                <td>{{ $ev['current_checkout'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Checkout Sebelumnya</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['previous_checkout'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Checkout Sekarang</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['current_checkout'] }}</td>
             </tr>
-
             <tr>
-                <th>Previous Ad Performance</th>
-                <td>{{ $ev['previous_ad_performance'] }}</td>
-
-                <th>Current Ad Performance</th>
-                <td>{{ $ev['current_ad_performance'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Kinerja Iklan Sebelumnya</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['previous_ad_performance'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Kinerja Iklan Sekarang</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['current_ad_performance'] }}</td>
             </tr>
-
             <tr>
-                <th>Previous Other Performance</th>
-                <td>{{ $ev['previous_other_performance'] }}</td>
-
-                <th>Current Other Performance</th>
-                <td>{{ $ev['current_other_performance'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Kinerja Lain Sebelumnya</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['previous_other_performance'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Kinerja Lain Sekarang</th>
+                <td style="width: 35%; padding: 8px; border: 1px solid #ddd;">{{ $ev['current_other_performance'] }}</td>
             </tr>
-
             <tr>
-                <th>Next Ad Strategy</th>
-                <td colspan="3">{{ $ev['next_ad_strategy'] }}</td>
+                <th style="width: 15%; vertical-align: top; text-align: left; padding: 8px; border: 1px solid #ddd;">Strategi Selanjutnya</th>
+                <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">{{ $ev['next_ad_strategy'] }}</td>
             </tr>
-
         </table>
     @endforeach
 </div>

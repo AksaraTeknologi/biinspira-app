@@ -11,6 +11,9 @@ import { useState } from 'react';
 export interface AdPlanData {
     id: string | null;
     user_name: string | null;
+    ad_schedule_time: string | null;
+    title_flayer: string | null;
+    image_flayer: string | null;
     name_event: string | null;
     status: string | null;
     platforms: PlatformData[] | PlatformData | null;
@@ -122,14 +125,10 @@ export default function MarketingShow({ data }: AdPlanProps) {
     function renderAlphabetList(value: string | null | undefined) {
         if (!value) return <div className="mt-1">-</div>;
 
-        const parts = value.split(";").map(v => v.trim());
+        const parts = value.split(';').map((v) => v.trim());
 
         if (parts.length <= 1) {
-            return (
-                <div className="mt-1">
-                    - {parts[0]}
-                </div>
-            );
+            return <div className="mt-1">- {parts[0]}</div>;
         }
 
         return (
@@ -192,10 +191,45 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             <Label>Status</Label>
                                             <div className="mt-1">{data?.status || '-'}</div>
                                         </div>
+                                        <div>
+                                            <Label>Jadwal Tayang Iklan</Label>
+                                            <div className="mt-1">{data?.ad_schedule_time || '-'}</div>
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
+                            {data?.image_flayer && (
+                                <Card className="w-full border-zinc-200 shadow-md">
+                                    <CardHeader>
+                                        <Label>Gambar Flayer</Label>
+                                    </CardHeader>
 
+                                    <CardContent className="flex flex-col items-center gap-3">
+                                        <a href={data.image_flayer} target="_blank" rel="noopener noreferrer" className="block">
+                                            <img
+                                                src={data.image_flayer}
+                                                alt={data.title_flayer ?? 'Flayer Image'}
+                                                className="max-h-[300px] w-auto rounded-md border border-zinc-300 object-contain shadow transition hover:opacity-90"
+                                            />
+                                        </a>
+
+                                        {/* ACTIONS */}
+                                        <div className="flex gap-2">
+                                            <Button asChild variant="outline" size="sm">
+                                                <a href={data.image_flayer} target="_blank" rel="noopener noreferrer">
+                                                    Preview
+                                                </a>
+                                            </Button>
+
+                                            <Button asChild size="sm">
+                                                <a href={data.image_flayer} download>
+                                                    Download
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                             <Card className="w-full border-zinc-200 shadow-md">
                                 <CardContent>
                                     <Tabs value={planTab} onValueChange={setPlanTab}>

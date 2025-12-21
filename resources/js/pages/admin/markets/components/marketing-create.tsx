@@ -38,6 +38,8 @@ export default function PerencanaanIklan() {
     };
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [filteredEvents, setFilteredEvents] = useState(events);
+    const [adScheduleTime, setAdScheduleTime] = useState('00:00');
+    const [imageFlayer, setImageFlayer] = useState<File | null>(null);
 
     const formatNol = (value: string | number) => {
         if (!value) return '';
@@ -185,7 +187,7 @@ export default function PerencanaanIklan() {
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
             route(routeName),
-            { ...filteredData, mode },
+            { ...filteredData, ad_schedule_time: adScheduleTime, image_flayer: imageFlayer, mode },
             {
                 onSuccess: () => toast.success('Data berhasil disimpan!'),
                 onError: () => toast.error('Gagal menyimpan data.'),
@@ -290,7 +292,6 @@ export default function PerencanaanIklan() {
                                     </Button>
                                 </div>
                             </div>
-                            {/* --- AKHIR BLOK DINAMIS --- */}
                         </div>
                     )}
 
@@ -459,7 +460,7 @@ export default function PerencanaanIklan() {
 
     return (
         <AppLayout>
-            <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
+            <div className="w-full space-y-6 p-4 md:p-6">
                 <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
 
                 <form onSubmit={handleSubmit}>
@@ -521,6 +522,27 @@ export default function PerencanaanIklan() {
                                             )}
                                         </SelectContent>
                                     </Select>
+                                    <div className="mt-4">
+                                        <Label>Jam Tayang Iklan</Label>
+                                        <Input
+                                            type="time"
+                                            required
+                                            id="time-picker"
+                                            step={60}
+                                            onChange={(e) => setAdScheduleTime(e.target.value)}
+                                            defaultValue={'00:00:00'}
+                                            className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                        />
+                                    </div>
+                                    <div className="mt-4">
+                                        <Label>Gambar Flayer</Label>
+                                        <Input
+                                            type="file"
+                                            placeholder="Masukkan Flayer Gambar"
+                                            className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                            onChange={(e) => setImageFlayer(e.target.files?.[0] || null)}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Tabs */}

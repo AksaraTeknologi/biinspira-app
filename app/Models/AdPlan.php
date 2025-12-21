@@ -10,6 +10,14 @@ class AdPlan extends Model
 {
     use HasFactory, HasUuids;
 
+    protected $fillable = [
+        'user_id',
+        'event_id',
+        'status',
+        "ad_schedule_time",
+        "title_flayer",
+        "image_flayer"
+    ];
     protected $guarded = ['created_at', 'updated_at'];
 
     public function user()
