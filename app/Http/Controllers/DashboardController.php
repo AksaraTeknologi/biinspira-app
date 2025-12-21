@@ -60,6 +60,22 @@ class DashboardController extends Controller
         ]);
     }
 
+    private function groupByWeek(Collection $items)
+    {
+        return $items->groupBy(function ($item) {
+            $date = Carbon::parse($item['date']);
+
+            return $date->format('Y-m') . '-W' . $date->weekOfMonth;
+        });
+    }
+
+    private function groupByEvent(Collection $items)
+    {
+        return $items->groupBy(function ($item) {
+            return $item['id'];
+        });
+    }
+
     private function getRawDataGraphic()
     {
         $query = AdResultPlatform::with([
@@ -93,23 +109,26 @@ class DashboardController extends Controller
             ])
         );
 
-        $raw = $query->get()->map(function ($item) {
+        $raw = $query->get()->map(function ($item, $key) {
             $platforms = $item->result->plan->planPlatforms;
 
             return [
+                'id'          => $item->result?->id,
+                'event_name'  => $item->result->plan->event?->name, 
+                'event_label' => $key + 1,
+                // 'event_date' => optional($platforms->first()?->end_date)->format('d/n/y'),
                 'date'        => optional($platforms->first()?->end_date)->toDateString(),
                 'month_key'   => optional($platforms->first()?->end_date)->format('Y-m'),
                 'month_label' => optional($platforms->first()?->end_date)->format('M'),
                 'pendapatan'  => (int) $item->result?->revenue,
                 'pengeluaran' => (int) $item->total_cost,
-                'audience'    => (int) $item->result?->sum('checkout_count'),
-                // 'audience'    => $platforms->sum('audience_target'),
+                'audience'    => (int) $item->result?->checkout_count,
                 'user'        => ucfirst(strtolower($item->result->plan->user?->name)),
             ];
         });
 
         // ======================
-        // 📊 BULANAN
+        // Mounthly
         // ======================
         $bulanan = $raw
             ->groupBy('month_key')
@@ -124,7 +143,7 @@ class DashboardController extends Controller
             ->values();
 
         // ======================
-        // 📈 MINGGUAN (ASLI)
+        // Weekly
         // ======================
         $mingguan = $this->groupByWeek($raw)
             ->map(function ($items, $weekKey) {
@@ -141,9 +160,23 @@ class DashboardController extends Controller
             })
             ->values();
 
+        // ======================
+        // Events
+        // ======================
+        $event = $this->groupByEvent($raw)
+            ->map(fn($i) => [
+                'event_name'  => $i->first()['event_name'],
+                'event_label' => "E" . $i->first()['event_label'],
+                'pendapatan'  => $i->sum('pendapatan'),
+                'pengeluaran' => $i->sum('pengeluaran'),
+                'audience'    => $i->sum('audience'),
+            ])
+            ->values();
+
         return [
             'bulanan'  => $bulanan,
             'mingguan' => $mingguan,
+            'event'    => $event,
         ];
     }
 
@@ -262,14 +295,5 @@ class DashboardController extends Controller
                 unset($item['created_at']);
                 return $item;
             });
-    }
-
-    private function groupByWeek(Collection $items)
-    {
-        return $items->groupBy(function ($item) {
-            $date = Carbon::parse($item['date']);
-
-            return $date->format('Y-m') . '-W' . $date->weekOfMonth;
-        });
     }
 }
