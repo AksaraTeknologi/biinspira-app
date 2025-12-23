@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function MarketingEval() {
     const { props }: any = usePage();
@@ -19,16 +20,69 @@ export default function MarketingEval() {
 
     // === Determine CASE ===
     const isFirstBatch = prevEvaluation === null;
+    const cleanNumberFromDB = (value: string | number) => {
+        if (value === null || value === undefined) return '';
+        let num = parseFloat(value.toString());
+        if (isNaN(num)) return '';
+        num = Math.floor(num);
+        return num.toString();
+    };
+    const formatNol = (value: string | number) => {
+        if (!value) return '';
 
-    // === Choose previous event name ===
+        let numberString = value.toString().replace(/[^0-9]/g, '');
+        numberString = numberString.split(',')[0].split('.')[0];
+
+        const remainder = numberString.length % 3;
+        let formatted = numberString.substr(0, remainder);
+        const thousands = numberString.substr(remainder).match(/\d{3}/g);
+
+        if (thousands) {
+            formatted += (remainder ? '.' : '') + thousands.join('.');
+        }
+
+        return formatted;
+    };
+    const buildCurrentAdPerformance = () => {
+        if (!adResult) return '';
+
+        const revenue = adResult.revenue ?? 0;
+        const checkout = adResult.checkout_count ?? 0;
+        const platforms = adResult.result_platforms ?? [];
+
+        const platformTotals: string[] = [];
+
+        platforms.forEach((platform: any) => {
+            const platformName = platform.platform?.name ?? '-';
+            const platformCost = platform.total_cost ?? 0;
+
+            let reach = 0;
+            let impression = 0;
+
+            platform.metrics?.forEach((metric: any) => {
+                reach += Number(metric.reach ?? 0);
+                impression += Number(metric.impressions ?? 0);
+            });
+
+            platformTotals.push(
+                `Total Biaya Iklan (${platformName}) : ${formatNol(cleanNumberFromDB(platformCost))}
+Total Reach (${platformName}) : ${formatNol(cleanNumberFromDB(reach))}
+Total Impression (${platformName}) : ${formatNol(cleanNumberFromDB(impression))}`,
+            );
+        });
+
+        return `Omset per Event : ${formatNol(cleanNumberFromDB(revenue))}
+Jumlah Checkout : ${formatNol(cleanNumberFromDB(checkout))}
+
+${platformTotals.join('\n\n')}`;
+    };
+
     const previousEventName = isFirstBatch ? prevEvaluation?.plan?.event?.name : previousPlan?.event?.name;
     const previousCheckoutValue = isFirstBatch ? (adEvaluation?.previous_checkout ?? previousCheckoutFromResult) : previousCheckoutFromResult;
 
-    // === Previous performance ===
     const previousAdPerfValue = isFirstBatch ? adEvaluation?.previous_ad_performance : prevEvaluation?.current_ad_performance;
     const previousOtherPerfValue = isFirstBatch ? adEvaluation?.previous_other_performance : prevEvaluation?.current_other_performance;
 
-    // === form ===
     const { data, setData, post, processing } = useForm({
         ad_plan_id: currentPlan.id,
         current_event_name: currentPlan.event.name,
@@ -41,6 +95,19 @@ export default function MarketingEval() {
         current_other_performance: adEvaluation?.current_other_performance || '',
         next_ad_strategy: adEvaluation?.next_ad_strategy || '',
     });
+    useEffect(() => {
+        if (!adResult) return;
+        const generatedText = buildCurrentAdPerformance();
+        const currentValue = data.current_ad_performance?.trim() ?? '';
+        const hasAutoText = currentValue.includes('Omset per Event') || currentValue.includes('Jumlah Checkout');
+        if (!currentValue) {
+            setData('current_ad_performance', generatedText);
+            return;
+        }
+        if (!hasAutoText) {
+            setData('current_ad_performance', `${generatedText}\n\n${currentValue}`);
+        }
+    }, [adResult]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,33 +120,7 @@ export default function MarketingEval() {
         { title: 'Marketing', href: route('admin.marketing.index') },
         { title: 'Evaluasi Iklan', href: '' },
     ];
-    const formatRupiah = (value: string | number) => {
-        if (!value) return '';
-        let numberString = value.toString().replace(/[^,\d]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let rupiah = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-        return rupiah ? 'Rp ' + rupiah : '';
-    };
-
-    const toPlainNumber = (value: string) => {
-        if (!value) return '';
-        return value.replace(/[^0-9]/g, '');
-    };
-    // !! beberapa masih di pakai
-    const toNumberOnly = (value: string) => {
-        if (!value) return '';
-        value = value.split('.')[0].split(',')[0];
-        return value.replace(/[^0-9]/g, '');
-    };
     const isPrevLocked = !isFirstBatch;
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <div className="w-full space-y-6 p-6">
@@ -110,8 +151,8 @@ export default function MarketingEval() {
                                                 inputMode="numeric"
                                                 required
                                                 maxLength={13}
-                                                value={data.current_checkout}
-                                                onChange={(e) => setData('current_checkout', toPlainNumber(e.target.value))}
+                                                value={formatNol(data.current_checkout)}
+                                                onChange={(e) => setData('current_checkout', formatNol(e.target.value))}
                                             />
                                         </div>
 
@@ -158,10 +199,10 @@ export default function MarketingEval() {
                                                 type="text"
                                                 inputMode="numeric"
                                                 maxLength={13}
-                                                value={data.previous_checkout}
+                                                value={formatNol(data.previous_checkout)}
                                                 readOnly={isPrevLocked}
                                                 required
-                                                onChange={(e) => setData('previous_checkout', toPlainNumber(e.target.value))}
+                                                onChange={(e) => setData('previous_checkout', formatNol(e.target.value))}
                                             />
                                         </div>
 

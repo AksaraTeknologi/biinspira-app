@@ -21,7 +21,7 @@ class AdEvaluationController extends Controller
             ->where('created_at', '<', $currentPlan->created_at)
             ->whereHas('plan', function ($q) use ($currentPlan) {
                 $q->where('event_id', $currentPlan->event_id)
-                  ->where('user_id',$currentPlan->user_id)
+                    ->where('user_id', $currentPlan->user_id)
                     ->where('status', 'completed');
             })
             ->orderBy('created_at', 'desc')
@@ -58,7 +58,7 @@ class AdEvaluationController extends Controller
             $previousPlan = AdPlan::with('event')
                 ->where('event_id', $currentPlan->event_id)
                 ->where('status', 'completed')
-                ->where('user_id',$currentPlan->user_id)
+                ->where('user_id', $currentPlan->user_id)
                 ->where('created_at', '<', $currentPlan->created_at)
                 ->orderBy('created_at', 'desc')
                 ->first();
@@ -69,16 +69,18 @@ class AdEvaluationController extends Controller
                     ->first();
 
                 $prevEvaluation = AdEvaluation::where('ad_plan_id', $previousPlan->id)
-                                ->where('user_id',$currentPlan->user_id)
-                                ->first();
+                    ->where('user_id', $currentPlan->user_id)
+                    ->first();
             }
         }
 
         // --- CURRENT evaluation & result
         $currentEvaluation = AdEvaluation::where('ad_plan_id', $currentPlan->id)->first();
 
-        $adResult = AdResult::with(['resultPlatforms.platform'])
-            ->where('ad_plan_id', $currentPlan->id)
+        $adResult = AdResult::with([
+            'resultPlatforms.platform',
+            'resultPlatforms.metrics'
+        ])->where('ad_plan_id', $currentPlan->id)
             ->first();
 
         $platforms = MasterPlatform::select('id', 'name')->get();
