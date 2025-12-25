@@ -11,7 +11,9 @@ use App\Models\MasterPlatform;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AdPlanPlatformController extends Controller
@@ -27,8 +29,7 @@ class AdPlanPlatformController extends Controller
             'planPlatforms.platform',
             'planPlatforms.goal',
             'results'
-        ])
-            ->orderBy("created_at", "desc");
+        ])->orderBy("created_at", "desc");
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id)->latest();
         }
@@ -117,9 +118,18 @@ class AdPlanPlatformController extends Controller
             }
             $validatedData[$platformKey] = $validator->validated();
         }
+        $imageFlayerPath = null;
+        $titleFlayer = null;
+        if ($request->hasFile('image_flayer')) {
+            $imageFlayerPath = $request->file('image_flayer')->store('flayers', 'public');
+            $titleFlayer = pathinfo($request->file("image_flayer")->getClientOriginalName(), PATHINFO_FILENAME);
+        }
         $event = MasterEvent::findOrFail($firstPlatform['event_id']);
         $adPlan = AdPlan::create([
             'event_id' => $event->id,
+            'title_flayer' => $titleFlayer ?? null,
+            'image_flayer' => $imageFlayerPath ?? null,
+            'ad_schedule_time' => $request->input('ad_schedule_time'),
             'user_id'  => $firstPlatform['user_id'] ?? auth()->id(),
             'status'   => 'draft',
         ]);
@@ -154,7 +164,6 @@ class AdPlanPlatformController extends Controller
             )
             ->with('success', 'Semua perencanaan iklan berhasil disimpan!');
     }
-
 
     public function edit($id)
     {
@@ -206,6 +215,7 @@ class AdPlanPlatformController extends Controller
 
         $validator = Validator::make($data, [
             'user_id' => 'required|exists:users,id',
+            'ad_schedule_time' => 'required|string',
             'event_id' => 'required|exists:master_events,id',
             'ad_plan_id' => 'required|exists:ad_plans,id',
             'platforms' => 'nullable|array',
@@ -231,7 +241,20 @@ class AdPlanPlatformController extends Controller
 
         $validated = $validator->validated();
         $adPlan = AdPlan::findOrFail($validated['ad_plan_id']);
+        if ($request->hasFile('image_flayer')) {
+            if ($adPlan->image_flayer) {
+                Storage::disk('public')->delete($adPlan->image_flayer);
+            }
+            $file = $request->file('image_flayer');
+            $imageFlayerPath = $file->store('flayers', 'public');
+            $titleFlayer = Str::of(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            $adPlan->update([
+                'image_flayer' => $imageFlayerPath,
+                'title_flayer' => $titleFlayer,
+            ]);
+        }
         $adPlan->update([
+            'ad_schedule_time' => $validated['ad_schedule_time'],
             'event_id' => $validated['event_id'],
             'user_id'  => $validated['user_id'],
         ]);

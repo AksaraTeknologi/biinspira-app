@@ -2,21 +2,41 @@ import { Bar, ResponsiveContainer, XAxis, Tooltip, Line, CartesianGrid, YAxis, C
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-interface RawData {
+interface RawDataMonthly {
     month: string;
     pengeluaran: number;
     pendapatan: number;
+    audience: number;
+}
+
+interface RawDataWeekly {
+    week: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
+}
+
+interface RawDataEvent {
+    event_name: string;
+    event_label: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
 }
 
 interface GrafikPendapatanProps {
     className?: string;
-    RawData: RawData[];
+    RawData: {
+        bulanan: RawDataMonthly[];
+        mingguan: RawDataWeekly[];
+        event: RawDataEvent[];
+    };
 }
 
 export default function GrafikPendapatan({ className, RawData }: GrafikPendapatanProps) {
-    const [mode, setMode] = useState<"bulanan" | "mingguan">("bulanan");
+    const [mode, setMode] = useState<"bulanan" | "mingguan" | "event">("bulanan");
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
     function toFullMonthName(input: string) {
@@ -32,81 +52,67 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
     }
 
     function toMonthName(input: string) {
-        if (!input) return '';
-        const s = input.toString().trim().toLowerCase();
-        const map: Record<string, string> = {
-            jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May',
-            jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct',
-            nov: 'Nov', dec: 'Dec'
-        };
-
-        return map[s.slice(0, 3)] || input;
+        if (!input) return "";
+        return input.slice(0, 3);
     }
+
+    const activeSource = useMemo(() => {
+        switch (mode) {
+            case "mingguan":
+                return RawData.mingguan;
+            case "event":
+                return RawData.event;
+            default:
+                return RawData.bulanan;
+        }
+    }, [mode, RawData]);
 
     // Hitung kenaikan default (bulan terakhir)
     // rumus perhitungan: ((pendapatan bulan ini - pendapatan bulan lalu) / pendapatan bulan lalu) * 100
     const defaultIncrease =
-        RawData.length > 1
-            ? parseFloat((
-                ((RawData[RawData.length - 1].pendapatan -
-                    RawData[RawData.length - 2].pendapatan) /
-                    RawData[RawData.length - 2].pendapatan) *
-                100
-            ).toFixed(2))
+        activeSource.length > 1
+            ? parseFloat(
+                (
+                    ((activeSource[activeSource.length - 1].pendapatan -
+                        activeSource[activeSource.length - 2].pendapatan) /
+                        activeSource[activeSource.length - 2].pendapatan) *
+                    100
+                ).toFixed(2)
+            )
             : 0;
-
-    // ambil data bulan terakhir dari rawData
-    const lastRaw = RawData.length > 0 ? RawData[RawData.length - 1].month : "";
-    const lastMonth = toFullMonthName(lastRaw);
-
-    // ===============================
-    // 🔁 Transformasi data mingguan
-    // ===============================
-    const weeklyData = useMemo(() => {
-        if (RawData.length === 0) return [];
-
-        // Ambil bulan terakhir
-        const last = RawData[RawData.length - 1];
-
-        // Simulasi 4 minggu (contoh: total dibagi 4 minggu)
-        // nanti bisa disesuaikan kalau backend sudah support mingguan
-        const avgPendapatan = last.pendapatan / 4;
-        const avgPengeluaran = last.pengeluaran / 4;
-
-        return Array.from({ length: 4 }).map((_, i) => ({
-            week: `Minggu ke-${i + 1}`,
-            pendapatan: Math.round(avgPendapatan * (0.8 + Math.random() * 0.4)), // variasi acak kecil biar realistis
-            pengeluaran: Math.round(avgPengeluaran * (0.8 + Math.random() * 0.4)),
-        }));
-    }, [RawData]);
-
 
     // ===============================
     // 🔄 Tentukan data final untuk grafik
     // ===============================
     const data = useMemo(() => {
-        if (mode === "mingguan") {
-            return weeklyData.map((d) => ({
-                month: d.week,
-                PendapatanHeight: d.pendapatan,
-                Pendapatan: d.pendapatan,
-                PengeluaranHeight: d.pengeluaran,
-                Pengeluaran: d.pengeluaran,
-                EfisiensiH: d.pendapatan + d.pengeluaran,
-                Efisiensi: d.pendapatan - d.pengeluaran,
-            }));
-        }
-        return RawData.map((d) => ({
-            month: toMonthName(d.month),
+        return activeSource.map((d: any) => ({
+            // =====================
+            // LABEL UNTUK X-AXIS
+            // =====================
+            label:
+                mode === "bulanan"
+                    ? toMonthName(d.month)
+                    : mode === "mingguan"
+                        ? d.week
+                        : d.event_label,   // 👈 KHUSUS EVENT
+
+            // =====================
+            // LABEL UNTUK TOOLTIP
+            // =====================
+            tooltipLabel:
+                mode === "event"
+                    ? d.event_name
+                    : mode === "mingguan"
+                        ? d.week
+                        : toFullMonthName(d.month),
+
             PendapatanHeight: d.pendapatan,
-            Pendapatan: d.pendapatan,
             PengeluaranHeight: d.pengeluaran,
-            Pengeluaran: d.pengeluaran,
-            // EfisiensiH: ((d.pendapatan - (d.pendapatan - d.pengeluaran)) + d.pengeluaran) / 2,
             EfisiensiH: d.pendapatan + d.pengeluaran,
             Efisiensi: d.pendapatan - d.pengeluaran,
+            Audience: d.audience,
         }));
-    }, [mode, RawData, weeklyData]);
+    }, [activeSource, mode]);
 
     // 🧠 fungsi untuk menghitung persentase berdasarkan klik
     const handleBarClick = useCallback(
@@ -121,21 +127,17 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
     const selectedData =
         selectedIndex !== null && selectedIndex > 0
             ? {
-                current:
-                    mode === "mingguan"
-                        ? weeklyData[selectedIndex]
-                        : RawData[selectedIndex],
-                previous:
-                    mode === "mingguan"
-                        ? weeklyData[selectedIndex - 1]
-                        : RawData[selectedIndex - 1],
+                current: activeSource[selectedIndex],
+                previous: activeSource[selectedIndex - 1],
             }
             : null;
 
+    // hitung persentase kenaikan berdasarkan data yang dipilih
     const percentageIncrease = selectedData
         ? parseFloat(
             (
-                ((selectedData.current.pendapatan - selectedData.previous.pendapatan) /
+                ((selectedData.current.pendapatan -
+                    selectedData.previous.pendapatan) /
                     selectedData.previous.pendapatan) *
                 100
             ).toFixed(2)
@@ -143,40 +145,73 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
         : defaultIncrease;
 
     const currentLabel = (() => {
+        if (!activeSource.length) return "";
+
         if (!selectedData) {
-            if (mode === "mingguan") {
-                return weeklyData.length ? weeklyData[weeklyData.length - 1].week : "";
-            }
-            return lastMonth;
+            const last = activeSource[activeSource.length - 1];
+            return mode === "mingguan"
+                ? (last as RawDataWeekly).week
+                : toFullMonthName((last as RawDataMonthly).month);
         }
 
-        if (mode === "mingguan") {
-            // when mode is "mingguan", current comes from weeklyData and has a 'week' property
-            return (selectedData.current as { week: string }).week;
-        }
-
-        // otherwise current is RawData and has a 'month' property
-        return toFullMonthName((selectedData.current as RawData).month);
+        return mode === "mingguan"
+            ? (selectedData.current as RawDataWeekly).week
+            : toFullMonthName(
+                (selectedData.current as RawDataMonthly).month
+            );
     })();
 
     const CustomTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-            const efisiensi = payload.find((p: any) => p.dataKey === "EfisiensiNilai");
-            return (
-                <div className="p-2 rounded-md shadow-md border border-foreground bg-background">
-                    <p><strong>{payload[0].payload.month}</strong></p>
-                    <p>Omset: {Number(payload[0].payload.Pendapatan).toLocaleString('id-ID')}</p>
-                    <p>Pengeluaran: {Number(payload[0].payload.Pengeluaran).toLocaleString('id-ID')}</p>
-                    {(() => {
-                        const ef = Number(payload[0].payload.Efisiensi);
-                        const display = ef >= 0 ? `+${ef.toLocaleString('id-ID')}` : ef.toLocaleString('id-ID');
-                        return <p className={ef >= 0 ? 'text-green-500 font-semibold' : 'text-red-500 font-semibold'}>Efisiensi: {display}</p>;
-                    })()}
-                </div>
-            );
-        }
-        return null;
+        if (!active || !payload?.length) return null;
+
+        const d = payload[0].payload;
+
+        return (
+            <div className="p-2 rounded-md shadow-md border bg-background">
+                {/* <p className="font-semibold">{(mode === "mingguan" || mode === "event") ? d.label : toFullMonthName(d.label)}</p> */}
+                <p className="font-semibold">
+                    {d.tooltipLabel}
+                </p>
+                <p>Omset: {d.PendapatanHeight.toLocaleString("id-ID")}</p>
+                <p>Pengeluaran: {d.PengeluaranHeight.toLocaleString("id-ID")}</p>
+                <p
+                    className={
+                        d.Efisiensi >= 0
+                            ? "text-green-500 font-semibold"
+                            : "text-red-500 font-semibold"
+                    }
+                >
+                    Efisiensi:{" "}
+                    {d.Efisiensi >= 0 ? "+" : ""}
+                    {d.Efisiensi.toLocaleString("id-ID")}
+                </p>
+                <p>Jumlah Peserta: {d.Audience.toLocaleString("id-ID")}</p>
+            </div>
+        );
     };
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [barSize, setBarSize] = useState(35);
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const resizeObserver = new ResizeObserver(() => {
+            const width = containerRef.current!.offsetWidth;
+            const dataLength = data.length || 1;
+
+            // hitung ukuran bar
+            const calculated = Math.floor(width / (dataLength * 2));
+
+            // batas aman (sesuai permintaanmu)
+            const finalSize = Math.max(15, Math.min(35, calculated));
+
+            setBarSize(finalSize);
+        });
+
+        resizeObserver.observe(containerRef.current);
+
+        return () => resizeObserver.disconnect();
+    }, [data]);
 
     return (
         <Card className={`${className}`}>
@@ -194,6 +229,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                             <SelectContent align="end">
                                 <SelectItem value="bulanan">Bulanan</SelectItem>
                                 <SelectItem value="mingguan">Mingguan</SelectItem>
+                                <SelectItem value="event">Per Event</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -223,24 +259,33 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                 <span className="w-3 h-3 rounded-full bg-blue-700"></span>
                                 <span>Pengeluaran</span>
                             </div>
-                            {/* <div className="flex flex-row items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                                <span>Efisiensi</span>
-                            </div> */}
+                            <div className="flex flex-row items-center gap-2">
+                                <span className="w-3 h-3 rounded-full bg-[#6BAED6]"></span>
+                                <span>Jumlah Peserta</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="col-span-2 flex flex-col h-full">
-                        <div className="h-55 mt-auto">
+                        <div ref={containerRef} className="h-55 mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart
                                     data={data}
                                     barCategoryGap="12%"
                                     barGap={8}
                                     style={{ minHeight: 50 }}
+                                    onClick={handleBarClick}
                                 >
                                     <defs>
                                         <filter id="barShadow" x="-20%" y="-20%" width="200%" height="140%">
+                                            <feDropShadow
+                                                dx="0"
+                                                dy="-2"
+                                                stdDeviation="5"
+                                                floodColor="rgba(0,0,0,0.25)"
+                                            />
+                                        </filter>
+                                        <filter id="barLittleShadow" x="-20%" y="-20%" width="200%" height="140%">
                                             <feDropShadow
                                                 dx="0"
                                                 dy="-2"
@@ -264,12 +309,13 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                         strokeOpacity={0.1}
                                     />
                                     <XAxis
-                                        dataKey="month"
+                                        dataKey="label"
                                         tickLine={false}
                                         axisLine={false}
                                         tick={{ fill: "#9ca3af", fontSize: 12 }}
                                     />
-                                    <YAxis hide />
+                                    <YAxis yAxisId="left" hide />
+                                    <YAxis yAxisId="right" hide />
                                     <Tooltip
                                         content={<CustomTooltip />}
                                         cursor={{ fill: "rgba(0,0,0,0.05)" }}
@@ -281,24 +327,36 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     <Bar
                                         dataKey="PengeluaranHeight"
                                         stackId="a"
+                                        yAxisId="left"
                                         fill="#3b82f6"
                                         radius={[50, 50, 50, 50]}
-                                        barSize={35}
+                                        barSize={barSize}
                                         filter="url(#barShadow)"
                                         onClick={handleBarClick}
                                     />
                                     <Bar
                                         dataKey="PendapatanHeight"
                                         stackId="a"
+                                        yAxisId="left"
                                         fill="#facc15"
                                         radius={[50, 50, 50, 50]}
-                                        barSize={35}
+                                        barSize={barSize}
                                         filter="url(#barShadow)"
+                                        onClick={handleBarClick}
+                                    />
+                                    <Bar
+                                        dataKey="Audience"
+                                        yAxisId="right"
+                                        fill="#6BAED6"
+                                        radius={[50, 50, 50, 50]}
+                                        barSize={1.8}
+                                        filter="url(#barLittleShadow)"
                                         onClick={handleBarClick}
                                     />
                                     <Line
                                         type="monotone"
                                         dataKey="EfisiensiH"
+                                        yAxisId="left"
                                         stroke="#9ca3af"
                                         strokeWidth={2}
                                         dot={false}

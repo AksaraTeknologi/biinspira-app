@@ -136,8 +136,11 @@ export default function MarketingEdit() {
     const formatDate = (isoDate?: string) => (isoDate ? format(parseISO(isoDate), 'yyyy-MM-dd') : '');
     const { data, setData, post, processing } = useForm({
         event_id: adPlan.event?.id || '',
+        title_flayer: adPlan.title_flayer,
+        image_flayer: adPlan.image_flayer,
         ad_plan_id: adPlan.id,
         user_id: adPlan.user_id,
+        ad_schedule_time: adPlan.ad_schedule_time,
         platforms: mergedPlatforms.map((p: any) => ({
             id: p.id,
             platform_id: p.platform_id,
@@ -157,16 +160,13 @@ export default function MarketingEdit() {
         })),
     });
 
-    // ================ PERBAIKAN DI SINI ================
     // Gunakan useState untuk filteredEvents dan useEffect untuk update
     const [filteredEvents, setFilteredEvents] = useState(events);
-
     // Filter events berdasarkan user yang dipilih
     useEffect(() => {
         if (data.user_id && data.user_id !== '') {
             const filtered = events.filter((event: any) => String(event.user_id) === String(data.user_id));
             setFilteredEvents(filtered);
-
             // Reset event jika event yang dipilih tidak termasuk dalam filtered
             if (data.event_id) {
                 const currentEventExists = filtered.some((event: any) => String(event.id) === String(data.event_id));
@@ -178,7 +178,6 @@ export default function MarketingEdit() {
             setFilteredEvents(events);
         }
     }, [data.user_id, events, data.event_id]);
-    // ================ AKHIR PERBAIKAN ================
 
     const activePlatform = data.platforms.find((p) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
     const tab = mergedPlatforms.find((p) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
@@ -336,6 +335,7 @@ export default function MarketingEdit() {
             data: {
                 event_id: data.event_id,
                 ad_plan_id: data.ad_plan_id,
+                ad_schedule_time: data.ad_schedule_time,
                 user_id: data.user_id,
                 platforms: filteredPlatforms,
             },
@@ -637,6 +637,28 @@ export default function MarketingEdit() {
                                                 )}
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                    <div className="mt-4">
+                                        <Label>Jam Tayang Iklan</Label>
+                                        <Input
+                                            type="time"
+                                            required
+                                            id="time-picker"
+                                            onChange={(e) => setData('ad_schedule_time', e.target.value)}
+                                            value={data.ad_schedule_time}
+                                            step={60}
+                                            defaultValue={'00:00:00'}
+                                            className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                        />
+                                    </div>
+                                    <div className="mt-4">
+                                        <Label>Gambar Flayer</Label>
+                                        <Input
+                                            type="file"
+                                            placeholder='Masukkan Flayer Gambar'
+                                            className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                            onChange={(e) => setData("image_flayer", e.target.files?.[0])}
+                                        />
                                     </div>
                                 </div>
 

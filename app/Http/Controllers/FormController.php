@@ -39,6 +39,9 @@ class FormController extends Controller
                 'user_name'    => $request->user->name ?? null,
                 'name_event'   => $request->event->name ?? null,
                 'status'       => $request->status ?? null,
+                'ad_schedule_time' => $request->ad_schedule_time ?? null,
+                'title_flayer' => $request->title_flayer ?? null,
+                'image_flayer' => $request->image_flayer ? asset('storage/' . $request->image_flayer) : null,
 
                 'platforms'    => $request->planPlatforms->map(function ($pp) {
                     return [
@@ -85,8 +88,8 @@ class FormController extends Controller
                                         'direct_messages'     => $m->direct_messages !== null ? number_format((float)$m->direct_messages, 0, ',', '.') : null,
                                         'external_link_clicks' => $m->external_link_clicks !== null ? number_format((float)$m->external_link_clicks, 0, ',', '.') : null,
                                         'result_ads'          => $m->result_ads !== null ? number_format((float)$m->result_ads, 0, ',', '.') : null,
-                                        'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp,0,',','.') : null,
-                                        'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin,0,',','.') : null,
+                                        'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp, 0, ',', '.') : null,
+                                        'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin, 0, ',', '.') : null,
                                     ];
                                 }),
                             ];
@@ -126,6 +129,9 @@ class FormController extends Controller
             'user_name'    => $request->user->name ?? null,
             'name_event'   => $request->event->name ?? null,
             'status'       => $request->status ?? null,
+            'ad_schedule_time' => $request->ad_schedule_time ?? null,
+            'title_flayer' => $request->title_flayer ?? null,
+            'image_flayer' => $request->image_flayer ? public_path('storage/' . $request->image_flayer) : null,
 
             'platforms'    => $request->planPlatforms->map(function ($pp) {
                 return [
@@ -172,8 +178,8 @@ class FormController extends Controller
                                     'direct_messages'     => $m->direct_messages !== null ? number_format((float)$m->direct_messages, 0, ',', '.') : null,
                                     'external_link_clicks' => $m->external_link_clicks !== null ? number_format((float)$m->external_link_clicks, 0, ',', '.') : null,
                                     'result_ads'          => $m->result_ads !== null ? number_format((float)$m->result_ads, 0, ',', '.') : null,
-                                    'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp,0,',','.') : null,
-                                    'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin,0,',','.') : null,
+                                    'click_whatsapp'       => $m->click_whatsapp !== null ? number_format((float)$m->click_whatsapp, 0, ',', '.') : null,
+                                    'chat_admin'       => $m->chat_admin !== null ? number_format((float)$m->chat_admin, 0, ',', '.') : null,
                                 ];
                             }),
                         ];
@@ -200,5 +206,4 @@ class FormController extends Controller
 
         return $pdf->download('marketing-report-' . $id . '.pdf');
     }
-
 }
