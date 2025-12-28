@@ -50,6 +50,9 @@ interface AdPlan {
     user: User;
     event: Event;
     status: string;
+    duration_days: number;
+    total_cost: number;
+    checkout_count: number;
     plan_platforms: PlanPlatform[];
 }
 
@@ -222,6 +225,9 @@ export default function Marketing() {
                                 <TableHead>Event</TableHead>
                                 {/* <TableHead>Batch</TableHead> */}
                                 <TableHead>Jam Tayang Iklan</TableHead>
+                                <TableHead>Durasi (Hari)</TableHead>
+                                <TableHead>Total Biaya</TableHead>
+                                <TableHead>Jumlah Peserta</TableHead>
                                 <TableHead>Platform</TableHead>
                                 <TableHead>Goal</TableHead>
                                 <TableHead>Tipe Audiens</TableHead>
@@ -271,6 +277,9 @@ export default function Marketing() {
                                             </TableCell>
                                             <TableCell>{plan.event?.name || '-'}</TableCell>
                                             <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5): '-'} WIB</TableCell>
+                                            <TableCell>{plan.duration_days || '-'}</TableCell>
+                                            <TableCell className='whitespace-nowrap'>{plan.total_cost ? `Rp ${plan.total_cost.toLocaleString('id-ID')}` : '-'}</TableCell>
+                                            <TableCell>{plan.checkout_count ? plan.checkout_count.toLocaleString('id-ID') : '-'}</TableCell>
                                             {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
                                             <TableCell>{platforms || '-'}</TableCell>
                                             <TableCell>{goals || '-'}</TableCell>

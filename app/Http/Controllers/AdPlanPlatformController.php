@@ -20,7 +20,7 @@ class AdPlanPlatformController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user  = auth()->user();
         $start = $request->query('start_date');
         $end   = $request->query('end_date');
         $query = AdPlan::with([
@@ -28,32 +28,49 @@ class AdPlanPlatformController extends Controller
             'event',
             'planPlatforms.platform',
             'planPlatforms.goal',
-            'results'
-        ])->orderBy("created_at", "desc");
+            'results.resultPlatforms'
+        ])->orderBy('created_at', 'desc');
         if (!$user->hasRole('admin')) {
-            $query->where('user_id', $user->id)->latest();
+            $query->where('user_id', $user->id);
         }
         if ($start && $end) {
             $query->whereHas('planPlatforms', function ($q) use ($start, $end) {
-                $q->where(function ($sub) use ($start, $end) {
-                    $sub->where('start_date', '<=', $end)
-                        ->where('end_date', '>=', $start);
-                });
+                $q->where('start_date', '<=', $end)
+                    ->where('end_date', '>=', $start);
             });
         }
-        $adPlans = $query->get();
+
+        $adPlans = $query->get()->map(function ($plan) {
+            $startDate = $plan->planPlatforms->min('start_date');
+            $endDate   = $plan->planPlatforms->max('end_date');
+            $durationDays = ($startDate && $endDate)
+                ? Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1
+                : 0;
+            $totalCost = $plan->results
+                ->flatMap(fn($result) => $result->resultPlatforms)
+                ->sum('total_cost');
+            $checkoutCount = $plan->results->sum('checkout_count');
+            return [
+                ...$plan->toArray(),
+                'duration_days'  => $durationDays,
+                'total_cost'     => $totalCost,
+                'checkout_count' => $checkoutCount,
+            ];
+        });
+
         return Inertia::render(
             $user->hasRole('admin') ? 'admin/markets/marketing' : 'user/marketing',
             [
                 'adPlans' => $adPlans,
                 'isAdmin' => $user->hasRole('admin'),
-                'filter' => [
+                'filters' => [
                     'start_date' => $start,
-                    'end_date' => $end,
+                    'end_date'   => $end,
                 ],
             ]
         );
     }
+
 
     public function create()
     {
