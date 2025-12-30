@@ -52,6 +52,7 @@ class AdPlanPlatformController extends Controller
             $checkoutCount = $plan->results->sum('checkout_count');
             return [
                 ...$plan->toArray(),
+                'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
                 'duration_days'  => $durationDays,
                 'total_cost'     => $totalCost,
                 'checkout_count' => $checkoutCount,

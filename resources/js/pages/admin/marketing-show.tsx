@@ -163,6 +163,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                             const url = userRole === 'admin' ? route('admin.marketing.print', id) : route('user.marketing.print', id);
                             window.open(url, '_blank');
                         }}
+                        className="dark:bg-blue-700 dark:hover:bg-blue-600"
                     >
                         Print PDF
                     </Button>
@@ -221,7 +222,7 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                 </a>
                                             </Button>
 
-                                            <Button asChild size="sm">
+                                            <Button asChild size="sm" className="dark:bg-blue-700 dark:hover:bg-blue-600">
                                                 <a href={data.image_flayer} download>
                                                     Download
                                                 </a>

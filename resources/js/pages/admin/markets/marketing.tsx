@@ -46,13 +46,15 @@ interface PlanPlatform {
 
 interface AdPlan {
     id: number;
-    ad_schedule_time : string;
+    ad_schedule_time: string;
     user: User;
     event: Event;
     status: string;
     duration_days: number;
     total_cost: number;
     checkout_count: number;
+    image_flayer: string;
+    title_flayer: string;
     plan_platforms: PlanPlatform[];
 }
 
@@ -276,9 +278,27 @@ export default function Marketing() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plan.event?.name || '-'}</TableCell>
-                                            <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5): '-'} WIB</TableCell>
+                                            <TableCell>
+                                                {plan.image_flayer ? (
+                                                    <a
+                                                        href={plan.image_flayer}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 text-primary hover:underline"
+                                                    >
+                                                        {/* <img src={plan.image_flayer} alt={plan.title_flayer} className="h-10 w-auto rounded border" /> */}
+                                                        <Eye className="h-4 w-4" />
+                                                        <span>{plan.title_flayer || 'Flayer'}</span>
+                                                    </a>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </TableCell>
+                                            <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5) : '-'} WIB</TableCell>
                                             <TableCell>{plan.duration_days || '-'}</TableCell>
-                                            <TableCell className='whitespace-nowrap'>{plan.total_cost ? `Rp ${plan.total_cost.toLocaleString('id-ID')}` : '-'}</TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                                {plan.total_cost ? `Rp ${plan.total_cost.toLocaleString('id-ID')}` : '-'}
+                                            </TableCell>
                                             <TableCell>{plan.checkout_count ? plan.checkout_count.toLocaleString('id-ID') : '-'}</TableCell>
                                             {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
                                             <TableCell>{platforms || '-'}</TableCell>

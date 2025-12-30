@@ -46,10 +46,15 @@ interface PlanPlatform {
 
 interface AdPlan {
     id: number;
-    ad_schedule_time : string;
+    ad_schedule_time: string;
     user: User;
     event: Event;
     status: string;
+    duration_days: number;
+    total_cost: number;
+    checkout_count: number;
+    image_flayer: string;
+    title_flayer: string;
     plan_platforms: PlanPlatform[];
 }
 
@@ -222,6 +227,9 @@ export default function Marketing() {
                                 <TableHead>Event</TableHead>
                                 {/* <TableHead>Batch</TableHead> */}
                                 <TableHead>Jam Tayang Iklan</TableHead>
+                                <TableHead>Durasi (Hari)</TableHead>
+                                <TableHead>Total Biaya</TableHead>
+                                <TableHead>Jumlah Peserta</TableHead>
                                 <TableHead>Platform</TableHead>
                                 <TableHead>Goal</TableHead>
                                 <TableHead>Tipe Audiens</TableHead>
@@ -268,8 +276,29 @@ export default function Marketing() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plan.event?.name || '-'}</TableCell>
+                                            <TableCell>
+                                                {plan.image_flayer ? (
+                                                    <Link
+                                                        href={"/storage/"+plan.image_flayer}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1 text-primary hover:underline"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                        {plan.title_flayer || 'Flayer'}
+                                                    </Link>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </TableCell>
+
                                             {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
-                                            <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5): '-'} WIB</TableCell>
+                                            <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5) : '-'} WIB</TableCell>
+                                            <TableCell>{plan.duration_days || '-'}</TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                                {plan.total_cost ? `Rp ${plan.total_cost.toLocaleString('id-ID')}` : '-'}
+                                            </TableCell>
+                                            <TableCell>{plan.checkout_count ? plan.checkout_count.toLocaleString('id-ID') : '-'}</TableCell>
                                             <TableCell>{platforms || '-'}</TableCell>
                                             <TableCell>{goals || '-'}</TableCell>
                                             <TableCell>{audienceTypes || '-'}</TableCell>
