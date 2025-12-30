@@ -278,20 +278,20 @@ export default function Marketing() {
                                             <TableCell>{plan.event?.name || '-'}</TableCell>
                                             <TableCell>
                                                 {plan.image_flayer ? (
-                                                    <Link
-                                                        href={"/storage/"+plan.image_flayer}
+                                                    <a
+                                                        href={plan.image_flayer}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="flex items-center gap-1 text-primary hover:underline"
+                                                        className="flex items-center gap-2 text-primary hover:underline"
                                                     >
+                                                        {/* <img src={plan.image_flayer} alt={plan.title_flayer} className="h-10 w-auto rounded border" /> */}
                                                         <Eye className="h-4 w-4" />
-                                                        {plan.title_flayer || 'Flayer'}
-                                                    </Link>
+                                                        <span>{plan.title_flayer || 'Flayer'}</span>
+                                                    </a>
                                                 ) : (
                                                     '-'
                                                 )}
                                             </TableCell>
-
                                             {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
                                             <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5) : '-'} WIB</TableCell>
                                             <TableCell>{plan.duration_days || '-'}</TableCell>
