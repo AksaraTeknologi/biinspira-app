@@ -225,6 +225,7 @@ export default function Marketing() {
                             <TableRow>
                                 <TableHead>Aksi</TableHead>
                                 <TableHead>Event</TableHead>
+                                <TableHead>Flayer Iklan</TableHead>
                                 {/* <TableHead>Batch</TableHead> */}
                                 <TableHead>Jam Tayang Iklan</TableHead>
                                 <TableHead>Durasi (Hari)</TableHead>
