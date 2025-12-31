@@ -117,7 +117,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
     // 🧠 fungsi untuk menghitung persentase berdasarkan klik
     const handleBarClick = useCallback(
         (data: any, index: number) => {
-            if (index === 0) return; // tidak bisa hitung untuk bulan pertama
+            if (index <= 0) return; // tidak bisa hitung untuk bulan pertama
             setSelectedIndex(index);
         },
         [setSelectedIndex]
@@ -274,7 +274,7 @@ export default function GrafikPendapatan({ className, RawData }: GrafikPendapata
                                     barCategoryGap="12%"
                                     barGap={8}
                                     style={{ minHeight: 50 }}
-                                    onClick={handleBarClick}
+                                    // onClick={handleBarClick}
                                 >
                                     <defs>
                                         <filter id="barShadow" x="-20%" y="-20%" width="200%" height="140%">

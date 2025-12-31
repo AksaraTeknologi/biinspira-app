@@ -50,7 +50,7 @@ class DashboardController extends Controller
         $tableData = $this->getTableData();
         $dataHistoris = $this->getDataHistories();
 
-        // dd($rawDataGraphic);
+        // dd($tableData);
 
         return Inertia::render('admin/dashboard_new', [
             'rawDataGraphic' => $rawDataGraphic,
@@ -216,10 +216,10 @@ class DashboardController extends Controller
                     'status' => optional($item->platform)->name,
                     'cost' => 'Rp ' . number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
                     'omset' => (int) round(optional($item->result)->revenue ?? 0),
-                    'date' => $item->created_at->format('F'),
-                    'ordinal' => $item->created_at->format('Y-m-d'),
-                    // 'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('F') : null,
-                    // 'ordinal' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('Y-m-d') : null,
+                    // 'date' => $item->created_at->format('F'),
+                    // 'ordinal' => $item->created_at->format('Y-m-d'),
+                    'date' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('F') : null,
+                    'ordinal' => optional($item->result->plan->planPlatforms->first())->end_date ? optional($item->result->plan->planPlatforms->first())->end_date->format('Y-m-d') : null,
                 ];
             })  // 🔥 SORT berdasarkan tanggal asli
             ->sortByDesc('ordinal')

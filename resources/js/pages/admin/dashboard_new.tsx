@@ -11,10 +11,26 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin/dashb
 interface DashboardProps {
     dashboard_item: string;
     rawDataGraphic?: {
-        month: string;
-        pengeluaran: number;
-        pendapatan: number;
-    }[];
+        bulanan: {
+            month: string;
+            pengeluaran: number;
+            pendapatan: number;
+            audience: number;
+        }[];
+        mingguan: {
+            week: string;
+            pendapatan: number;
+            pengeluaran: number;
+            audience: number;
+        }[];
+        event: {
+            event_name: string;
+            event_label: string;
+            pendapatan: number;
+            pengeluaran: number;
+            audience: number;
+        }[];
+    };
     tableData: {
         no: number;
         user: string;
@@ -34,7 +50,7 @@ interface DashboardProps {
     }[];
 }
 
-export default function Dashboard({ dashboard_item, rawDataGraphic = [], tableData = [], dataHistoris = [] }: DashboardProps) {
+export default function Dashboard({ dashboard_item, rawDataGraphic = { bulanan: [], mingguan: [], event: [] }, tableData = [], dataHistoris = [] }: DashboardProps) {
     const { auth } = usePage<{ auth?: { user?: { name?: string } } }>().props;
     const user = auth?.user;
 
