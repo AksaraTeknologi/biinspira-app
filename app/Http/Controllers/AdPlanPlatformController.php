@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AdPlan;
 use App\Models\User;
 use App\Models\AdPlanPlatform;
+use App\Models\AdResult;
+use App\Models\AdResultPlatform;
 use App\Models\MasterAdGoal;
 use App\Models\MasterEvent;
 use App\Models\MasterPlatform;
@@ -46,15 +48,14 @@ class AdPlanPlatformController extends Controller
             $durationDays = ($startDate && $endDate)
                 ? Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1
                 : 0;
-            $totalCost = $plan->results
-                ->flatMap(fn($result) => $result->resultPlatforms)
-                ->sum('total_cost');
+            $totalCost = AdResultPlatform::whereIn('ad_result_id', AdResult::where('ad_plan_id', $plan->id)->pluck('id'))->sum('total_cost');
+            $formattedTotalCost = number_format($totalCost, 0, ',', '.');
             $checkoutCount = $plan->results->sum('checkout_count');
             return [
                 ...$plan->toArray(),
                 'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
                 'duration_days'  => $durationDays,
-                'total_cost'     => $totalCost,
+                'total_cost'     => $formattedTotalCost,
                 'checkout_count' => $checkoutCount,
             ];
         });

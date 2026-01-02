@@ -53,7 +53,7 @@ class AdResultPlatformController extends Controller
         $validator = Validator::make($request->all(), [
             'ad_result_id'    => 'nullable|exists:ad_results,id',
             'ad_plan_id'      => 'required|exists:ad_plans,id',
-            'checkout_count'  => 'required|integer|min:0',
+            'checkout_count'  => 'required|numeric|min:0',
             'revenue'         => 'required|numeric|min:0',
             'platforms'       => 'required|array',
             'platforms.*.platform_id'       => 'required|exists:master_platforms,id',

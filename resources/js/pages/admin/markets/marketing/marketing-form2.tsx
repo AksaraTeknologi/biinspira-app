@@ -13,70 +13,28 @@ import { useEffect, useState } from 'react';
 export default function MarketingForm2() {
     const { props } = usePage();
     const { events, platforms, adPlan, adResultData, isAdmin }: any = props;
-
-    const formatRupiah = (value: string | number) => {
-        if (!value) return '';
-        const numberString = value.toString().replace(/[^,\d]/g, '');
-        const integerPart = numberString;
-        const remainder = integerPart.length % 3;
-
-        let rupiah = integerPart.substr(0, remainder);
-        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return rupiah ? 'Rp ' + rupiah : '';
-    };
-    const cleanNumberFromDB = (value: string | number) => {
-        if (value === null || value === undefined) return '';
-        let num = parseFloat(value.toString());
-        if (isNaN(num)) return '';
-        num = Math.floor(num);
-        return num.toString();
-    };
-    const formatRupiah1 = (value: string | number) => {
-        if (!value) return '';
-        value = cleanNumberFromDB(value);
-        if (!value) return '';
-        const numberString = value.replace(/[^,\d]/g, '');
-        const integerPart = numberString;
-        const remainder = integerPart.length % 3;
-        let rupiah = integerPart.substr(0, remainder);
-        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return rupiah ? 'Rp ' + rupiah : '';
+    const formatRupiah1 = (value?: string | number) => {
+        if (value === null || value === undefined || value === '') return '';
+        const clean = Math.floor(Number(value)).toString();
+        if (clean === 'NaN') return '';
+        return 'Rp ' + clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
 
     const toPlainNumber = (value: string) => {
-        if (!value) return '';
-        return value.replace(/[^0-9]/g, '');
+        const clean = value.replace(/\D/g, '');
+        return clean.replace(/^0+(?!$)/, '');
     };
 
-    const formatNol = (value: string | number) => {
-        if (!value) return '';
+    const formatNol = (value?: string | number) => {
+        if (value === null || value === undefined || value === '') return '';
 
-        let numberString = value.toString().replace(/[^0-9]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let formatted = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            formatted += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return formatted;
+        const clean = value.toString().replace(/\D/g, '');
+        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
 
     // !! beberapa masih di pakai
     const toNumberOnly = (value: string) => {
-        if (!value) return '';
+        if (value === null || value === undefined) return '';
         value = value.split('.')[0].split(',')[0];
         return value.replace(/[^0-9]/g, '');
     };
@@ -96,7 +54,7 @@ export default function MarketingForm2() {
         ad_plan_id: adPlan?.id || '',
         event_id: event?.id || '',
         platforms: [],
-        checkout_count: adResultData?.adResult?.checkout_count || '',
+        checkout_count: adResultData?.adResult?.checkout_count || 0,
         revenue: toNumberOnly(adResultData?.adResult?.revenue?.toString() || ''),
     });
 
@@ -204,7 +162,7 @@ export default function MarketingForm2() {
                                         maxLength={13}
                                         required
                                         placeholder="Rp 0"
-                                        value={formatRupiah(data.revenue)}
+                                        value={formatRupiah1(data.revenue)}
                                         onChange={(e) => setData('revenue', toPlainNumber(e.target.value))}
                                     />
                                 </div>
@@ -216,7 +174,7 @@ export default function MarketingForm2() {
                                         inputMode="numeric"
                                         maxLength={10}
                                         placeholder="Masukkan jumlah checkout"
-                                        value={formatNol(data.checkout_count)}
+                                        value={formatNol(data.checkout_count) || ''}
                                         onChange={(e) => setData('checkout_count', toPlainNumber(e.target.value))}
                                     />
                                 </div>
@@ -244,7 +202,7 @@ export default function MarketingForm2() {
                                                             type="text"
                                                             inputMode="text"
                                                             placeholder="Masukkan hasil iklan"
-                                                            value={formatNol(platformData[p.id]?.result_ads) || ''}
+                                                            value={formatNol(platformData[p.id]?.result_ads)}
                                                             onChange={(e) => handleFieldChange(p.id, 'result_ads', toPlainNumber(e.target.value))}
                                                         />
                                                     </div>
@@ -257,7 +215,7 @@ export default function MarketingForm2() {
                                                         inputMode="numeric"
                                                         placeholder="Rp. 0"
                                                         maxLength={13}
-                                                        value={formatRupiah1(platformData[p.id]?.total_cost) || ''}
+                                                        value={formatRupiah1(platformData[p.id]?.total_cost)}
                                                         onChange={(e) => handleFieldChange(p.id, 'total_cost', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
@@ -285,7 +243,7 @@ export default function MarketingForm2() {
                                                         required
                                                         placeholder="Rp. 0"
                                                         maxLength={13}
-                                                        value={formatRupiah(platformData[p.id]?.cost_per_result) || ''}
+                                                        value={formatRupiah1(platformData[p.id]?.cost_per_result) || ''}
                                                         onChange={(e) => handleFieldChange(p.id, 'cost_per_result', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
