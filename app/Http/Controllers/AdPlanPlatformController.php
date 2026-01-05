@@ -41,14 +41,13 @@ class AdPlanPlatformController extends Controller
                     ->where('end_date', '>=', $start);
             });
         }
-
         $adPlans = $query->get()->map(function ($plan) {
             if ($plan->planPlatforms->isEmpty()) {
                 $durationDays = 0;
             } else {
                 $startDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->start_date))->min();
                 $endDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->end_date))->max();
-                $durationDays = $startDate && $endDate ? $startDate->diffInDays($endDate) + 1 : 0;
+                $durationDays = $startDate && $endDate ? $startDate->diffInDays($endDate) : 0;
             }
             $totalCost = AdResultPlatform::whereIn('ad_result_id', AdResult::where('ad_plan_id', $plan->id)->pluck('id'))->sum('total_cost');
             return [
