@@ -43,20 +43,22 @@ class AdPlanPlatformController extends Controller
         }
 
         $adPlans = $query->get()->map(function ($plan) {
-            $startDate = $plan->planPlatforms->min('start_date');
-            $endDate   = $plan->planPlatforms->max('end_date');
-            $durationDays = ($startDate && $endDate)
-                ? Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1
-                : 0;
+            if ($plan->planPlatforms->isEmpty()) {
+                $durationDays = 0;
+            } else {
+                $startDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->start_date))->min();
+                $endDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->end_date))->max();
+                $durationDays = $startDate && $endDate ? $startDate->diffInDays($endDate) + 1 : 0;
+            }
             $totalCost = AdResultPlatform::whereIn('ad_result_id', AdResult::where('ad_plan_id', $plan->id)->pluck('id'))->sum('total_cost');
-            $formattedTotalCost = number_format($totalCost, 0, ',', '.');
-            $checkoutCount = $plan->results->sum('checkout_count');
             return [
                 ...$plan->toArray(),
-                'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
-                'duration_days'  => $durationDays,
-                'total_cost'     => $formattedTotalCost,
-                'checkout_count' => $checkoutCount,
+                'image_flayer' => $plan->image_flayer
+                    ? asset('storage/' . $plan->image_flayer)
+                    : null,
+                'duration_days' => $durationDays,
+                'total_cost' => number_format($totalCost, 0, ',', '.'),
+                'checkout_count' => $plan->results->sum('checkout_count'),
             ];
         });
 
@@ -76,6 +78,11 @@ class AdPlanPlatformController extends Controller
 
     public function create()
     {
+        $user = auth()->user();
+        $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
+        if (!$user->hasRole('admin') && !$hasEvent) {
+            return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
+        }
         $eventQuery = MasterEvent::with('user');
         if (!auth()->user()->hasRole('admin')) {
             $eventQuery->where('user_id', auth()->id());
@@ -83,9 +90,12 @@ class AdPlanPlatformController extends Controller
         $events = $eventQuery->get();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
-        $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
-            $q->where('name', 'admin');
-        })->get();
+        $users = User::select('id', 'name')
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'admin');
+            })
+            ->whereHas('events')
+            ->get();
         return Inertia::render('admin/markets/components/marketing-create', [
             'dashboard_item' => 'Buat Market Iklan',
             'events' => $events,
