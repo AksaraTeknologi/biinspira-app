@@ -64,21 +64,6 @@ const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') 
 export default function Marketing() {
     const { adPlans = [], isAdmin } = usePage<{ adPlans?: AdPlan[]; isAdmin?: boolean }>().props;
     const { filters } = usePage().props as any;
-    const { flash } = usePage().props as any;
-    useEffect(() => {
-        if (!flash) return;
-
-        const toastMap = {
-            success: toast.success,
-            error: toast.error,
-            warning: toast.warning,
-            info: toast.message,
-        };
-
-        Object.entries(toastMap).forEach(([key, handler]) => {
-            if (flash[key]) handler(flash[key]);
-        });
-    }, [flash]);
 
     const [date, setDate] = useState<DateRange | undefined>(() => {
         if (filters?.start_date && filters?.end_date) {

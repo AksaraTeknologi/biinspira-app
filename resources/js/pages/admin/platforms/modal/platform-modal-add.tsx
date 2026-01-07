@@ -43,7 +43,7 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
 
-    router.post(route('admin.events.store'), data, {
+    router.post(route('admin.platforms.store'), data, {
       onSuccess: () => {
         toast.success('Platform berhasil ditambahkan');
         setOpen(false);
@@ -61,7 +61,7 @@ export function AddPlatformModal({ onSuccess }: AddPlatformModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary hover:bg-blue-700 
+        <Button className="gap-2 bg-primary hover:bg-blue-700
               dark:bg-background dark:hover:bg-blue-900 dark:border dark:border-primary"
         >
           <Plus className="h-4 w-4" />

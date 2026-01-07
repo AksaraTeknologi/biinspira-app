@@ -28,6 +28,7 @@ class MasterPlatformController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:master_platforms,name'],
         ]);
         if ($validator->fails()) {
+            dd($validator->errors());
             return redirect()->back()->withErrors($validator)->withInput();
         }
 

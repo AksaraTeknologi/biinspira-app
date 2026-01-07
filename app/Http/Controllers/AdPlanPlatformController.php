@@ -65,6 +65,7 @@ class AdPlanPlatformController extends Controller
             $user->hasRole('admin') ? 'admin/markets/marketing' : 'user/marketing',
             [
                 'adPlans' => $adPlans,
+                'platforms' => MasterPlatform::select("id", 'name')->get(),
                 'isAdmin' => $user->hasRole('admin'),
                 'filters' => [
                     'start_date' => $start,
@@ -106,7 +107,10 @@ class AdPlanPlatformController extends Controller
     public function store(Request $request)
     {
         $mode = $request->input('mode', 'next');
-        $platformDataList = $request->only(['boost', 'meta', 'business']);
+        $platformDataList = collect($request->all())
+            ->except(['_token', 'mode', 'ad_schedule_time', 'image_flayer'])
+            ->filter(fn($data) => is_array($data))
+            ->toArray();
         $platformDataList = array_filter($platformDataList, fn($data) => is_array($data));
 
         if (empty($platformDataList)) {
@@ -139,6 +143,7 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
+                dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()
