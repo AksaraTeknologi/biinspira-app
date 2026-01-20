@@ -8,7 +8,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
-    useFlashToast();
+    // useFlashToast();
     return (
         <SidebarProvider>
             <AppShell variant="sidebar">

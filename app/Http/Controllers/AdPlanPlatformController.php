@@ -143,7 +143,7 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
-                dd($validator->errors());
+                // dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()
