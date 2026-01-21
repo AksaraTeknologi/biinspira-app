@@ -61,19 +61,19 @@ export default function MarketingEdit() {
                 names: Array.isArray(a.names)
                     ? a.names
                     : a.name
-                      ? String(a.name)
+                        ? String(a.name)
                             .split(',')
                             .map((s: string) => s.trim())
                             .filter(Boolean)
-                      : [],
+                        : [],
             }));
         }
 
         const types = typeStr
             ? typeStr
-                  .split(';')
-                  .map((s) => s.trim())
-                  .filter(Boolean)
+                .split(';')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [];
         const groups = nameStr ? nameStr.split(';').map((g) => g.trim()) : [];
 
@@ -85,9 +85,9 @@ export default function MarketingEdit() {
             const g = groups[i] || '';
             const names = g
                 ? g
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
                 : [];
             result.push({ id: genId(), type: t, names });
         }
@@ -200,10 +200,10 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                          ...p,
-                          start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
-                          end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
-                      }
+                        ...p,
+                        start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
+                        end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
+                    }
                     : p,
             ),
         );
@@ -216,9 +216,9 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                          ...p,
-                          audience_details: [...(p.audience_details || []), newItem],
-                      }
+                        ...p,
+                        audience_details: [...(p.audience_details || []), newItem],
+                    }
                     : p,
             ),
         );
@@ -634,10 +634,20 @@ export default function MarketingEdit() {
                                     </div>
                                 </div>
 
-                                <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3 text-xs md:text-xs">
+                                <Tabs
+                                    value={String(tab)}
+                                    onValueChange={handleTabChange}
+                                >
+                                    <TabsList
+                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
+                                        style={{ scrollbarWidth: "none" }}
+                                    >
                                         {mergedPlatforms.map((p: any) => (
-                                            <TabsTrigger key={p.platform?.id ?? p.platform_id} value={p.platform.name.toLowerCase()}>
+                                            <TabsTrigger
+                                                key={p.platform?.id ?? p.platform_id}
+                                                value={p.platform.name.toLowerCase()}
+                                                className='px-20'
+                                            >
                                                 {p.platform.name}
                                             </TabsTrigger>
                                         ))}

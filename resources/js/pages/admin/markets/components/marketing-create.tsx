@@ -370,9 +370,9 @@ export default function PerencanaanIklan() {
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {currentData.start_date && currentData.end_date
                                             ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                                  new Date(currentData.end_date),
-                                                  'dd MMM yyyy',
-                                              )}`
+                                                new Date(currentData.end_date),
+                                                'dd MMM yyyy',
+                                            )}`
                                             : 'Pilih tanggal mulai dan selesai'}
                                     </Button>
                                 </PopoverTrigger>
@@ -563,10 +563,20 @@ export default function PerencanaanIklan() {
                                 </div>
 
                                 {/* Tabs */}
-                                <Tabs value={String(tab)} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3">
+                                <Tabs
+                                    value={String(tab)}
+                                    onValueChange={handleTabChange}
+                                >
+                                    <TabsList
+                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
+                                        style={{ scrollbarWidth: "none" }}
+                                    >
                                         {platforms.map((platform) => (
-                                            <TabsTrigger key={platform.id} value={String(platform.id)}>
+                                            <TabsTrigger
+                                                key={platform.id}
+                                                value={String(platform.id)}
+                                                className="px-20"
+                                            >
                                                 {platform.name}
                                             </TabsTrigger>
                                         ))}

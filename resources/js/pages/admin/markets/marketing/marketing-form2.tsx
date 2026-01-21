@@ -201,9 +201,9 @@ export default function MarketingForm2() {
 
                             {/* PLATFORM TABS */}
                             <Tabs value={tab} onValueChange={setTab}>
-                                <TabsList className={`mb-4 grid w-full grid-cols-${platformList.length}`}>
+                                <TabsList className={`mb-4 w-full flex flex-row gap-3 overflow-x-auto justify-start`} style={{ scrollbarWidth: 'none' }}>
                                     {platformList.map((p) => (
-                                        <TabsTrigger key={p.id} value={getPlatformKey(p.name)}>
+                                        <TabsTrigger key={p.id} value={getPlatformKey(p.name)} className="px-20">
                                             {p.name}
                                         </TabsTrigger>
                                     ))}
