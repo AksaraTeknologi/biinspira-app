@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -46,6 +47,8 @@ export default function MarketingForm2() {
         if (lower.includes('boost')) return 'boost';
         if (lower.includes('meta')) return 'meta';
         if (lower.includes('business')) return 'business';
+        if (lower.includes('google ads')) return 'google_ads';
+        if (lower.includes('media partner')) return 'media_partner';
         return lower;
     };
     const [tab, setTab] = useState(getPlatformKey(platformList[0]?.name || ''));
@@ -60,9 +63,24 @@ export default function MarketingForm2() {
 
     const [platformData, setPlatformData] = useState<Record<number, any>>({});
     const hiddenFieldsByPlatform: Record<string, string[]> = {
-        boost: ['result_ads'],
-        business: ['result_ads'],
-        meta: ['clicks', 'likes', 'saves', 'shares', 'profile_visits', 'folows', 'direct_messages', 'external_link_clicks'],
+        boost: ['result_ads', 'media_partner'],
+        business: ['result_ads', 'media_partner'],
+        meta: ['clicks', 'likes', 'saves', 'shares', 'profile_visits', 'folows', 'direct_messages', 'external_link_clicks', 'media_partner'],
+        media_partner: ['result_ads'],
+        google_ads: [
+            'result_ads',
+            'media_partner',
+            'clicks',
+            'likes',
+            'saves',
+            'shares',
+            'profile_visits',
+            'folows',
+            'direct_messages',
+            'external_link_clicks',
+            'click_whatsapp',
+            'chat_admin',
+        ],
     };
     const capitalizeWords = (str: string) => {
         return str
@@ -84,6 +102,7 @@ export default function MarketingForm2() {
                 total_cost: r.total_cost || 0,
                 reach: m.reach || 0,
                 impressions: m.impressions || 0,
+                media_partner: r.media_partner || '',
                 cost_per_result: m.cost_per_result || 0,
                 result_ads: m.result_ads,
                 clicks: m.clicks || 0,
@@ -207,7 +226,6 @@ export default function MarketingForm2() {
                                                         />
                                                     </div>
                                                 )}
-
                                                 <div>
                                                     <Label>Total Biaya Iklan</Label>
                                                     <Input
@@ -260,6 +278,17 @@ export default function MarketingForm2() {
                                                         onChange={(e) => handleFieldChange(p.id, 'impressions', toPlainNumber(e.target.value))}
                                                     />
                                                 </div>
+                                                {!isHidden('media_partner') && (
+                                                    <div>
+                                                        <Label>Media Partner</Label>
+                                                        <Textarea
+                                                            inputMode="text"
+                                                            placeholder="Masukkan media partner"
+                                                            value={platformData[p.id]?.media_partner || ''}
+                                                            onChange={(e) => handleFieldChange(p.id, 'media_partner', e.target.value)}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* METRIC TAMBAHAN */}
@@ -291,28 +320,34 @@ export default function MarketingForm2() {
                                                                 />
                                                             </div>
                                                         ))}
-                                                    <div>
-                                                        <Label>Chat Whatsapp</Label>
-                                                        <Input
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            maxLength={10}
-                                                            placeholder={'Masukkan jumlah Chat whatsapp'}
-                                                            value={formatNol(platformData[p.id]?.click_whatsapp) || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'click_whatsapp', toPlainNumber(e.target.value))}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label>Chat Whatsapp Admin</Label>
-                                                        <Input
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            maxLength={10}
-                                                            placeholder={'Masukkan jumlah Chat whatsapp admin'}
-                                                            value={formatNol(platformData[p.id]?.chat_admin) || ''}
-                                                            onChange={(e) => handleFieldChange(p.id, 'chat_admin', toPlainNumber(e.target.value))}
-                                                        />
-                                                    </div>
+                                                    {!isHidden('click_whatsapp') && (
+                                                        <div>
+                                                            <Label>Chat Whatsapp</Label>
+                                                            <Input
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                maxLength={10}
+                                                                placeholder={'Masukkan jumlah Chat whatsapp'}
+                                                                value={formatNol(platformData[p.id]?.click_whatsapp) || ''}
+                                                                onChange={(e) =>
+                                                                    handleFieldChange(p.id, 'click_whatsapp', toPlainNumber(e.target.value))
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    {!isHidden('chat_admin') && (
+                                                        <div>
+                                                            <Label>Chat Whatsapp Admin</Label>
+                                                            <Input
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                maxLength={10}
+                                                                placeholder={'Masukkan jumlah Chat whatsapp admin'}
+                                                                value={formatNol(platformData[p.id]?.chat_admin) || ''}
+                                                                onChange={(e) => handleFieldChange(p.id, 'chat_admin', toPlainNumber(e.target.value))}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
