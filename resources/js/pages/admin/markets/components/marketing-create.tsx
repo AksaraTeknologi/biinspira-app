@@ -258,7 +258,7 @@ export default function PerencanaanIklan() {
                             </div>
 
                             <div>
-                                <Label>Detail Audiens</Label>
+                                <Label>Detail Peserta</Label>
                                 <div className="space-y-3">
                                     {/* 1. Ambil array 'audience_details' dari platformData */}
                                     {(platformData?.audience_details || []).map((audience: any, index: number) => (
@@ -300,7 +300,7 @@ export default function PerencanaanIklan() {
                                         className="w-full bg-blue-600 text-white hover:bg-blue-700"
                                         onClick={addAudienceRow}
                                     >
-                                        + Tambah Jenis Audiens
+                                        + Tambah Jenis Target Peserta
                                     </Button>
                                 </div>
                             </div>
@@ -413,7 +413,7 @@ export default function PerencanaanIklan() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Jenis Target Audiens</Label>
+                            <Label>Jenis Target Peserta</Label>
                             <Select
                                 required
                                 value={currentData.audience_type || 'targeted'}
@@ -450,7 +450,7 @@ export default function PerencanaanIklan() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Target Audiens (jumlah)</Label>
+                            <Label>Target Peserta (jumlah)</Label>
                             <Input
                                 type="text"
                                 inputMode="numeric"

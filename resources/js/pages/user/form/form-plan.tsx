@@ -166,7 +166,7 @@ export default function FormPlan({
                             )}
                         </div>
                         <div>
-                            <Label>Target Audiens (jumlah)</Label>
+                            <Label>Target Peserta (jumlah)</Label>
                             <Input
                                 type="number"
                                 {...register("audience_target")}
@@ -178,7 +178,7 @@ export default function FormPlan({
                             )}
                         </div>
                         <div>
-                            <Label>Jenis Target Audiens</Label>
+                            <Label>Jenis Target Peserta</Label>
                             <Select
                                 value={targetType}
                                 onValueChange={(val) => setValue("audience_type", val)}
@@ -220,7 +220,7 @@ export default function FormPlan({
                                     </div>
 
                                     <div>
-                                        <Label>Jenis Audiens</Label>
+                                        <Label>Jenis Target Peserta</Label>
                                         <Select
                                             value={typeAudiens ?? ''}
                                             onValueChange={(val) => setValue("type_audience_targeted", val)}
@@ -241,7 +241,7 @@ export default function FormPlan({
 
                                     {typeAudiens && (
                                         <div>
-                                            <Label>Detail Audiens ({typeAudiens})</Label>
+                                            <Label>Detail Target Peserta ({typeAudiens})</Label>
                                             <Input
                                                 placeholder={`Masukkan detail untuk ${typeAudiens}`}
                                                 {...register("name_audience_targeted")}

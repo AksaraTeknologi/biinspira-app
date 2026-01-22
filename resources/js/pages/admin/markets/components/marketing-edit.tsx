@@ -363,7 +363,7 @@ export default function MarketingEdit() {
                                 />
                             </div>
                             <div>
-                                <Label>Detail Audiens</Label>
+                                <Label>Detail Target Peserta</Label>
                                 <div className="space-y-3">
                                     {(activePlatform?.audience_details || []).map((audience: any) => (
                                         <div key={audience.id} className="grid grid-cols-[1fr,1fr,auto] gap-3">
@@ -508,7 +508,7 @@ export default function MarketingEdit() {
                     </div>
 
                     <div className="mt-4">
-                        <Label>Jenis Target Audiens</Label>
+                        <Label>Jenis Target Peserta</Label>
                         <Select
                             value={activePlatform?.audience_type || 'targeted'}
                             onValueChange={(val) => updateActivePlatformField('audience_type', val)}
@@ -538,7 +538,7 @@ export default function MarketingEdit() {
                     </div>
 
                     <div>
-                        <Label>Target Audiens (jumlah)</Label>
+                        <Label>Target Peserta (jumlah)</Label>
                         <Input
                             type="text"
                             inputMode="numeric"

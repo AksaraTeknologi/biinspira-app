@@ -141,10 +141,10 @@
             </tr>
 
             <tr>
-                <th>Tipe Audiens</th>
+                <th>Tipe Peserta</th>
                 <td>{{ $pf['targetType'] }}</td>
 
-                <th>Target Audiens</th>
+                <th>Target Peserta</th>
                 <td>{{ $pf['targetValue'] }}</td>
             </tr>
 

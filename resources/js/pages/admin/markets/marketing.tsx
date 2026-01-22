@@ -234,7 +234,7 @@ export default function Marketing() {
                                 <TableHead>Jumlah Peserta</TableHead>
                                 <TableHead>Platform</TableHead>
                                 <TableHead>Goal</TableHead>
-                                <TableHead>Tipe Audiens</TableHead>
+                                <TableHead>Tipe Target Peserta</TableHead>
                                 <TableHead>Tanggal Berakhir</TableHead>
                                 <TableHead>User</TableHead>
                                 <TableHead>Status</TableHead>

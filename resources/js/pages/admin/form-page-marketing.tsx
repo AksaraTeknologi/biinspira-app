@@ -45,7 +45,7 @@ export default function PerencanaanIklan() {
               <Label>Lokasi</Label>
               <Input placeholder="Masukkan lokasi audiens" />
 
-              <Label>Type Audiens</Label>
+              <Label>Type Peserta</Label>
               <Select>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih type audiens" />
@@ -132,7 +132,7 @@ export default function PerencanaanIklan() {
         </div>
 
         <div>
-          <Label>Target Audiens</Label>
+          <Label>Target Peserta</Label>
           <Input type="number" placeholder="Masukkan jumlah target audiens" />
         </div>
       </div>
