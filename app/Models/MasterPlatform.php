@@ -10,6 +10,7 @@ class MasterPlatform extends Model
     use HasFactory;
 
     protected $guarded = ['created_at', 'updated_at'];
+    public const TYPE_MEDIA_PARTNER = 'Media Partner';
 
     public function planPlatforms()
     {

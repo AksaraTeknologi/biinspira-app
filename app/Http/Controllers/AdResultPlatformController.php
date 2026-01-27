@@ -120,9 +120,8 @@ class AdResultPlatformController extends Controller
             );
         }
         $adPlan = AdPlan::with('planPlatforms.platform')->findOrFail($data['ad_plan_id']);
-        if ($this->shouldCompleteImmediately($adPlan)) {
+        if ($this->shouldCompleteImmediately($adResultPlatform)) {
             $adPlan->update(['status' => 'completed']);
-
             return redirect()
                 ->route(
                     auth()->user()->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index'
@@ -139,13 +138,8 @@ class AdResultPlatformController extends Controller
             ->route($route, ['id' => $data['ad_plan_id']])
             ->with('success', 'Data hasil iklan berhasil disimpan atau diperbarui.');
     }
-    private function shouldCompleteImmediately(AdPlan $adPlan): bool
+    private function shouldCompleteImmediately(AdResultPlatform $adResultPlatform): bool
     {
-        foreach ($adPlan->planPlatforms as $planPlatform) {
-            if ($planPlatform->platform->requires_evaluation) {
-                return false;
-            }
-        }
-        return true;
+        return $adResultPlatform->platform->name === MasterPlatform::TYPE_MEDIA_PARTNER;
     }
 }
