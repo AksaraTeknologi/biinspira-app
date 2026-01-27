@@ -53,8 +53,9 @@ class AdResultPlatformController extends Controller
         $validator = Validator::make($request->all(), [
             'ad_result_id'    => 'nullable|exists:ad_results,id',
             'ad_plan_id'      => 'required|exists:ad_plans,id',
-            'checkout_count'  => 'required|integer|min:0',
+            'checkout_count'  => 'required|numeric|min:0',
             'revenue'         => 'required|numeric|min:0',
+            'media_partner'   => 'nullable|string',
             'platforms'       => 'required|array',
             'platforms.*.platform_id'       => 'required|exists:master_platforms,id',
             'platforms.*.total_cost'      => 'required|numeric|min:0',
@@ -83,6 +84,7 @@ class AdResultPlatformController extends Controller
                 'ad_plan_id'     => $data['ad_plan_id'],
                 'checkout_count' => $data['checkout_count'],
                 'revenue'        => $data['revenue'],
+                'media_partner'  => $data['media_partner'] ?? null,
             ]
         );
         foreach ($data['platforms'] as $platformData) {
@@ -97,7 +99,6 @@ class AdResultPlatformController extends Controller
                 ]
             );
 
-            // buat atau update AdMetric per platform
             AdMetric::updateOrCreate(
                 ['ad_result_platform_id' => $adResultPlatform->id],
                 [
@@ -118,6 +119,16 @@ class AdResultPlatformController extends Controller
                 ]
             );
         }
+        $adPlan = AdPlan::with('planPlatforms.platform')->findOrFail($data['ad_plan_id']);
+        if ($this->shouldCompleteImmediately($adPlan)) {
+            $adPlan->update(['status' => 'completed']);
+
+            return redirect()
+                ->route(
+                    auth()->user()->hasRole('admin') ? 'admin.marketing.index' : 'user.marketing.index'
+                )->with('success', 'Data Hasil iklan berhasil disimpan atau diperbarui.');
+        }
+
         $user = auth()->user();
         if ($user->hasRole('admin')) {
             $route = 'admin.marketing.evaluation';
@@ -127,5 +138,14 @@ class AdResultPlatformController extends Controller
         return redirect()
             ->route($route, ['id' => $data['ad_plan_id']])
             ->with('success', 'Data hasil iklan berhasil disimpan atau diperbarui.');
+    }
+    private function shouldCompleteImmediately(AdPlan $adPlan): bool
+    {
+        foreach ($adPlan->planPlatforms as $planPlatform) {
+            if ($planPlatform->platform->requires_evaluation) {
+                return false;
+            }
+        }
+        return true;
     }
 }

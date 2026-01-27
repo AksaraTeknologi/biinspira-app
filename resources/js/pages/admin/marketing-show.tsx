@@ -272,11 +272,11 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                             <div className="mt-1">Rp {p.daily_budget ?? '-'}</div>
                                                         </div>
                                                         <div>
-                                                            <Label>Taget Audiens (Value)</Label>
+                                                            <Label>Jumlah Target Peserta (Value)</Label>
                                                             <div className="mt-1">{p.targetValue ?? '-'}</div>
                                                         </div>
                                                         <div>
-                                                            <Label>Taget Audiens (Type)</Label>
+                                                            <Label>Tipe Target Peserta (Type)</Label>
                                                             <div className="mt-1">{p.targetType || '-'}</div>
                                                         </div>
                                                     </div>
@@ -303,12 +303,12 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                                                 <div className="mt-1">{p.location_targeted || '-'}</div>
                                                             </div>
                                                             <div>
-                                                                <Label>Type Audiens (targeted)</Label>
+                                                                <Label>Type Peserta (targeted)</Label>
                                                                 {renderAlphabetList(p.type_targeted)}
                                                             </div>
 
                                                             <div>
-                                                                <Label>Detail Audiens (targeted)</Label>
+                                                                <Label>Detail Peserta (targeted)</Label>
                                                                 {renderAlphabetList(p.name_targeted)}
                                                             </div>
                                                         </div>

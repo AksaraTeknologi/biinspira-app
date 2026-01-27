@@ -11,8 +11,9 @@ import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
+import { toast } from 'sonner';
 
 interface Event {
     id: number;
@@ -233,7 +234,7 @@ export default function Marketing() {
                                 <TableHead>Jumlah Peserta</TableHead>
                                 <TableHead>Platform</TableHead>
                                 <TableHead>Goal</TableHead>
-                                <TableHead>Tipe Audiens</TableHead>
+                                <TableHead>Tipe Target Peserta</TableHead>
                                 <TableHead>Tanggal Berakhir</TableHead>
                                 <TableHead>User</TableHead>
                                 <TableHead>Status</TableHead>

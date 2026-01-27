@@ -27,21 +27,11 @@ export default function MarketingEval() {
         num = Math.floor(num);
         return num.toString();
     };
-    const formatNol = (value: string | number) => {
-        if (!value) return '';
+    const formatNol = (value?: string | number) => {
+        if (value === null || value === undefined || value === '') return '';
 
-        let numberString = value.toString().replace(/[^0-9]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let formatted = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            formatted += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return formatted;
+        const clean = value.toString().replace(/\D/g, '');
+        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
     const buildCurrentAdPerformance = () => {
         if (!adResult) return '';

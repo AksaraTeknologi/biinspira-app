@@ -21,7 +21,6 @@ export default function MarketingEdit() {
     const { adPlan, events, goals, platforms, isAdmin }: any = props;
     const planPlatforms = adPlan.plan_platforms || [];
 
-    // helpers
     const genId = () => {
         if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) {
             return (crypto as any).randomUUID();
@@ -30,45 +29,26 @@ export default function MarketingEdit() {
     };
 
     const formatNol = (value: string | number) => {
-        if (!value) return '';
+        if (value === null || value === undefined || value === '') return '';
 
-        let numberString = value.toString().replace(/[^0-9]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let formatted = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            formatted += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return formatted;
+        const clean = value.toString().replace(/\D/g, '');
+        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
 
     const formatRupiah = (value: string | number) => {
-        if (!value) return '';
-        let numberString = value.toString().replace(/[^,\d]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let rupiah = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return rupiah ? 'Rp ' + rupiah : '';
+        if (value === null || value === undefined || value === '') return '';
+        const clean = Math.floor(Number(value)).toString();
+        if (clean === 'NaN') return '';
+        return 'Rp ' + clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
 
     const toPlainNumber = (value: string) => {
-        if (!value) return '';
+        if (value === null || value === undefined || value === '') return '';
         return value.replace(/[^0-9]/g, '');
     };
 
     const toNumberOnly = (value: string) => {
-        if (!value) return '';
+        if (value === null || value === undefined || value === '') return '';
         value = value.split('.')[0].split(',')[0];
         return value.replace(/[^0-9]/g, '');
     };
@@ -81,19 +61,19 @@ export default function MarketingEdit() {
                 names: Array.isArray(a.names)
                     ? a.names
                     : a.name
-                      ? String(a.name)
+                        ? String(a.name)
                             .split(',')
                             .map((s: string) => s.trim())
                             .filter(Boolean)
-                      : [],
+                        : [],
             }));
         }
 
         const types = typeStr
             ? typeStr
-                  .split(';')
-                  .map((s) => s.trim())
-                  .filter(Boolean)
+                .split(';')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [];
         const groups = nameStr ? nameStr.split(';').map((g) => g.trim()) : [];
 
@@ -105,9 +85,9 @@ export default function MarketingEdit() {
             const g = groups[i] || '';
             const names = g
                 ? g
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
                 : [];
             result.push({ id: genId(), type: t, names });
         }
@@ -115,7 +95,6 @@ export default function MarketingEdit() {
         return result;
     }
 
-    // Build merged platforms for UI initial state, parse audience strings properly
     const mergedPlatforms = platforms.map((platform: any) => {
         const existing = planPlatforms.find((p: any) => Number(p.platform_id) === Number(platform.id)) || {};
         const audience_details = parseAudienceFromDb(existing.type_audience_targeted, existing.name_audience_targeted, existing.audience_details);
@@ -160,14 +139,13 @@ export default function MarketingEdit() {
         })),
     });
 
-    // Gunakan useState untuk filteredEvents dan useEffect untuk update
     const [filteredEvents, setFilteredEvents] = useState(events);
-    // Filter events berdasarkan user yang dipilih
+
     useEffect(() => {
         if (data.user_id && data.user_id !== '') {
             const filtered = events.filter((event: any) => String(event.user_id) === String(data.user_id));
             setFilteredEvents(filtered);
-            // Reset event jika event yang dipilih tidak termasuk dalam filtered
+
             if (data.event_id) {
                 const currentEventExists = filtered.some((event: any) => String(event.id) === String(data.event_id));
                 if (!currentEventExists) {
@@ -222,10 +200,10 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                          ...p,
-                          start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
-                          end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
-                      }
+                        ...p,
+                        start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
+                        end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
+                    }
                     : p,
             ),
         );
@@ -238,9 +216,9 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                          ...p,
-                          audience_details: [...(p.audience_details || []), newItem],
-                      }
+                        ...p,
+                        audience_details: [...(p.audience_details || []), newItem],
+                    }
                     : p,
             ),
         );
@@ -256,7 +234,6 @@ export default function MarketingEdit() {
                     if (field === 'type') {
                         return { ...a, type: value };
                     } else {
-                        // field === 'names', value input is comma separated string -> convert to array
                         const names = String(value)
                             .split(',')
                             .map((s) => s.trim())
@@ -265,7 +242,6 @@ export default function MarketingEdit() {
                     }
                 });
 
-                // Build DB strings: types separated by ';' and name-groups separated by ';' (names in group joined by ',')
                 const typeString = audience
                     .map((x: any) => x.type || '')
                     .filter(Boolean)
@@ -309,7 +285,6 @@ export default function MarketingEdit() {
         );
     };
 
-    // Submit handler
     const handleSubmit = (submitMode: 'draft' | 'next') => {
         if (!activePlatform?.goals_id) {
             toast.error('Tujuan iklan wajib dipilih');
@@ -388,7 +363,7 @@ export default function MarketingEdit() {
                                 />
                             </div>
                             <div>
-                                <Label>Detail Audiens</Label>
+                                <Label>Detail Target Peserta</Label>
                                 <div className="space-y-3">
                                     {(activePlatform?.audience_details || []).map((audience: any) => (
                                         <div key={audience.id} className="grid grid-cols-[1fr,1fr,auto] gap-3">
@@ -533,7 +508,7 @@ export default function MarketingEdit() {
                     </div>
 
                     <div className="mt-4">
-                        <Label>Jenis Target Audiens</Label>
+                        <Label>Jenis Target Peserta</Label>
                         <Select
                             value={activePlatform?.audience_type || 'targeted'}
                             onValueChange={(val) => updateActivePlatformField('audience_type', val)}
@@ -563,7 +538,7 @@ export default function MarketingEdit() {
                     </div>
 
                     <div>
-                        <Label>Target Audiens (jumlah)</Label>
+                        <Label>Target Peserta (jumlah)</Label>
                         <Input
                             type="text"
                             inputMode="numeric"
@@ -600,10 +575,7 @@ export default function MarketingEdit() {
                                     {isAdmin && (
                                         <div className="mb-4">
                                             <Label>User</Label>
-                                            <Select
-                                                value={String(data.user_id)}
-                                                onValueChange={(value) => setData('user_id', value)}
-                                            >
+                                            <Select value={String(data.user_id)} onValueChange={(value) => setData('user_id', value)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={'Pilih User'} />
                                                 </SelectTrigger>
@@ -655,17 +627,27 @@ export default function MarketingEdit() {
                                         <Label>Gambar Flayer</Label>
                                         <Input
                                             type="file"
-                                            placeholder='Masukkan Flayer Gambar'
+                                            placeholder="Masukkan Flayer Gambar"
                                             className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                                            onChange={(e) => setData("image_flayer", e.target.files?.[0])}
+                                            onChange={(e) => setData('image_flayer', e.target.files?.[0])}
                                         />
                                     </div>
                                 </div>
 
-                                <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3 text-xs md:text-xs">
+                                <Tabs
+                                    value={String(tab)}
+                                    onValueChange={handleTabChange}
+                                >
+                                    <TabsList
+                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
+                                        style={{ scrollbarWidth: "none" }}
+                                    >
                                         {mergedPlatforms.map((p: any) => (
-                                            <TabsTrigger key={p.platform?.id ?? p.platform_id} value={p.platform.name.toLowerCase()}>
+                                            <TabsTrigger
+                                                key={p.platform?.id ?? p.platform_id}
+                                                value={p.platform.name.toLowerCase()}
+                                                className='px-20'
+                                            >
                                                 {p.platform.name}
                                             </TabsTrigger>
                                         ))}

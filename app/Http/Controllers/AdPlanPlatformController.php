@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AdPlan;
 use App\Models\User;
 use App\Models\AdPlanPlatform;
+use App\Models\AdResult;
+use App\Models\AdResultPlatform;
 use App\Models\MasterAdGoal;
 use App\Models\MasterEvent;
 use App\Models\MasterPlatform;
@@ -39,23 +41,23 @@ class AdPlanPlatformController extends Controller
                     ->where('end_date', '>=', $start);
             });
         }
-
         $adPlans = $query->get()->map(function ($plan) {
-            $startDate = $plan->planPlatforms->min('start_date');
-            $endDate   = $plan->planPlatforms->max('end_date');
-            $durationDays = ($startDate && $endDate)
-                ? Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1
-                : 0;
-            $totalCost = $plan->results
-                ->flatMap(fn($result) => $result->resultPlatforms)
-                ->sum('total_cost');
-            $checkoutCount = $plan->results->sum('checkout_count');
+            if ($plan->planPlatforms->isEmpty()) {
+                $durationDays = 0;
+            } else {
+                $startDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->start_date))->min();
+                $endDate = $plan->planPlatforms->map(fn($p) => Carbon::parse($p->end_date))->max();
+                $durationDays = $startDate && $endDate ? $startDate->diffInDays($endDate) : 0;
+            }
+            $totalCost = AdResultPlatform::whereIn('ad_result_id', AdResult::where('ad_plan_id', $plan->id)->pluck('id'))->sum('total_cost');
             return [
                 ...$plan->toArray(),
-                'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
-                'duration_days'  => $durationDays,
-                'total_cost'     => $totalCost,
-                'checkout_count' => $checkoutCount,
+                'image_flayer' => $plan->image_flayer
+                    ? asset('storage/' . $plan->image_flayer)
+                    : null,
+                'duration_days' => $durationDays,
+                'total_cost' => number_format($totalCost, 0, ',', '.'),
+                'checkout_count' => $plan->results->sum('checkout_count'),
             ];
         });
 
@@ -63,6 +65,7 @@ class AdPlanPlatformController extends Controller
             $user->hasRole('admin') ? 'admin/markets/marketing' : 'user/marketing',
             [
                 'adPlans' => $adPlans,
+                'platforms' => MasterPlatform::select("id", 'name')->get(),
                 'isAdmin' => $user->hasRole('admin'),
                 'filters' => [
                     'start_date' => $start,
@@ -75,6 +78,11 @@ class AdPlanPlatformController extends Controller
 
     public function create()
     {
+        $user = auth()->user();
+        $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
+        if (!$user->hasRole('admin') && !$hasEvent) {
+            return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
+        }
         $eventQuery = MasterEvent::with('user');
         if (!auth()->user()->hasRole('admin')) {
             $eventQuery->where('user_id', auth()->id());
@@ -82,9 +90,12 @@ class AdPlanPlatformController extends Controller
         $events = $eventQuery->get();
         $goals = MasterAdGoal::all();
         $platforms = MasterPlatform::all();
-        $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
-            $q->where('name', 'admin');
-        })->get();
+        $users = User::select('id', 'name')
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'admin');
+            })
+            ->whereHas('events')
+            ->get();
         return Inertia::render('admin/markets/components/marketing-create', [
             'dashboard_item' => 'Buat Market Iklan',
             'events' => $events,
@@ -96,7 +107,10 @@ class AdPlanPlatformController extends Controller
     public function store(Request $request)
     {
         $mode = $request->input('mode', 'next');
-        $platformDataList = $request->only(['boost', 'meta', 'business']);
+        $platformDataList = collect($request->all())
+            ->except(['_token', 'mode', 'ad_schedule_time', 'image_flayer'])
+            ->filter(fn($data) => is_array($data))
+            ->toArray();
         $platformDataList = array_filter($platformDataList, fn($data) => is_array($data));
 
         if (empty($platformDataList)) {
@@ -129,6 +143,7 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
+                // dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()

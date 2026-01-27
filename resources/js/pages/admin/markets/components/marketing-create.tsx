@@ -15,27 +15,38 @@ import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+interface Platform {
+    id: number;
+    name: string;
+    slug: string;
+}
 
 export default function PerencanaanIklan() {
     const { props } = usePage();
-    const { events, goals, users, auth } = props as {
+    const { events, goals, users, auth, platforms } = props as unknown as {
         events: { id: number; name: string; date?: string }[];
+        platforms: { id: number; name: string }[];
         goals: { id: number; name: string }[];
         users: { id: number; name: string }[];
         auth: { user: { id: number; name: string; role: string } };
     };
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
-    const [formState, setFormState] = useState<Record<string, any>>({
-        boost: { audience_details: [] },
-        meta: { audience_details: [] },
-        business: { audience_details: [] },
-    });
+    const [formState, setFormState] = useState<Record<number, any>>(() =>
+        platforms.reduce(
+            (acc, platform) => {
+                acc[platform.id] = {
+                    audience_details: [],
+                };
+                return acc;
+            },
+            {} as Record<number, any>,
+        ),
+    );
 
-    const platformMap: Record<string, string> = {
-        boost: '1',
-        meta: '2',
-        business: '3',
-    };
+    const platformMap = platforms.reduce<Record<string, number>>((acc, platform) => {
+        acc[platform.slug] = platform.id;
+        return acc;
+    }, {});
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [filteredEvents, setFilteredEvents] = useState(events);
     const [adScheduleTime, setAdScheduleTime] = useState('00:00');
@@ -79,7 +90,7 @@ export default function PerencanaanIklan() {
         return value.replace(/[^0-9]/g, '');
     };
 
-    const [tab, setTab] = useState<'boost' | 'meta' | 'business'>('boost');
+    const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
     const [selectedEvent, setSelectedEvent] = useState('');
     const { post, processing } = useForm({});
@@ -91,8 +102,8 @@ export default function PerencanaanIklan() {
         setSelectedEvent('');
     };
 
-    const handleTabChange = (val: 'boost' | 'meta' | 'business') => {
-        setTab(val);
+    const handleTabChange = (val: string) => {
+        setTab(Number(val));
     };
 
     const handleInputChange = (field: string, value: any) => {
@@ -146,15 +157,13 @@ export default function PerencanaanIklan() {
             .reduce(
                 (acc, [key, value]) => {
                     const audienceDetails = value.audience_details || [];
-
-                    // Perbaikan: ambil type dan name dari setiap audience detail
                     const type_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.type) // Langsung ambil string type
+                        .map((ad: any) => ad.type)
                         .filter(Boolean)
                         .join(';');
 
                     const name_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.name) // Langsung ambil string name
+                        .map((ad: any) => ad.name)
                         .filter(Boolean)
                         .join(';');
 
@@ -164,7 +173,7 @@ export default function PerencanaanIklan() {
                         daily_budget: parseInt(value.daily_budget || 0),
                         audience_type: value?.audience_type || 'targeted',
                         event_id: selectedEvent || null,
-                        platform_id: platformMap[key],
+                        platform_id: Number(key),
                         user_id: isAdmin ? value?.user_id : auth?.user?.id,
                         type_audience_targeted: type_audience_targeted,
                         name_audience_targeted: name_audience_targeted,
@@ -190,7 +199,10 @@ export default function PerencanaanIklan() {
             { ...filteredData, ad_schedule_time: adScheduleTime, image_flayer: imageFlayer, mode },
             {
                 onSuccess: () => toast.success('Data berhasil disimpan!'),
-                onError: () => toast.error('Gagal menyimpan data.'),
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    toast.error(firstError ?? 'Gagal menyimpan data');
+                },
             },
         );
     };
@@ -246,7 +258,7 @@ export default function PerencanaanIklan() {
                             </div>
 
                             <div>
-                                <Label>Detail Audiens</Label>
+                                <Label>Detail Peserta</Label>
                                 <div className="space-y-3">
                                     {/* 1. Ambil array 'audience_details' dari platformData */}
                                     {(platformData?.audience_details || []).map((audience: any, index: number) => (
@@ -288,7 +300,7 @@ export default function PerencanaanIklan() {
                                         className="w-full bg-blue-600 text-white hover:bg-blue-700"
                                         onClick={addAudienceRow}
                                     >
-                                        + Tambah Jenis Audiens
+                                        + Tambah Jenis Target Peserta
                                     </Button>
                                 </div>
                             </div>
@@ -358,9 +370,9 @@ export default function PerencanaanIklan() {
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {currentData.start_date && currentData.end_date
                                             ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                                  new Date(currentData.end_date),
-                                                  'dd MMM yyyy',
-                                              )}`
+                                                new Date(currentData.end_date),
+                                                'dd MMM yyyy',
+                                            )}`
                                             : 'Pilih tanggal mulai dan selesai'}
                                     </Button>
                                 </PopoverTrigger>
@@ -401,7 +413,7 @@ export default function PerencanaanIklan() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Jenis Target Audiens</Label>
+                            <Label>Jenis Target Peserta</Label>
                             <Select
                                 required
                                 value={currentData.audience_type || 'targeted'}
@@ -438,7 +450,7 @@ export default function PerencanaanIklan() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Target Audiens (jumlah)</Label>
+                            <Label>Target Peserta (jumlah)</Label>
                             <Input
                                 type="text"
                                 inputMode="numeric"
@@ -478,11 +490,16 @@ export default function PerencanaanIklan() {
                                             <Select
                                                 value={formState[tab]?.user_id || ''}
                                                 onValueChange={(val) => {
-                                                    setFormState((prev) => ({
-                                                        boost: { ...prev.boost, user_id: val },
-                                                        meta: { ...prev.meta, user_id: val },
-                                                        business: { ...prev.business, user_id: val },
-                                                    }));
+                                                    setFormState((prev) => {
+                                                        const updated = { ...prev };
+                                                        Object.keys(updated).forEach((key) => {
+                                                            updated[Number(key)] = {
+                                                                ...updated[Number(key)],
+                                                                user_id: val,
+                                                            };
+                                                        });
+                                                        return updated;
+                                                    });
                                                     setSelectedUser(val);
                                                     const filtered = events.filter((event) => String(event.user.id) === val);
                                                     setFilteredEvents(filtered);
@@ -546,16 +563,30 @@ export default function PerencanaanIklan() {
                                 </div>
 
                                 {/* Tabs */}
-                                <Tabs value={tab} onValueChange={handleTabChange}>
-                                    <TabsList className="mb-4 grid w-full grid-cols-3 text-sm md:text-base">
-                                        <TabsTrigger value="boost">Boost Post</TabsTrigger>
-                                        <TabsTrigger value="meta">Meta Ads</TabsTrigger>
-                                        <TabsTrigger value="business">Business Suite</TabsTrigger>
+                                <Tabs
+                                    value={String(tab)}
+                                    onValueChange={handleTabChange}
+                                >
+                                    <TabsList
+                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
+                                        style={{ scrollbarWidth: "none" }}
+                                    >
+                                        {platforms.map((platform) => (
+                                            <TabsTrigger
+                                                key={platform.id}
+                                                value={String(platform.id)}
+                                                className="px-20"
+                                            >
+                                                {platform.name}
+                                            </TabsTrigger>
+                                        ))}
                                     </TabsList>
 
-                                    <TabsContent value="boost">{renderFormContent()}</TabsContent>
-                                    <TabsContent value="meta">{renderFormContent()}</TabsContent>
-                                    <TabsContent value="business">{renderFormContent()}</TabsContent>
+                                    {platforms.map((platform) => (
+                                        <TabsContent key={platform.id} value={String(platform.id)}>
+                                            {renderFormContent()}
+                                        </TabsContent>
+                                    ))}
                                 </Tabs>
 
                                 <div className="flex flex-col gap-3 pt-4 md:flex-row md:justify-between">

@@ -37,5 +37,13 @@ class AppServiceProvider extends ServiceProvider
                 return ['user' => null];
             },
         ]);
+        Inertia::share([
+            'flash' => fn() => [
+                'success' => session('success'),
+                'error' => session('error'),
+                'warning' => session('warning'),
+                'info' => session('info'),
+            ],
+        ]);
     }
 }
