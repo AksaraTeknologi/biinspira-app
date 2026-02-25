@@ -6,6 +6,10 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Link } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
+
+
 
 interface FinanceProps {
     tableData: any[];
@@ -99,6 +103,8 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
             plan_id: string;
             user: string;
             omset: number;
+            event_name: string;
+            audience: string;
             rows: any[];
         }[] = [];
 
@@ -115,6 +121,8 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                     plan_id: item.plan_id,
                     user: item.user,
                     omset: omsetNumber,
+                    event_name: item.event_name,
+                    audience: item.audience,
                     rows: [item],
                 });
             }
@@ -122,6 +130,9 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
 
         return grouped;
     }, [filteredData]);
+
+    const baseUrl = isAdmin ? '/admin/marketing/marketing/show' : '/user/marketing/show';
+
 
     return (
         <Card className={className}>
@@ -209,6 +220,8 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                             <TableRow className="bg-border">
                                 <TableHead>No</TableHead>
                                 <TableHead>User</TableHead>
+                                <TableHead>Event</TableHead>
+                                <TableHead>Peserta</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Pengeluaran</TableHead>
                                 <TableHead>Omset</TableHead>
@@ -229,6 +242,19 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
 
                                             <TableCell rowSpan={rowSpan} className="text-center align-middle font-semibold">
                                                 {row.user}
+                                            </TableCell>
+                                            
+                                          <TableCell rowSpan={rowSpan} className="text-left align-middle font-semibold">
+                                            <Link
+                                                href={`${baseUrl}/${row.plan_id}`}
+                                                className="flex items-center justify-between w-full hover:underline">
+                                                <span className="truncate">{row.event_name}</span>
+                                                <Eye className="h-5 w-5 shrink-0 opacity-70" />
+                                            </Link>
+                                            </TableCell>
+
+                                            <TableCell rowSpan={rowSpan} className="text-center align-middle font-semibold">
+                                                {row.audience}
                                             </TableCell>
 
                                             {/* ITEM PERTAMA */}
@@ -258,6 +284,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                                             </TableCell>
                                         </TableRow>
 
+                                  
                                         {/* SISA ROW */}
                                         {row.rows.slice(1).map((item, i) => (
                                             <TableRow key={i} className="border-b-2 bg-input dark:border-muted-foreground">
@@ -286,4 +313,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
             </CardContent>
         </Card>
     );
+
+
 }
+

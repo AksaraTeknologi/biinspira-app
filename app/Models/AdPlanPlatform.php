@@ -32,4 +32,9 @@ class AdPlanPlatform extends Model
     {
         return $this->belongsTo(MasterAdGoal::class, 'goals_id');
     }
+
+    public function masterEvent()
+    {
+        return $this->belongsTo(MasterEvent::class);
+    }
 }

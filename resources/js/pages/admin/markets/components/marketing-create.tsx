@@ -21,6 +21,12 @@ interface Platform {
     slug: string;
 }
 
+type Event = {
+  id: number
+  name: string
+  batch: string
+}
+
 export default function PerencanaanIklan() {
     const { props } = usePage();
     const { events, goals, users, auth, platforms } = props as unknown as {
@@ -206,6 +212,10 @@ export default function PerencanaanIklan() {
             },
         );
     };
+
+    const selectedEventData = filteredEvents.find(
+    (event) => String(event.id) === selectedEvent
+    )
 
     const renderTargetingFields = (platformData: any) => {
         const targetType = platformData?.audience_type || 'targeted';
@@ -520,25 +530,39 @@ export default function PerencanaanIklan() {
                                         </div>
                                     )}
 
-                                    <Label>Nama Event</Label>
-                                    <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
+                                   <div className="grid grid-cols-2 gap-4">
+                                    {/* Nama Event */}
+                                    <div>
+                                        <Label>Nama Event</Label>
+                                        <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih event" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {filteredEvents.length > 0 ? (
-                                                filteredEvents.map((event) => (
-                                                    <SelectItem key={event.id} value={String(event.id)}>
-                                                        {event.name}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <SelectItem value="" disabled>
-                                                    Tidak ada event
+                                            filteredEvents.map((event) => (
+                                                <SelectItem key={event.id} value={String(event.id)}>
+                                                {event.name}
                                                 </SelectItem>
+                                            ))
+                                            ) : (
+                                            <SelectItem value="none" disabled>
+                                                Tidak ada event
+                                            </SelectItem>
                                             )}
                                         </SelectContent>
-                                    </Select>
+                                        </Select>
+                                    </div>
+
+                                    {/* Batch otomatis */}
+                                    <div>
+                                        <Label>Batch</Label>
+                                        <div className="h-10 px-3 flex items-center border rounded-md bg-muted">
+                                        {selectedEventData ? `Batch ${selectedEventData.batch}` : "-"}
+                                        </div>
+                                    </div>
+                                    </div>
+
                                     <div className="mt-4">
                                         <Label>Jam Tayang Iklan</Label>
                                         <Input

@@ -99,10 +99,12 @@ class AdPlanPlatformController extends Controller
         return Inertia::render('admin/markets/components/marketing-create', [
             'dashboard_item' => 'Buat Market Iklan',
             'events' => $events,
+            'batch' => $events->map(fn($event) => $event->masterEvent)->unique('batch')->pluck('batch'),
             'goals' => $goals,
             'platforms' => $platforms,
             'users' => $users,
         ]);
+        
     }
     public function store(Request $request)
     {
