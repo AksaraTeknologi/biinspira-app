@@ -18,32 +18,93 @@ use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
 
+
 class FormController extends Controller
 {
-    public function show($id)
-    {
-        $request = AdPlan::with([
-            'user',
-            'event',
-            'planPlatforms.platform',
-            'planPlatforms.goal',
-            'results.resultPlatforms.metrics',
-            'evaluations'
-        ])
-            ->where('id', $id)
-            ->first();
+protected function calculateCurrentTotals(AdPlan $plan)
+{
+    $checkout = $plan->results?->sum('checkout_count') ?? 0;
+    $revenue  = $plan->results?->sum('revenue') ?? 0;
+    $cost     = $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0;
+
+    return compact('checkout', 'revenue', 'cost');
+}
+
+protected function getPreviousPlans(AdPlan $plan)
+{
+    $baseEventName = preg_replace('/Batch\s\d+/i', '', $plan->event->name ?? '');
+
+    $plans = AdPlan::with(['event', 'results.resultPlatforms.metrics'])
+        ->where('user_id', $plan->user_id)
+        ->where('id', '<>', $plan->id) // exclude plan sekarang
+        ->whereHas('event', fn($q) => $q->where('name', 'like', '%' . trim($baseEventName) . '%'))
+        ->orderBy('created_at', 'asc')
+        ->get();
+
+    return $plans;
+}
+
+protected function buildEventGraph($plans)
+{
+    return $plans->map(fn($plan, $index) => [
+        'event_name'  => $plan->event->name ?? 'Event',
+        'event_label' => 'B' . ($index + 1),
+        'pendapatan'  => $plan->results?->sum('revenue') ?? 0,
+        'pengeluaran' => $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0,
+        'audience'    => $plan->results?->sum('checkout_count') ?? 0,
+    ]);
+}
+
+public function show($id)
+{
+    $plan = AdPlan::with([
+        'user',
+        'event',
+        'planPlatforms.platform',
+        'planPlatforms.goal',
+        'results.resultPlatforms.metrics',
+        'evaluations'
+    ])->findOrFail($id);
+
+    $totals = $this->calculateCurrentTotals($plan);
+
+    $previousPlans = $this->getPreviousPlans($plan);
+    $eventGraph = $this->buildEventGraph($previousPlans);
+
+    $graphData = [
+        'bulanan' => [[
+            'month' => now()->format('M'),
+            'pendapatan' => $totals['revenue'],
+            'pengeluaran' => $totals['cost'],
+            'audience' => $totals['checkout'],
+        ]],
+        'mingguan' => [[
+            'week' => 'Week 1',
+            'pendapatan' => $totals['revenue'],
+            'pengeluaran' => $totals['cost'],
+            'audience' => $totals['checkout'],
+        ]],
+        'event' => $eventGraph,
+    ];
+
+
+
 
         return Inertia::render('admin/marketing-show', [
-            'data' => [
-                'id'           => $request->id ?? null,
-                'user_name'    => $request->user->name ?? null,
-                'name_event'   => $request->event->name ?? null,
-                'status'       => $request->status ?? null,
-                'ad_schedule_time' => $request->ad_schedule_time ?? null,
-                'title_flayer' => $request->title_flayer ?? null,
-                'image_flayer' => $request->image_flayer ? asset('storage/' . $request->image_flayer) : null,
+            'graphData' => $graphData,
 
-                'platforms'    => $request->planPlatforms->map(function ($pp) {
+            'data' => [
+                'id'           => $plan->id ?? null,
+                'user_name'    => $plan->user->name ?? null,
+                'name_event'   => $plan->event->name ?? null,
+                'status'       => $plan->status ?? null,
+                'ad_schedule_time' => $plan->ad_schedule_time ?? null,
+                'title_flayer' => $plan->title_flayer ?? null,
+                'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
+
+           
+
+                'platforms'    => $plan->planPlatforms->map(function ($pp) {
                     return [
                         'start_date'      => $pp->start_date->format('d M Y'),
                         'end_date'        => $pp->end_date->format('d M Y'),
@@ -63,7 +124,7 @@ class FormController extends Controller
                     ];
                 }),
 
-                'result' => $request->results->map(function ($r) {
+                'result' => $plan->results->map(function ($r) {
                     return [
                         'checkout_count' => $r->checkout_count !== null ? number_format((float)$r->checkout_count, 0, ',', '.') : null,
                         'revenue'        => $r->revenue !== null ? number_format((float)$r->revenue, 0, ',', '.') : null,
@@ -97,7 +158,7 @@ class FormController extends Controller
                     ];
                 }),
 
-                'evaluation' => $request->evaluations->map(function ($ev) {
+                'evaluation' => $plan->evaluations->map(function ($ev) {
                     return [
                         'previous_event'           => $ev->previous_event_name,
                         'previous_checkout'        => $ev->previous_checkout !== null ? number_format((float)$ev->previous_checkout, 0, ',', '.') : null,
@@ -110,8 +171,13 @@ class FormController extends Controller
                     ];
                 }),
             ]
+
+            
+            
         ]);
     }
+
+
 
     public function generatePDF($id)
     {

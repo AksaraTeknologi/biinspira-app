@@ -222,6 +222,10 @@ export default function PerencanaanIklan() {
         const showTargeted = targetType === 'targeted' || targetType === 'combined';
         const showBroad = targetType === 'broad' || targetType === 'combined';
 
+        const [batch, setBatch] = useState("");
+
+        
+
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
