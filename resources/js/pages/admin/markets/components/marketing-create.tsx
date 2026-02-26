@@ -36,12 +36,15 @@ export default function PerencanaanIklan() {
         users: { id: number; name: string }[];
         auth: { user: { id: number; name: string; role: string } };
     };
+
+    const [batch, setBatch] = useState("");
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
     const [formState, setFormState] = useState<Record<number, any>>(() =>
         platforms.reduce(
             (acc, platform) => {
                 acc[platform.id] = {
                     audience_details: [],
+                    batch: "",
                 };
                 return acc;
             },
@@ -201,8 +204,14 @@ export default function PerencanaanIklan() {
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
-            route(routeName),
-            { ...filteredData, ad_schedule_time: adScheduleTime, image_flayer: imageFlayer, mode },
+    route(routeName),
+    { 
+        ...filteredData, 
+        batch, // ← TAMBAHKAN INI
+        ad_schedule_time: adScheduleTime, 
+        image_flayer: imageFlayer, 
+        mode 
+    },
             {
                 onSuccess: () => toast.success('Data berhasil disimpan!'),
                 onError: (errors) => {
@@ -222,7 +231,7 @@ export default function PerencanaanIklan() {
         const showTargeted = targetType === 'targeted' || targetType === 'combined';
         const showBroad = targetType === 'broad' || targetType === 'combined';
 
-        const [batch, setBatch] = useState("");
+        
 
         
 
@@ -558,12 +567,16 @@ export default function PerencanaanIklan() {
                                         </Select>
                                     </div>
 
-                                    {/* Batch otomatis */}
+                                    {/* Batch manual */}
                                     <div>
-                                        <Label>Batch</Label>
-                                        <div className="h-10 px-3 flex items-center border rounded-md bg-muted">
-                                        {selectedEventData ? `Batch ${selectedEventData.batch}` : "-"}
-                                        </div>
+                                    <Label>Batch</Label>
+                                        <Input
+                                        type="text"
+                                        placeholder="Masukkan batch"
+                                        value={batch}
+                                        onChange={(e) => setBatch(e.target.value)}
+                                            required
+                                        />
                                     </div>
                                     </div>
 
