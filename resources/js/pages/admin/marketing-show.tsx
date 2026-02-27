@@ -163,6 +163,8 @@ export default function MarketingShow({ }: AdPlanProps) {
             return <div className="mt-1">- {parts[0]}</div>;
         }
 
+        console.log(data);
+
         return (
             <ul className="mt-1 space-y-1">
                 {parts.map((item, idx) => {
@@ -217,7 +219,7 @@ export default function MarketingShow({ }: AdPlanProps) {
     }
         
 
-    
+    console.log(firstEvaluation)
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -259,6 +261,10 @@ export default function MarketingShow({ }: AdPlanProps) {
                                         <div>
                                             <Label>Status</Label>
                                             <div className="mt-1">{data?.status || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.batch || '-'}</div>
                                         </div>
                                         <div>
                                             <Label>Jadwal Tayang Iklan</Label>
@@ -567,6 +573,14 @@ export default function MarketingShow({ }: AdPlanProps) {
                                         <div>
                                             <Label>Nama Event Sebelumnya</Label>
                                             <div className="mt-1">{firstEvaluation?.previous_event || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.batch || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.previous_batch || '-'}</div>
                                         </div>
                                     </CardContent>
                                 </Card>

@@ -89,7 +89,13 @@ public function show($id)
 
 
 
+        $previousEvent = null;
 
+if ($plan->event) {
+    $previousEvent = MasterEvent::where('batch', '<', $plan->event->batch)
+        ->orderBy('batch', 'desc')
+        ->first();
+}
         return Inertia::render('admin/marketing-show', [
             'graphData' => $graphData,
 
@@ -97,6 +103,8 @@ public function show($id)
                 'id'           => $plan->id ?? null,
                 'user_name'    => $plan->user->name ?? null,
                 'name_event'   => $plan->event->name ?? null,
+                'batch'        => $plan->event->batch ?? null,
+                'previous_batch' => $previousEvent?->batch ?? null,
                 'status'       => $plan->status ?? null,
                 'ad_schedule_time' => $plan->ad_schedule_time ?? null,
                 'title_flayer' => $plan->title_flayer ?? null,
@@ -194,6 +202,7 @@ public function show($id)
             'id'           => $request->id ?? null,
             'user_name'    => $request->user->name ?? null,
             'name_event'   => $request->event->name ?? null,
+            'batch'        => $request->event->batch ?? null,
             'status'       => $request->status ?? null,
             'ad_schedule_time' => $request->ad_schedule_time ?? null,
             'title_flayer' => $request->title_flayer ?? null,
