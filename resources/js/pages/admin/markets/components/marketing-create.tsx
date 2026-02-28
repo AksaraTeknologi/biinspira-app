@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 interface Platform {
     id: number;
     name: string;
@@ -37,14 +37,13 @@ export default function PerencanaanIklan() {
         auth: { user: { id: number; name: string; role: string } };
     };
 
-    const [batch, setBatch] = useState("");
+    
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
     const [formState, setFormState] = useState<Record<number, any>>(() =>
         platforms.reduce(
             (acc, platform) => {
                 acc[platform.id] = {
                     audience_details: [],
-                    batch: "",
                 };
                 return acc;
             },
@@ -61,6 +60,7 @@ export default function PerencanaanIklan() {
     const [adScheduleTime, setAdScheduleTime] = useState('00:00');
     const [imageFlayer, setImageFlayer] = useState<File | null>(null);
 
+    const [selectedEvent, setSelectedEvent] = useState('');
     const formatNol = (value: string | number) => {
         if (!value) return '';
 
@@ -101,7 +101,6 @@ export default function PerencanaanIklan() {
 
     const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
-    const [selectedEvent, setSelectedEvent] = useState('');
     const { post, processing } = useForm({});
 
     const handleUserChange = (userId: string) => {
@@ -207,7 +206,6 @@ export default function PerencanaanIklan() {
     route(routeName),
     { 
         ...filteredData, 
-        batch, // ← TAMBAHKAN INI
         ad_schedule_time: adScheduleTime, 
         image_flayer: imageFlayer, 
         mode 
@@ -233,7 +231,6 @@ export default function PerencanaanIklan() {
 
         
 
-        
 
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
@@ -543,7 +540,7 @@ export default function PerencanaanIklan() {
                                         </div>
                                     )}
 
-                                   <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     {/* Nama Event */}
                                     <div>
                                         <Label>Nama Event</Label>
@@ -574,14 +571,13 @@ export default function PerencanaanIklan() {
                                         type="text"
                                         value={
                                             selectedEventData?.batch
-                                                ? `Batch ${Number(selectedEventData.batch) + 1}`
+                                                ? `Batch ${Number(selectedEventData.batch) }`
                                                 : "-"
                                         }
                                         readOnly
                                         className="bg-muted"
                                     />
-                                                                          
-                                     </div>
+                                    </div>
                                     </div>
 
                                     <div className="mt-4">

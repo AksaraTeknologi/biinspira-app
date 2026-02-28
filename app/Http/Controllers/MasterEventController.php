@@ -7,22 +7,25 @@ use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class MasterEventController extends Controller
 {
     public function index()
     {
         $query = MasterEvent::with('user')->orderBy('end_date', 'asc');
+
         if (!auth()->user()->hasRole('admin')) {
             $query->where('user_id', auth()->id());
         }
+
         $events = $query->get();
+
         $users = User::select('id', 'name')
             ->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'admin');
             })
             ->get();
+
         return Inertia::render('admin/events/event', [
             'events' => $events,
             'users' => $users,
@@ -30,45 +33,59 @@ class MasterEventController extends Controller
             'authUserRole' => auth()->user()->role,
         ]);
     }
+
     public function create()
     {
         $users = User::select('id', 'name')->get();
+
         return Inertia::render('admin/events/modal/event-modal-add', [
             'users' => $users,
         ]);
     }
+
     public function store(Request $request)
-    {
-        if (auth()->user()->hasRole("admin")) {
+{
+    if (auth()->user()->hasRole("admin")) {
 
-            $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string', 'max:255'],
-                'batch' => ['required', 'string', 'max:255'],
-                'end_date' => ['required', 'date'],
-                'user_id' => ['required', 'string', 'exists:users,id'],
-            ]);
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            $data = $validator->validated();
-        } else {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'end_date' => ['required', 'date'],
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
 
-            $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string', 'max:255'],
-                'batch' => ['required', 'string', 'max:255'],
-                'end_date' => ['required', 'date'],
-            ]);
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            $data = $validator->validated();
-            $data['user_id'] = auth()->id();
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
         }
 
-        MasterEvent::create($data);
+        $data = $validator->validated();
 
-        return back();
+    } else {
+
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'end_date' => ['required', 'date'],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $data = $validator->validated();
+        $data['user_id'] = auth()->id();
     }
+    $highestBatch = MasterEvent::where('name', $data['name'])
+        ->where('user_id', $data['user_id'])
+        ->max('batch');
+
+    $newBatch = $highestBatch ? $highestBatch + 1 : 1;
+
+    $data['batch'] = $newBatch;
+
+    MasterEvent::create($data);
+
+    return back();
+}
+
     public function edit(String $id)
     {
         $event = MasterEvent::with('user')->findOrFail($id);
@@ -79,22 +96,27 @@ class MasterEventController extends Controller
             'users' => $users,
         ]);
     }
+
     public function update(Request $request, String $id)
     {
         $event = MasterEvent::findOrFail($id);
+
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'batch' => ['required', 'string', 'max:255'],
+            'batch' => ['required', 'integer'],
             'end_date' => ['required', 'date'],
-            'user_id' => ['required', 'string', 'exists:users,id'],
+            'user_id' => ['required', 'exists:users,id'],
         ]);
+
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            return back()->withErrors($validator)->withInput();
         }
 
         $event->update($validator->validated());
+
         return back();
     }
+
     public function destroy(String $id)
     {
         $event = MasterEvent::findOrFail($id);
