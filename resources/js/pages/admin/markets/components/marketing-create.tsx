@@ -569,15 +569,19 @@ export default function PerencanaanIklan() {
 
                                     {/* Batch manual */}
                                     <div>
-                                    <Label>Batch</Label>
+                                            <Label>Batch</Label>
                                         <Input
                                         type="text"
-                                        placeholder="Masukkan batch"
-                                        value={batch}
-                                        onChange={(e) => setBatch(e.target.value)}
-                                            required
-                                        />
-                                    </div>
+                                        value={
+                                            selectedEventData?.batch
+                                                ? `Batch ${Number(selectedEventData.batch) + 1}`
+                                                : "-"
+                                        }
+                                        readOnly
+                                        className="bg-muted"
+                                    />
+                                                                          
+                                     </div>
                                     </div>
 
                                     <div className="mt-4">

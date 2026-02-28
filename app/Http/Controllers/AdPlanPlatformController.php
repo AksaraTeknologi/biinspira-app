@@ -170,6 +170,7 @@ class AdPlanPlatformController extends Controller
         ]);
 
         if ($adPlan->wasRecentlyCreated) {
+            $event->increment('batch'); 
          }
         foreach ($validatedData as $data) {
             AdPlanPlatform::updateOrCreate(

@@ -215,16 +215,16 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
 
             <CardContent>
                 <div className="max-h-57 overflow-y-auto rounded-lg border shadow-sm dark:border-muted-foreground" style={{ scrollbarWidth: 'none' }}>
-                    <Table className="w-full">
+                    <Table className="w-full table-fixed ">
                         <TableHeader>
                             <TableRow className="bg-border">
-                                <TableHead>No</TableHead>
-                                <TableHead>User</TableHead>
-                                <TableHead>Event</TableHead>
-                                <TableHead>Peserta</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Pengeluaran</TableHead>
-                                <TableHead>Omset</TableHead>
+                               <TableHead className="w-[60px]">No</TableHead>
+                                <TableHead className="w-[120px]">User</TableHead>
+                                <TableHead className="w-[280px]">Event</TableHead>
+                                <TableHead className="w-[100px] text-center">Peserta</TableHead>
+                                <TableHead className="w-[140px]">Type</TableHead>
+                                <TableHead className="w-[140px]">Pengeluaran</TableHead>
+                                <TableHead className="w-[140px] text-center">Omset</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -247,7 +247,7 @@ export default function FinancialDataTable({ tableData, className }: FinanceProp
                                           <TableCell rowSpan={rowSpan} className="text-left align-middle font-semibold">
                                             <Link
                                                 href={`${baseUrl}/${row.plan_id}`}
-                                                className="flex items-center justify-between w-full hover:underline">
+                                                className="flex items-center gap-2 hover:underline">
                                                 <span className="truncate">{row.event_name}</span>
                                                 <Eye className="h-5 w-5 shrink-0 opacity-70" />
                                             </Link>
