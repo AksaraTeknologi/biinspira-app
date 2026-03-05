@@ -13,12 +13,18 @@ import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 interface Platform {
     id: number;
     name: string;
     slug: string;
+}
+
+type Event = {
+  id: number
+  name: string
+  batch: string
 }
 
 export default function PerencanaanIklan() {
@@ -30,6 +36,8 @@ export default function PerencanaanIklan() {
         users: { id: number; name: string }[];
         auth: { user: { id: number; name: string; role: string } };
     };
+
+    
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
     const [formState, setFormState] = useState<Record<number, any>>(() =>
         platforms.reduce(
@@ -52,6 +60,7 @@ export default function PerencanaanIklan() {
     const [adScheduleTime, setAdScheduleTime] = useState('00:00');
     const [imageFlayer, setImageFlayer] = useState<File | null>(null);
 
+    const [selectedEvent, setSelectedEvent] = useState('');
     const formatNol = (value: string | number) => {
         if (!value) return '';
 
@@ -92,7 +101,6 @@ export default function PerencanaanIklan() {
 
     const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
-    const [selectedEvent, setSelectedEvent] = useState('');
     const { post, processing } = useForm({});
 
     const handleUserChange = (userId: string) => {
@@ -195,8 +203,13 @@ export default function PerencanaanIklan() {
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
-            route(routeName),
-            { ...filteredData, ad_schedule_time: adScheduleTime, image_flayer: imageFlayer, mode },
+    route(routeName),
+    { 
+        ...filteredData, 
+        ad_schedule_time: adScheduleTime, 
+        image_flayer: imageFlayer, 
+        mode 
+    },
             {
                 onSuccess: () => toast.success('Data berhasil disimpan!'),
                 onError: (errors) => {
@@ -207,10 +220,17 @@ export default function PerencanaanIklan() {
         );
     };
 
+    const selectedEventData = filteredEvents.find(
+    (event) => String(event.id) === selectedEvent
+    )
+
     const renderTargetingFields = (platformData: any) => {
         const targetType = platformData?.audience_type || 'targeted';
         const showTargeted = targetType === 'targeted' || targetType === 'combined';
         const showBroad = targetType === 'broad' || targetType === 'combined';
+
+        
+
 
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
@@ -520,25 +540,46 @@ export default function PerencanaanIklan() {
                                         </div>
                                     )}
 
-                                    <Label>Nama Event</Label>
-                                    <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Nama Event */}
+                                    <div>
+                                        <Label>Nama Event</Label>
+                                        <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih event" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {filteredEvents.length > 0 ? (
-                                                filteredEvents.map((event) => (
-                                                    <SelectItem key={event.id} value={String(event.id)}>
-                                                        {event.name}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <SelectItem value="" disabled>
-                                                    Tidak ada event
+                                            filteredEvents.map((event) => (
+                                                <SelectItem key={event.id} value={String(event.id)}>
+                                                {event.name}
                                                 </SelectItem>
+                                            ))
+                                            ) : (
+                                            <SelectItem value="none" disabled>
+                                                Tidak ada event
+                                            </SelectItem>
                                             )}
                                         </SelectContent>
-                                    </Select>
+                                        </Select>
+                                    </div>
+
+                                    {/* Batch manual */}
+                                    <div>
+                                            <Label>Batch</Label>
+                                        <Input
+                                        type="text"
+                                        value={
+                                            selectedEventData?.batch
+                                                ? `Batch ${Number(selectedEventData.batch) }`
+                                                : "-"
+                                        }
+                                        readOnly
+                                        className="bg-muted"
+                                    />
+                                    </div>
+                                    </div>
+
                                     <div className="mt-4">
                                         <Label>Jam Tayang Iklan</Label>
                                         <Input

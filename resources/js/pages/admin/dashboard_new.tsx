@@ -34,9 +34,11 @@ interface DashboardProps {
     tableData: {
         no: number;
         user: string;
+        event_name: string;
         status: string;
         cost: string;
         omset: string;
+        audience: string;
     }[];
     dataHistoris: {
         id: number;

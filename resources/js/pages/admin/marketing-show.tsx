@@ -6,7 +6,9 @@ import AppLayout from '@/layouts/app-layout';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { Minus, Plus } from 'lucide-react';
+import GraphShow from '@/components/custom/graphshow';
 import { useState } from 'react';
+import { PageProps as InertiaPageProps } from '@inertiajs/core'
 
 export interface AdPlanData {
     id: string | null;
@@ -86,11 +88,41 @@ export interface EvaluationData {
     next_ad_strategy: string | null;
 }
 
-export interface AdPlanProps {
+export interface AdPlanProps extends InertiaPageProps {
     data?: AdPlanData;
+    graphData?: {
+        bulanan: RawDataMonthly[];
+        mingguan: RawDataWeekly[];
+        event: RawDataEvent[];
+    };
 }
 
-export default function MarketingShow({ data }: AdPlanProps) {
+interface RawDataMonthly {
+    month: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
+}
+
+interface RawDataWeekly {
+    week: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
+}
+
+interface RawDataEvent {
+    event_name: string;
+    event_label: string;
+    pendapatan: number;
+    pengeluaran: number;
+    audience: number;
+}
+
+
+export default function MarketingShow({ }: AdPlanProps) {
+    const { data, graphData } = usePage<PageProps>().props;
+    console.log("PAGE PROPS:", data, graphData);
     const [openPlan, setOpenPlan] = useState(true);
     const [openResult, setOpenResult] = useState(true);
     const [openEvaluation, setOpenEvaluation] = useState(true);
@@ -131,6 +163,8 @@ export default function MarketingShow({ data }: AdPlanProps) {
             return <div className="mt-1">- {parts[0]}</div>;
         }
 
+        console.log(data);
+
         return (
             <ul className="mt-1 space-y-1">
                 {parts.map((item, idx) => {
@@ -150,6 +184,42 @@ export default function MarketingShow({ data }: AdPlanProps) {
     const userRole = auth.role[0];
 
     const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') }];
+    
+     
+    interface PageProps extends InertiaPageProps {
+        data: AdPlanData;
+        graphData: {
+            bulanan: RawDataMonthly[];
+            mingguan: RawDataWeekly[];
+            event: RawDataEvent[];
+        };
+    }
+
+
+    interface RawDataMonthly {
+        month: string;
+        pengeluaran: number;
+        pendapatan: number;
+        audience: number;
+    }
+
+    interface RawDataWeekly {
+        week: string;
+        pendapatan: number;
+        pengeluaran: number;
+        audience: number;
+    }
+
+    interface RawDataEvent {
+        event_name: string;
+        event_label: string;
+        pendapatan: number;
+        pengeluaran: number;
+        audience: number;
+    }
+        
+
+    console.log(firstEvaluation)
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -191,6 +261,10 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                         <div>
                                             <Label>Status</Label>
                                             <div className="mt-1">{data?.status || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.batch || '-'}</div>
                                         </div>
                                         <div>
                                             <Label>Jadwal Tayang Iklan</Label>
@@ -500,6 +574,14 @@ export default function MarketingShow({ data }: AdPlanProps) {
                                             <Label>Nama Event Sebelumnya</Label>
                                             <div className="mt-1">{firstEvaluation?.previous_event || '-'}</div>
                                         </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.batch || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <Label>Batch</Label>
+                                            <div className="mt-1">{data?.previous_batch || '-'}</div>
+                                        </div>
                                     </CardContent>
                                 </Card>
                                 <Card className="w-full border-zinc-200 shadow-md">
@@ -549,7 +631,30 @@ export default function MarketingShow({ data }: AdPlanProps) {
                         <CardHeader>Evaluasi Iklan Belum Dibuat</CardHeader>
                     </Card>
                 )}
+
+                {/* ================= GRAPH SECTION ================= */}
+               
+             <Card className="w-full border-zinc-200 shadow-md">
+                
+                <CardHeader>
+                    <div>Grafik Performa Iklan {data?.name_event || '-'} </div>
+                </CardHeader>
+                <CardContent>
+                    {graphData ? (
+                        <div className="w-full h-[400px]">
+                            <GraphShow RawData={graphData} />
+                        </div>
+                    ) : (
+                        <div className="text-sm text-gray-500">
+                            Tidak ada data grafik
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
             </div>
         </AppLayout>
     );
+    
 }
+
+

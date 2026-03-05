@@ -183,7 +183,7 @@ class DashboardController extends Controller
     private function getTableData()
     {
         $query = AdResultPlatform::with([
-            'result:id,ad_plan_id,revenue',
+            'result:id,ad_plan_id,revenue,checkout_count',
             'result.plan.user:id,name',
             'result.plan.planPlatforms:id,ad_plan_id,end_date',
             'platform:id,name',
@@ -213,6 +213,8 @@ class DashboardController extends Controller
                     'id' => $item->id,
                     'plan_id' => $item->result->ad_plan_id,
                     'user' => optional($item->result->plan->user)->name ? ucfirst(strtolower(optional($item->result->plan->user)->name)) : null,
+                    'event_name' => $item->result->plan->event?->name,
+                    'audience' => $item->result->checkout_count,
                     'status' => optional($item->platform)->name,
                     'cost' => 'Rp ' . number_format((int) round($item->total_cost ?? 0), 0, ',', '.'),
                     'omset' => (int) round(optional($item->result)->revenue ?? 0),
@@ -271,6 +273,7 @@ class DashboardController extends Controller
                     'date' => $item->created_at->format('d M Y'),
                     'event_name' => $item->event?->name,
                     'user_name' => $item->user?->name ? ucfirst(strtolower($item->user->name)) : null,
+                    
                     'amount' => $totalCost === null ? '-' : number_format((int) round($totalCost), 0, ',', '.'),
                     'avatar' => $item->user?->avatar ?: null,
                     'time' => $item->created_at->format('H:i:s'),

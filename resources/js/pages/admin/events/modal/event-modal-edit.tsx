@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 
 const schema = z.object({
     name: z.string().min(2, 'Nama event minimal 2 karakter'),
-    batch: z.string().min(1, 'Batch wajib diisi'),
+    batch: z.coerce.number().min(1, 'Batch wajib diisi'),
     end_date: z
         .string()
         .min(1, 'Tanggal wajib diisi')
