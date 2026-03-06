@@ -12,6 +12,7 @@ use App\Http\Controllers\AdResultPlatformController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -90,6 +91,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::get('/dashboard', [DashboardController::class, "dashboardMarketing"])->name("admin.marketing.dashboard");
         Route::get('/marketing/show/{id}', [FormController::class, 'show'])->name('admin.marketing.show');
     });
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {

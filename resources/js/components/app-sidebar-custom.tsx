@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGrid, List, PartyPopper, Target } from 'lucide-react';
+import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGrid, List, PartyPopper, Receipt, Target } from 'lucide-react';
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
@@ -37,6 +37,7 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
             { title: 'Target Iklan', href: route('admin.adgoals.index'), icon: Target },
             { title: 'Event', href: route('admin.events.index'), icon: CalendarSearch },
             { title: 'Platform', href: route('admin.platforms.index'), icon: LaptopMinimal },
+            { title: 'Transaksi', href: route('admin.transactions.index'), icon: Receipt },
         ],
     },
     // {
@@ -97,6 +98,15 @@ export function AppSidebar() {
     // === Helper: cek apakah submenu terbuka ===
     const checkIsSubMenuOpen = (item: NavItem & { children?: NavItem[] }) => {
         const currentPath = new URL(page.url, window.location.origin).pathname;
+
+        // If a parent has children, keep it open when any child route is active.
+        if (item.children && item.children.length > 0) {
+            return item.children.some((child) => {
+                const childPath = new URL(child.href, window.location.origin).pathname;
+                return currentPath === childPath || currentPath.startsWith(childPath + '/');
+            });
+        }
+
         const parentPath = getParentPath(item);
 
         if (!parentPath) return false;
@@ -198,7 +208,7 @@ export function AppSidebar() {
                                                     open = true; // Perbaikan: set `open` bukan `active`
                                                 }
                                             }
-                                        } catch (e) {
+                                        } catch {
                                             // ignore if route helper unavailable
                                         }
                                     }
@@ -313,7 +323,7 @@ export function AppSidebar() {
                                                                                 active = true;
                                                                             }
                                                                         }
-                                                                    } catch (e) {
+                                                                    } catch {
                                                                         // ignore if route helper unavailable
                                                                     }
                                                                 }

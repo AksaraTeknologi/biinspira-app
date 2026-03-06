@@ -35,4 +35,27 @@ return [
         ],
     ],
 
+    'platforms' => [
+        'aksademy' => [
+            'base_url' => env('AKSADEMY_API_BASE_URL'),
+            'token' => env('AKSADEMY_API_TOKEN'),
+        ],
+        'kompeten' => [
+            'base_url' => env('KOMPETEN_API_BASE_URL'),
+            'token' => env('KOMPETEN_API_TOKEN'),
+        ],
+        'sekolahpajak' => [
+            'base_url' => env('SEKOLAHPAJAK_API_BASE_URL'),
+            'token' => env('SEKOLAHPAJAK_API_TOKEN'),
+        ],
+        'talenta' => [
+            'base_url' => env('TALENTA_API_BASE_URL'),
+            'token' => env('TALENTA_API_TOKEN'),
+        ],
+        'skillgrow' => [
+            'base_url' => env('SKILLGROW_API_BASE_URL'),
+            'token' => env('SKILLGROW_API_TOKEN'),
+        ],
+    ],
+
 ];
