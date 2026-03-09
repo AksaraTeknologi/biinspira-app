@@ -56,6 +56,14 @@ return [
             'base_url' => env('SKILLGROW_API_BASE_URL'),
             'token' => env('SKILLGROW_API_TOKEN'),
         ],
+        'smartcounting' => [
+            'base_url' => env('SMARTCOUNTING_API_BASE_URL'),
+            'token' => env('SMARTCOUNTING_API_TOKEN'),
+        ],
+        'biinspira' => [
+            'base_url' => env('BIINSPIRA_API_BASE_URL'),
+            'token' => env('BIINSPIRA_API_TOKEN'),
+        ],
     ],
 
 ];

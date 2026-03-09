@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Deferred, Head } from '@inertiajs/react';
+import { Deferred, Head, router } from '@inertiajs/react';
 import {
     ColumnDef,
     flexRender,
@@ -42,16 +42,14 @@ interface PlatformOption {
     label: string;
 }
 
-interface PlatformStats {
-    paid_transactions: number;
-    total_revenue: number;
-    this_month_revenue: number;
-}
-
 interface TransactionsProps {
     invoices?: Invoice[];
-    perPlatformStats?: Record<string, PlatformStats>;
     availablePlatforms: PlatformOption[];
+    filters?: {
+        platform?: string;
+        start_date?: string;
+        end_date?: string;
+    };
     flash?: {
         success?: string;
         error?: string;
@@ -104,19 +102,23 @@ function TableLoading() {
     );
 }
 
-function StatsCards({ perPlatformStats, selectedPlatform }: { perPlatformStats: Record<string, PlatformStats>; selectedPlatform: string }) {
+function StatsCards({ invoices }: { invoices: Invoice[] }) {
     const statistics = useMemo(() => {
-        if (selectedPlatform === 'all') {
-            const totals = { paid_transactions: 0, total_revenue: 0, this_month_revenue: 0 };
-            Object.values(perPlatformStats).forEach((s) => {
-                totals.paid_transactions += s.paid_transactions;
-                totals.total_revenue += s.total_revenue;
-                totals.this_month_revenue += s.this_month_revenue;
-            });
-            return totals;
-        }
-        return perPlatformStats[selectedPlatform] ?? { paid_transactions: 0, total_revenue: 0, this_month_revenue: 0 };
-    }, [perPlatformStats, selectedPlatform]);
+        const now = new Date();
+        const thisMonthRevenue = invoices
+            .filter((inv) => {
+                if (!inv.paid_at) return false;
+                const d = new Date(inv.paid_at);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            })
+            .reduce((sum, inv) => sum + (inv.nett_amount ?? 0), 0);
+
+        return {
+            paid_transactions: invoices.length,
+            total_revenue: invoices.reduce((sum, inv) => sum + (inv.nett_amount ?? 0), 0),
+            this_month_revenue: thisMonthRevenue,
+        };
+    }, [invoices]);
 
     return (
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -136,31 +138,13 @@ function StatsCards({ perPlatformStats, selectedPlatform }: { perPlatformStats: 
     );
 }
 
-function InvoiceTable({ invoices, selectedPlatform, date }: { invoices: Invoice[]; selectedPlatform: string; date: DateRange | undefined }) {
+function InvoiceTable({ invoices }: { invoices: Invoice[] }) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
 
-    const filteredInvoices = useMemo(() => {
-        let data = invoices;
-        if (selectedPlatform !== 'all') {
-            data = data.filter((inv) => inv.source_platform === selectedPlatform);
-        }
-        if (date?.from) {
-            const from = new Date(date.from);
-            from.setHours(0, 0, 0, 0);
-            data = data.filter((inv) => inv.paid_at && new Date(inv.paid_at) >= from);
-        }
-        if (date?.to) {
-            const to = new Date(date.to);
-            to.setHours(23, 59, 59, 999);
-            data = data.filter((inv) => inv.paid_at && new Date(inv.paid_at) <= to);
-        }
-        return data;
-    }, [invoices, selectedPlatform, date]);
-
     const table = useReactTable({
-        data: filteredInvoices,
+        data: invoices,
         columns: columns as ColumnDef<Invoice, unknown>[],
         state: { sorting, globalFilter, columnVisibility },
         onSortingChange: setSorting,
@@ -258,12 +242,60 @@ function InvoiceTable({ invoices, selectedPlatform, date }: { invoices: Invoice[
     );
 }
 
-export default function Transactions({ invoices, perPlatformStats, availablePlatforms, flash }: TransactionsProps) {
-    const [selectedPlatform, setSelectedPlatform] = React.useState('all');
+export default function Transactions({ invoices, availablePlatforms, filters, flash }: TransactionsProps) {
+    const [selectedPlatform, setSelectedPlatform] = React.useState(filters?.platform ?? 'all');
     const [date, setDate] = React.useState<DateRange | undefined>(() => ({
-        from: subMonths(new Date(), 1),
-        to: new Date(),
+        from: filters?.start_date ? new Date(filters.start_date) : subMonths(new Date(), 1),
+        to: filters?.end_date ? new Date(filters.end_date) : new Date(),
     }));
+
+    useEffect(() => {
+        setSelectedPlatform(filters?.platform ?? 'all');
+        setDate({
+            from: filters?.start_date ? new Date(filters.start_date) : subMonths(new Date(), 1),
+            to: filters?.end_date ? new Date(filters.end_date) : new Date(),
+        });
+    }, [filters?.platform, filters?.start_date, filters?.end_date]);
+
+    const applyFilter = () => {
+        router.get(
+            route('admin.transactions.index'),
+            {
+                platform: selectedPlatform,
+                start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+                end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : '',
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const resetFilter = () => {
+        const defaultFrom = subMonths(new Date(), 1);
+        const defaultTo = new Date();
+        const defaultRange: DateRange = {
+            from: defaultFrom,
+            to: defaultTo,
+        };
+
+        setSelectedPlatform('all');
+        setDate(defaultRange);
+
+        router.get(
+            route('admin.transactions.index'),
+            {
+                platform: 'all',
+                start_date: format(defaultFrom, 'yyyy-MM-dd'),
+                end_date: format(defaultTo, 'yyyy-MM-dd'),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
@@ -340,17 +372,23 @@ export default function Transactions({ invoices, perPlatformStats, availablePlat
                                 ))}
                             </SelectContent>
                         </Select>
+                        <Button onClick={applyFilter} disabled={!date?.from || !date?.to}>
+                            Terapkan Filter
+                        </Button>
+                        <Button variant="outline" onClick={resetFilter}>
+                            Reset
+                        </Button>
                     </div>
                 </div>
 
-                {/* Statistics Cards */}
-                <Deferred data="perPlatformStats" fallback={<StatsLoading />}>
-                    <StatsCards perPlatformStats={perPlatformStats ?? {}} selectedPlatform={selectedPlatform} />
+                {/* Statistics Cards — dihitung dari data invoices */}
+                <Deferred data="invoices" fallback={<StatsLoading />}>
+                    <StatsCards invoices={invoices ?? []} />
                 </Deferred>
 
                 {/* Invoice Table */}
                 <Deferred data="invoices" fallback={<TableLoading />}>
-                    <InvoiceTable invoices={invoices ?? []} selectedPlatform={selectedPlatform} date={date} />
+                    <InvoiceTable invoices={invoices ?? []} />
                 </Deferred>
             </div>
         </AppLayout>
