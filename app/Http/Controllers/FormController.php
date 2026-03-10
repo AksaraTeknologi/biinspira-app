@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 
 class FormController extends Controller
@@ -32,12 +33,19 @@ protected function calculateCurrentTotals(AdPlan $plan)
 
 protected function getPreviousPlans(AdPlan $plan)
 {
-    $baseEventName = preg_replace('/Batch\s\d+/i', '', $plan->event->name ?? '');
+    // Ambil tanggal sekarang dari plan
+    $currentDate = $plan->created_at;
 
+    // Hitung range bulan: bulan sebelumnya sampai bulan sekarang
+    $startOfPrevMonth   = Carbon::parse($currentDate)->subMonth()->startOfMonth();
+    $endOfCurrentMonth  = Carbon::parse($currentDate)->endOfMonth();
+
+    // Ambil semua plan dari user yang sama, event yang sama, dan dalam range bulan
     $plans = AdPlan::with(['event', 'results.resultPlatforms.metrics'])
         ->where('user_id', $plan->user_id)
-        ->where('id', '<>', $plan->id) // exclude plan sekarang
-        ->whereHas('event', fn($q) => $q->where('name', 'like', '%' . trim($baseEventName) . '%'))
+        ->where('event_id', $plan->event_id) // pastikan event sama
+        ->where('id', '<>', $plan->id)      // exclude plan sekarang
+        ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
         ->orderBy('created_at', 'asc')
         ->get();
 
@@ -57,42 +65,61 @@ protected function buildEventGraph($plans)
 
 public function show($id)
 {
-    $plan = AdPlan::with([
+ $plan = AdPlan::with([
         'user',
         'event',
         'planPlatforms.platform',
         'planPlatforms.goal',
+        'results.resultPlatforms.platform',
         'results.resultPlatforms.metrics',
         'evaluations'
     ])->findOrFail($id);
 
     $totals = $this->calculateCurrentTotals($plan);
 
-    $previousPlans = $this->getPreviousPlans($plan);
-    $eventGraph = $this->buildEventGraph($previousPlans);
+$currentDate = $plan->created_at;
+$startOfPrevMonth = Carbon::parse($currentDate)->subMonth()->startOfMonth();
+$endOfCurrentMonth = Carbon::parse($currentDate)->endOfMonth();
 
-    $graphData = [
-        'bulanan' => [[
-            'month' => now()->format('M'),
-            'pendapatan' => $totals['revenue'],
-            'pengeluaran' => $totals['cost'],
-            'audience' => $totals['checkout'],
-        ]],
-        'mingguan' => [[
-            'week' => 'Week 1',
-            'pendapatan' => $totals['revenue'],
-            'pengeluaran' => $totals['cost'],
-            'audience' => $totals['checkout'],
-        ]],
-        'event' => $eventGraph,
-    ];
+$plansForGraph = AdPlan::with(['results.resultPlatforms'])
+    ->where('user_id', $plan->user_id)
+    ->where('event_id', $plan->event_id)
+    ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
+    ->get();
 
+$graphBulanan = $plansForGraph
+    ->groupBy(fn($p) => $p->created_at->format('M-Y'))
+    ->map(fn($plansInMonth, $month) => [
+        'month' => $month,
+        'pendapatan' => $plansInMonth->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
+        'pengeluaran' => $plansInMonth->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
+        'audience' => $plansInMonth->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
+    ])
+    ->values();
 
+$graphMingguan = $plansForGraph
+    ->groupBy(fn($p) => 'Week ' . Carbon::parse($p->created_at)->weekOfMonth)
+    ->map(fn($plansInWeek, $week) => [
+        'week' => $week,
+        'pendapatan' => $plansInWeek->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
+        'pengeluaran' => $plansInWeek->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
+        'audience' => $plansInWeek->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
+    ])
+    ->values();
 
-        $previousEvent = null;
+// Graph event (sesuai function buildEventGraph)
+$eventGraph = $this->buildEventGraph($plansForGraph);
 
-if ($plan->event) {
-    $previousEvent = MasterEvent::where('batch', '<', $plan->event->batch)
+$graphData = [
+    'bulanan' => $graphBulanan,
+    'mingguan' => $graphMingguan, // gunakan hasil hitung otomatis
+    'event' => $eventGraph,
+];
+$previousPlan = null;
+
+if (!is_null($plan->batch)) {
+    $previousPlan = AdPlan::where('batch', '<', $plan->batch)
+        ->where('event_id', $plan->event_id)
         ->orderBy('batch', 'desc')
         ->first();
 }
@@ -103,8 +130,9 @@ if ($plan->event) {
                 'id'           => $plan->id ?? null,
                 'user_name'    => $plan->user->name ?? null,
                 'name_event'   => $plan->event->name ?? null,
-                'batch'        => $plan->event->batch ?? null,
-                'previous_batch' => $previousEvent?->batch ?? null,
+                'batch' => $plan->batch ?? null, 
+                'previous_batch' => $previousPlan?->batch ?? null, 
+                'event_batch' => $plan->event?->batch ?? null,
                 'status'       => $plan->status ?? null,
                 'ad_schedule_time' => $plan->ad_schedule_time ?? null,
                 'title_flayer' => $plan->title_flayer ?? null,

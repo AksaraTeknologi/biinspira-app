@@ -18,6 +18,11 @@ export interface AdPlanData {
     image_flayer: string | null;
     name_event: string | null;
     status: string | null;
+
+
+    batch?: number | string | null;          
+    previous_batch?: number | string | null;
+
     platforms: PlatformData[] | PlatformData | null;
     result: ResultData[] | null;
     evaluation: EvaluationData[] | null;
@@ -218,8 +223,7 @@ export default function MarketingShow({ }: AdPlanProps) {
         audience: number;
     }
         
-
-    console.log(firstEvaluation)
+    console.log("GRAPH DATA BULANAN:", graphData?.bulanan);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -575,12 +579,13 @@ export default function MarketingShow({ }: AdPlanProps) {
                                             <div className="mt-1">{firstEvaluation?.previous_event || '-'}</div>
                                         </div>
                                         <div>
-                                            <Label>Batch</Label>
-                                            <div className="mt-1">{data?.batch || '-'}</div>
+                                            <Label>Batch Iklan</Label>
+                                            <div>{data?.batch || '-'}</div>
                                         </div>
+
                                         <div>
-                                            <Label>Batch</Label>
-                                            <div className="mt-1">{data?.previous_batch || '-'}</div>
+                                            <Label>Batch Event</Label>
+                                            <div>{data?.event_batch || '-'}</div>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -642,6 +647,7 @@ export default function MarketingShow({ }: AdPlanProps) {
                 <CardContent>
                     {graphData ? (
                         <div className="w-full h-[400px]">
+                            
                             <GraphShow RawData={graphData} />
                         </div>
                     ) : (

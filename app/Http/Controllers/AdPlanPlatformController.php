@@ -52,6 +52,10 @@ class AdPlanPlatformController extends Controller
             $totalCost = AdResultPlatform::whereIn('ad_result_id', AdResult::where('ad_plan_id', $plan->id)->pluck('id'))->sum('total_cost');
             return [
                 ...$plan->toArray(),
+                'batch' => $plan->batch,
+                'avatar' => $plan->user->avatar
+                ? asset('storage/' . $plan->user->avatar)
+                : null,
                 'image_flayer' => $plan->image_flayer
                     ? asset('storage/' . $plan->image_flayer)
                     : null,
@@ -162,6 +166,7 @@ class AdPlanPlatformController extends Controller
         $event = MasterEvent::findOrFail($firstPlatform['event_id']);
         $adPlan = AdPlan::create([
             'event_id' => $event->id,
+            'batch' => $request->input('batch'),
             'title_flayer' => $titleFlayer ?? null,
             'image_flayer' => $imageFlayerPath ?? null,
             'ad_schedule_time' => $request->input('ad_schedule_time'),
@@ -253,6 +258,7 @@ class AdPlanPlatformController extends Controller
             'ad_schedule_time' => 'required|string',
             'event_id' => 'required|exists:master_events,id',
             'ad_plan_id' => 'required|exists:ad_plans,id',
+            'batch' => 'nullable|string',
             'platforms' => 'nullable|array',
             'platforms.*.id' => 'nullable|exists:ad_plan_platforms,id',
             'platforms.*.platform_id' => 'required|exists:master_platforms,id',

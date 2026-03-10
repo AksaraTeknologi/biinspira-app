@@ -59,6 +59,7 @@ export default function PerencanaanIklan() {
     const [filteredEvents, setFilteredEvents] = useState(events);
     const [adScheduleTime, setAdScheduleTime] = useState('00:00');
     const [imageFlayer, setImageFlayer] = useState<File | null>(null);
+    const [batchValue, setBatchValue] = useState(''); // State untuk batch
 
     const [selectedEvent, setSelectedEvent] = useState('');
     const formatNol = (value: string | number) => {
@@ -207,6 +208,7 @@ export default function PerencanaanIklan() {
     { 
         ...filteredData, 
         ad_schedule_time: adScheduleTime, 
+        batch: batchValue, 
         image_flayer: imageFlayer, 
         mode 
     },
@@ -565,19 +567,20 @@ export default function PerencanaanIklan() {
                                     </div>
 
                                     {/* Batch manual */}
-                                    <div>
-                                            <Label>Batch</Label>
-                                        <Input
-                                        type="text"
-                                        value={
-                                            selectedEventData?.batch
-                                                ? `Batch ${Number(selectedEventData.batch) }`
-                                                : "-"
-                                        }
-                                        readOnly
-                                        className="bg-muted"
-                                    />
-                                    </div>
+<div>
+    <Label>Batch Iklan</Label>
+    <Input
+        type="text"
+        name="batch"
+        value={batchValue}  // ← BENAR
+        onChange={(e) => setBatchValue(e.target.value)}  // ← BENAR
+        placeholder="Masukkan batch iklan"
+        required
+    />
+    <p className="text-xs text-gray-500 mt-1">
+        Versi/nomor rencana iklan untuk event ini
+    </p>
+</div>
                                     </div>
 
                                     <div className="mt-4">
