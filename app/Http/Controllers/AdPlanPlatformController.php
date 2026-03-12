@@ -77,35 +77,64 @@ class AdPlanPlatformController extends Controller
 
 
     public function create()
-    {
-        $user = auth()->user();
-        $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
-        if (!$user->hasRole('admin') && !$hasEvent) {
-            return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
-        }
-        $eventQuery = MasterEvent::with('user');
-        if (!auth()->user()->hasRole('admin')) {
-            $eventQuery->where('user_id', auth()->id());
-        }
-        $events = $eventQuery->get();
-        $goals = MasterAdGoal::all();
-        $platforms = MasterPlatform::all();
-        $users = User::select('id', 'name')
-            ->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'admin');
-            })
-            ->whereHas('events')
-            ->get();
-        return Inertia::render('admin/markets/components/marketing-create', [
-            'dashboard_item' => 'Buat Market Iklan',
-            'events' => $events,
-            'batch' => $events->map(fn($event) => $event->masterEvent)->unique('batch')->pluck('batch'),
-            'goals' => $goals,
-            'platforms' => $platforms,
-            'users' => $users,
-        ]);
-        
+{
+    $user = auth()->user();
+    $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
+    if (!$user->hasRole('admin') && !$hasEvent) {
+        return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
     }
+    $eventQuery = MasterEvent::with('user');
+    if (!auth()->user()->hasRole('admin')) {
+        $eventQuery->where('user_id', auth()->id());
+    }
+    $events = $eventQuery->get();
+    $goals = MasterAdGoal::all();
+    $platforms = MasterPlatform::all();
+    $users = User::select('id', 'name')
+        ->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'admin');
+        })
+        ->whereHas('events')
+        ->get();
+
+    // ✅ TAMBAHKAN INI — query history dari AdPlanPlatform
+    $history = [
+        'location_targeted' => AdPlanPlatform::whereNotNull('location_targeted')
+            ->distinct()
+            ->pluck('location_targeted'),
+
+        'location_broad' => AdPlanPlatform::whereNotNull('location_broad')
+            ->distinct()
+            ->pluck('location_broad'),
+
+        'audience_names' => AdPlanPlatform::whereNotNull('name_audience_targeted')
+            ->distinct()
+            ->pluck('name_audience_targeted')
+            ->flatMap(fn($val) => explode(';', $val))
+            ->unique()
+            ->values(),
+
+        'audience_target' => AdPlanPlatform::whereNotNull('audience_target')
+            ->distinct()
+            ->pluck('audience_target')
+            ->map(fn($v) => (string) $v),
+
+        'daily_budget' => AdPlanPlatform::whereNotNull('daily_budget')
+            ->distinct()
+            ->pluck('daily_budget')
+            ->map(fn($v) => (string) $v),
+    ];
+
+    return Inertia::render('admin/markets/components/marketing-create', [
+        'dashboard_item' => 'Buat Market Iklan',
+        'events' => $events,
+        'batch' => $events->map(fn($event) => $event->masterEvent)->unique('batch')->pluck('batch'),
+        'goals' => $goals,
+        'platforms' => $platforms,
+        'users' => $users,
+        'history' => $history, // ✅ TAMBAHKAN INI
+    ]);
+}
     public function store(Request $request)
     {
         $mode = $request->input('mode', 'next');

@@ -6,7 +6,14 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin/dashboard' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin/marketing/dashboard' }];
+
+
+interface AudiencePerEvent {
+    event_id: number;
+    event_name: string;
+    audience: number;
+}
 
 interface DashboardProps {
     dashboard_item: string;
@@ -50,9 +57,16 @@ interface DashboardProps {
         time: string;
         color: string;
     }[];
+    audiencePerEvent?: AudiencePerEvent[]; 
 }
 
-export default function Dashboard({ dashboard_item, rawDataGraphic = { bulanan: [], mingguan: [], event: [] }, tableData = [], dataHistoris = [] }: DashboardProps) {
+export default function Dashboard({
+    dashboard_item,
+    rawDataGraphic = { bulanan: [], mingguan: [], event: [] },
+    tableData = [],
+    dataHistoris = [],
+    audiencePerEvent = [], // ✅ BARU
+}: DashboardProps) {
     const { auth } = usePage<{ auth?: { user?: { name?: string } } }>().props;
     const user = auth?.user;
 
@@ -72,6 +86,7 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = { bulanan: 
             year: 'numeric',
         }),
     );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={dashboard_item} />
@@ -82,7 +97,6 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = { bulanan: 
                         <p className="text-sm font-extralight">Selamat Datang</p>
                         <h1 className="text-2xl font-semibold">{user?.name}</h1>
                     </div>
-                    {/* tanggal */}
                     <div>
                         <div className="mt-2 text-right">
                             <p className="text-md font-semibold">{weekday}</p>
@@ -90,9 +104,15 @@ export default function Dashboard({ dashboard_item, rawDataGraphic = { bulanan: 
                         </div>
                     </div>
                 </div>
+
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-24">
                     <div className="flex flex-col gap-y-6 lg:col-span-15">
-                        <GraphCustom RawData={rawDataGraphic} />
+                        {/* ✅ Tambah audiencePerEvent & isAdmin ke GraphCustom */}
+                        <GraphCustom
+                            RawData={rawDataGraphic}
+                            audiencePerEvent={audiencePerEvent}
+                            isAdmin={true}
+                        />
                         <FinancialDataTable tableData={tableData} />
                     </div>
                     <div className="flex flex-col gap-y-6 lg:col-span-9">
