@@ -492,14 +492,19 @@ export default function PerencanaanIklan() {
                                             </Select>
                                         </div>
                                         <div>
-                                            <Label>Batch</Label>
-                                            <Input
-                                                type="text"
-                                                value={selectedEventData?.batch ? `Batch ${Number(selectedEventData.batch)}` : '-'}
-                                                readOnly
-                                                className="bg-muted"
-                                            />
-                                        </div>
+    <Label>Batch Iklan</Label>
+    <Input
+        type="text"
+        name="batch"
+        value={batchValue}  // ← BENAR
+        onChange={(e) => setBatchValue(e.target.value)}  // ← BENAR
+        placeholder="Masukkan batch iklan"
+        required
+    />
+    <p className="text-xs text-gray-500 mt-1">
+        Versi/nomor rencana iklan untuk event ini
+    </p>
+</div>
                                     </div>
 
                                     <div className="mt-4">

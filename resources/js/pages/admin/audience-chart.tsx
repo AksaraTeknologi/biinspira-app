@@ -274,7 +274,7 @@ export default function AudienceChartPage() {
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div>
                     <h1 className="text-2xl font-semibold">Grafik Peserta Per Event</h1>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-xs text-gray-900">
                         Setiap batch merupakan satu rencana iklan. Gunakan filter untuk mempersempit tampilan.
                     </p>
                 </div>
@@ -374,12 +374,12 @@ export default function AudienceChartPage() {
 
                         {/* Panel Slide — event milik user yang dipilih */}
                         {activeUserId && activeUserData && (
-                            <Card className="flex-1 h-fit border-blue-200 bg-blue-50/30 animate-in slide-in-from-left-2 duration-200">
+                            <Card className="flex-1 h-fit border-gray-200 bg-white animate-in slide-in-from-left-2 duration-200">
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-sm font-semibold">{activeUserData.user_name}</CardTitle>
-                                            <p className="text-xs text-gray-400 mt-0.5">Pilih event untuk filter grafik</p>
+                                            <p className="text-xs text-gray-900">Pilih event untuk filter grafik</p>
                                         </div>
                                         <button onClick={() => setActiveUserId(null)} className="text-gray-400 hover:text-gray-600">
                                             <X className="h-4 w-4" />
