@@ -69,6 +69,7 @@ export default function PerencanaanIklan() {
     const [filteredEvents,  setFilteredEvents]  = useState(events);
     const [adScheduleTime,  setAdScheduleTime]  = useState('00:00');
     const [imageFlayer,     setImageFlayer]     = useState<File | null>(null);
+    const [batchValue, setBatchValue] = useState(''); // State untuk batch
     const [selectedEvent,   setSelectedEvent]   = useState('');
     const [tab,             setTab]             = useState<number>(() => platforms[0]?.id ?? 0);
     const [range,           setRange]           = useState<{ from?: Date; to?: Date }>({});
@@ -166,8 +167,14 @@ export default function PerencanaanIklan() {
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
-            route(routeName),
-            { ...filteredData, ad_schedule_time: adScheduleTime, image_flayer: imageFlayer, mode },
+    route(routeName),
+    { 
+        ...filteredData, 
+        ad_schedule_time: adScheduleTime, 
+        batch: batchValue, 
+        image_flayer: imageFlayer, 
+        mode 
+    },
             {
                 onSuccess: () => toast.success('Data berhasil disimpan!'),
                 onError: (errors) => {

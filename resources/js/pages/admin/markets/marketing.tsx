@@ -219,121 +219,192 @@ export default function Marketing() {
                         </div>
                     )}
                 </div>
+<div className="overflow-hidden rounded-lg border shadow-sm">
+    <Table>
+        <TableHeader className="bg-border">
+            <TableRow>
+                <TableHead>Aksi</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Avatar</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Flayer Iklan</TableHead>
+                <TableHead>Jam Tayang Iklan</TableHead>
+                <TableHead>Durasi (Hari)</TableHead>
+                <TableHead>Total Biaya</TableHead>
+                <TableHead>Jumlah Peserta</TableHead>
+                <TableHead>Platform</TableHead>
+                <TableHead>Goal</TableHead>
+                <TableHead>Tipe Target Peserta</TableHead>
+                <TableHead>Tanggal Berakhir</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Status</TableHead>
+            </TableRow>
+        </TableHeader>
 
-                <div className="overflow-hidden rounded-lg border shadow-sm">
-                    <Table>
-                        <TableHeader className="bg-border">
-                            <TableRow>
-                                <TableHead>Aksi</TableHead>
-                                <TableHead>Event</TableHead>
-                                <TableHead>Flayer Iklan</TableHead>
-                                {/* <TableHead>Batch</TableHead> */}
-                                <TableHead>Jam Tayang Iklan</TableHead>
-                                <TableHead>Durasi (Hari)</TableHead>
-                                <TableHead>Total Biaya</TableHead>
-                                <TableHead>Jumlah Peserta</TableHead>
-                                <TableHead>Platform</TableHead>
-                                <TableHead>Goal</TableHead>
-                                <TableHead>Tipe Target Peserta</TableHead>
-                                <TableHead>Tanggal Berakhir</TableHead>
-                                <TableHead>User</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody className="bg-input">
-                            {adPlans.length > 0 ? (
-                                adPlans.map((plan) => {
-                                    const platforms = plan.plan_platforms.map((p) => p.platform?.name).join(', ');
-                                    const goals = plan.plan_platforms.map((p) => p.goal?.name).join(', ');
-                                    const audienceTypes = [
-                                        ...new Set(
-                                            plan.plan_platforms.map((p) =>
-                                                p.audience_type === 'targeted'
-                                                    ? 'Targetting Audiens'
-                                                    : p.audience_type === 'broad'
-                                                      ? 'Broad'
-                                                      : p.audience_type === 'combined'
-                                                        ? 'Combined'
-                                                        : '-',
-                                            ),
-                                        ),
-                                    ].join(', ');
-                                    const endDates = plan.plan_platforms.map((p) => formatDate(p.end_date)).join(', ');
+        <TableBody className="bg-input">
+            {adPlans.length > 0 ? (
+                adPlans.map((plan) => {
 
-                                    return (
-                                        <TableRow key={plan.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={route('admin.marketing.show', plan.id)}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={route('admin.marketing.edit', plan.id)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    {isAdmin && (
-                                                        <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role="admin" />
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{plan.event?.name || '-'}</TableCell>
-                                            <TableCell>
-                                                {plan.image_flayer ? (
-                                                    <a
-                                                        href={plan.image_flayer}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center gap-2 text-primary hover:underline"
-                                                    >
-                                                        {/* <img src={plan.image_flayer} alt={plan.title_flayer} className="h-10 w-auto rounded border" /> */}
-                                                        <Eye className="h-4 w-4" />
-                                                        <span>{plan.title_flayer || 'Flayer'}</span>
-                                                    </a>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5) : '-'} WIB</TableCell>
-                                            <TableCell>{plan.duration_days || '-'}</TableCell>
-                                            <TableCell className="whitespace-nowrap">
-                                                {plan.total_cost ? `Rp ${plan.total_cost.toLocaleString('id-ID')}` : '-'}
-                                            </TableCell>
-                                            <TableCell>{plan.checkout_count ? plan.checkout_count.toLocaleString('id-ID') : '-'}</TableCell>
-                                            {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
-                                            <TableCell>{platforms || '-'}</TableCell>
-                                            <TableCell>{goals || '-'}</TableCell>
-                                            <TableCell>{audienceTypes || '-'}</TableCell>
-                                            <TableCell>{endDates || '-'}</TableCell>
-                                            <TableCell>{plan.user?.name || '-'}</TableCell>
-                                            <TableCell>
-                                                <span
-                                                    className={`rounded px-2 py-1 text-xs font-medium ${
-                                                        plan.status === 'active'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : plan.status === 'draft'
-                                                              ? 'bg-yellow-100 text-yellow-700'
-                                                              : 'bg-gray-100 text-gray-700'
-                                                    }`}
-                                                >
-                                                    {plan.status || '-'}
-                                                </span>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={9} className="py-6 text-center text-gray-500">
-                                        Tidak ada data iklan.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                    const platforms = plan.plan_platforms
+                        .map((p) => p.platform?.name)
+                        .join(', ');
+
+                    const goals = plan.plan_platforms
+                        .map((p) => p.goal?.name)
+                        .join(', ');
+
+                    const audienceTypes = [
+                        ...new Set(
+                            plan.plan_platforms.map((p) =>
+                                p.audience_type === "targeted"
+                                    ? "Targetting Audiens"
+                                    : p.audience_type === "broad"
+                                    ? "Broad"
+                                    : p.audience_type === "combined"
+                                    ? "Combined"
+                                    : "-"
+                            )
+                        ),
+                    ].join(", ");
+
+                    const endDates = plan.plan_platforms
+                        .map((p) => formatDate(p.end_date))
+                        .join(", ");
+
+                    return (
+                        <TableRow key={plan.id}>
+
+                            {/* AKSI */}
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href={route("admin.marketing.show", plan.id)}>
+                                            <Eye className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href={route("admin.marketing.edit", plan.id)}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+
+                                    {isAdmin && (
+                                        <DeleteButton
+                                            id={plan.id}
+                                            routeTable="marketing"
+                                            name={plan.event?.name}
+                                            role="admin"
+                                        />
+                                    )}
+                                </div>
+                            </TableCell>
+
+                            <TableCell>{plan.user?.name || "-"}</TableCell>
+ 
+                            {/* AVATAR */}
+                            <TableCell>
+                                {plan.avatar ? (
+                                    <img
+                                        src={plan.avatar}
+                                        alt={plan.user?.name}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold">
+                                        {plan.user?.name?.charAt(0) || "-"}
+                                    </div>
+                                )}
+                            </TableCell>
+
+                            {/* EVENT */}
+                            <TableCell>{plan.event?.name || "-"}</TableCell>
+
+                            {/* FLAYER */}
+                            <TableCell>
+                                {plan.image_flayer ? (
+                                    <a
+                                        href={plan.image_flayer}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-primary hover:underline"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                        <span>{plan.title_flayer || "Flayer"}</span>
+                                    </a>
+                                ) : (
+                                    "-"
+                                )}
+                            </TableCell>
+
+                            {/* JAM */}
+                            <TableCell>
+                                {plan.ad_schedule_time
+                                    ? plan.ad_schedule_time.slice(0, 5)
+                                    : "-"}{" "}
+                                WIB
+                            </TableCell>
+
+                            {/* DURASI */}
+                            <TableCell>{plan.duration_days || "-"}</TableCell>
+
+                            {/* BIAYA */}
+                            <TableCell className="whitespace-nowrap">
+                                {plan.total_cost
+                                    ? `Rp ${plan.total_cost.toLocaleString("id-ID")}`
+                                    : "-"}
+                            </TableCell>
+
+                            {/* PESERTA */}
+                            <TableCell>
+                                {plan.checkout_count
+                                    ? plan.checkout_count.toLocaleString("id-ID")
+                                    : "-"}
+                            </TableCell>
+
+                            {/* PLATFORM */}
+                            <TableCell>{platforms || "-"}</TableCell>
+
+                            {/* GOAL */}
+                            <TableCell>{goals || "-"}</TableCell>
+
+                            {/* AUDIENCE */}
+                            <TableCell>{audienceTypes || "-"}</TableCell>
+
+                            {/* END DATE */}
+                            <TableCell>{endDates || "-"}</TableCell>
+
+                            {/* USER */}
+                            <TableCell>{plan.user?.name || "-"}</TableCell>
+
+                            {/* STATUS */}
+                            <TableCell>
+                                <span
+                                    className={`rounded px-2 py-1 text-xs font-medium ${
+                                        plan.status === "active"
+                                            ? "bg-green-100 text-green-700"
+                                            : plan.status === "draft"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-gray-100 text-gray-700"
+                                    }`}
+                                >
+                                    {plan.status || "-"}
+                                </span>
+                            </TableCell>
+
+                        </TableRow>
+                    );
+                })
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={15} className="py-6 text-center text-gray-500">
+                        Tidak ada data iklan.
+                    </TableCell>
+                </TableRow>
+            )}
+        </TableBody>
+    </Table>
+</div>
             </div>
         </AppLayout>
     );
