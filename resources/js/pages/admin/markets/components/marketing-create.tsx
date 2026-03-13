@@ -14,7 +14,12 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { LocationAutocompleteInput } from '@/components/ui/locationautocompleteinput';
+
+// ============================================================
+// TIPE
+// ============================================================
 interface Platform {
     id: number;
     name: string;
@@ -22,117 +27,96 @@ interface Platform {
 }
 
 type Event = {
-  id: number
-  name: string
-  batch: string
-}
+    id: number;
+    name: string;
+    batch: string;
+};
 
+// ============================================================
+// KOMPONEN UTAMA
+// ============================================================
 export default function PerencanaanIklan() {
     const { props } = usePage();
-    const { events, goals, users, auth, platforms } = props as unknown as {
+    const { events, goals, users, auth, platforms, history } = props as unknown as {
         events: { id: number; name: string; date?: string }[];
         platforms: { id: number; name: string }[];
         goals: { id: number; name: string }[];
         users: { id: number; name: string }[];
         auth: { user: { id: number; name: string; role: string } };
+        history: {
+            location_targeted: string[];
+            location_broad: string[];
+            // field lain tidak dipakai lagi untuk suggestion
+        };
     };
 
-    
+    // ✅ Hanya suggestion lokasi yang dipakai
+    const locationTargetedHistory = (history?.location_targeted || []).map(String);
+    const locationBroadHistory    = (history?.location_broad    || []).map(String);
+
     const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
     const [formState, setFormState] = useState<Record<number, any>>(() =>
         platforms.reduce(
             (acc, platform) => {
-                acc[platform.id] = {
-                    audience_details: [],
-                };
+                acc[platform.id] = { audience_details: [] };
                 return acc;
             },
             {} as Record<number, any>,
         ),
     );
 
-    const platformMap = platforms.reduce<Record<string, number>>((acc, platform) => {
-        acc[platform.slug] = platform.id;
-        return acc;
-    }, {});
-    const [selectedUser, setSelectedUser] = useState<string | null>(null);
-    const [filteredEvents, setFilteredEvents] = useState(events);
-    const [adScheduleTime, setAdScheduleTime] = useState('00:00');
-    const [imageFlayer, setImageFlayer] = useState<File | null>(null);
-
-    const [selectedEvent, setSelectedEvent] = useState('');
-    const formatNol = (value: string | number) => {
-        if (!value) return '';
-
-        let numberString = value.toString().replace(/[^0-9]/g, '');
-        numberString = numberString.split(',')[0].split('.')[0];
-
-        const remainder = numberString.length % 3;
-        let formatted = numberString.substr(0, remainder);
-        const thousands = numberString.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            formatted += (remainder ? '.' : '') + thousands.join('.');
-        }
-
-        return formatted;
-    };
+    const [selectedUser,    setSelectedUser]    = useState<string | null>(null);
+    const [filteredEvents,  setFilteredEvents]  = useState(events);
+    const [adScheduleTime,  setAdScheduleTime]  = useState('00:00');
+    const [imageFlayer,     setImageFlayer]     = useState<File | null>(null);
+    const [batchValue, setBatchValue] = useState(''); // State untuk batch
+    const [selectedEvent,   setSelectedEvent]   = useState('');
+    const [tab,             setTab]             = useState<number>(() => platforms[0]?.id ?? 0);
+    const [range,           setRange]           = useState<{ from?: Date; to?: Date }>({});
+    const { post, processing } = useForm({});
 
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
         const numberString = value.toString().replace(/[^,\d]/g, '');
-        const integerPart = numberString;
-        const remainder = integerPart.length % 3;
-
-        let rupiah = integerPart.substr(0, remainder);
-        const thousands = integerPart.substr(remainder).match(/\d{3}/g);
-
-        if (thousands) {
-            rupiah += (remainder ? '.' : '') + thousands.join('.');
-        }
-
+        const remainder    = numberString.length % 3;
+        let rupiah         = numberString.substr(0, remainder);
+        const thousands    = numberString.substr(remainder).match(/\d{3}/g);
+        if (thousands) rupiah += (remainder ? '.' : '') + thousands.join('.');
         return rupiah ? 'Rp ' + rupiah : '';
     };
 
-    const toPlainNumber = (value: string) => {
+    const toPlainNumber = (value: string) => value.replace(/[^0-9]/g, '');
+
+    const formatNol = (value: string | number) => {
         if (!value) return '';
-        return value.replace(/[^0-9]/g, '');
+        let s = value.toString().replace(/[^0-9]/g, '');
+        const r = s.length % 3;
+        let f = s.substr(0, r);
+        const t = s.substr(r).match(/\d{3}/g);
+        if (t) f += (r ? '.' : '') + t.join('.');
+        return f;
     };
 
-    const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
-    const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
-    const { post, processing } = useForm({});
-
-    const handleUserChange = (userId: string) => {
-        setSelectedUser(userId);
-        const filtered = events.filter((event) => String(event.user.id) === userId);
-        setFilteredEvents(filtered);
-        setSelectedEvent('');
-    };
-
-    const handleTabChange = (val: string) => {
-        setTab(Number(val));
-    };
+    const handleTabChange = (val: string) => setTab(Number(val));
 
     const handleInputChange = (field: string, value: any) => {
         setFormState((prev) => ({
             ...prev,
-            [tab]: {
-                ...prev[tab],
-                [field]: value,
-            },
+            [tab]: { ...prev[tab], [field]: value },
         }));
     };
 
     const handleDateChange = (rangeValue: { from?: Date; to?: Date } | undefined) => {
         setRange(rangeValue || {});
         if (rangeValue?.from) handleInputChange('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
-        if (rangeValue?.to) handleInputChange('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
+        if (rangeValue?.to)   handleInputChange('end_date',   format(rangeValue.to,   'yyyy-MM-dd'));
     };
+
     const addAudienceRow = () => {
         const currentAudiences = formState[tab]?.audience_details || [];
         handleInputChange('audience_details', [...currentAudiences, { type: '', name: '' }]);
     };
+
     const handleAudienceRowChange = (index: number, field: 'type' | 'name', value: string) => {
         const currentAudiences = [...(formState[tab]?.audience_details || [])];
         currentAudiences[index] = { ...currentAudiences[index], [field]: value };
@@ -144,14 +128,12 @@ export default function PerencanaanIklan() {
         currentAudiences.splice(index, 1);
         handleInputChange('audience_details', currentAudiences);
     };
+
     const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
         const current = formState[tab];
-        if (!current?.goals_id) {
-            toast.error('Tujuan iklan wajib dipilih!');
-            return;
-        }
+        if (!current?.goals_id) { toast.error('Tujuan iklan wajib dipilih!'); return; }
 
         const filteredData = Object.entries(formState)
             .filter(([_, value]) => {
@@ -162,44 +144,26 @@ export default function PerencanaanIklan() {
                 const hasAudienceDetails = value.audience_details && value.audience_details.length > 0;
                 return meaningfulFields.length > 0 || hasAudienceDetails;
             })
-            .reduce(
-                (acc, [key, value]) => {
-                    const audienceDetails = value.audience_details || [];
-                    const type_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.type)
-                        .filter(Boolean)
-                        .join(';');
+            .reduce((acc, [key, value]) => {
+                const audienceDetails            = value.audience_details || [];
+                const type_audience_targeted     = audienceDetails.map((ad: any) => ad.type).filter(Boolean).join(';');
+                const name_audience_targeted     = audienceDetails.map((ad: any) => ad.name).filter(Boolean).join(';');
+                const { audience_details, ...restOfValue } = value;
+                acc[key] = {
+                    ...restOfValue,
+                    daily_budget:    parseInt(value.daily_budget || 0),
+                    audience_type:   value?.audience_type || 'targeted',
+                    event_id:        selectedEvent || null,
+                    platform_id:     Number(key),
+                    user_id:         isAdmin ? value?.user_id : auth?.user?.id,
+                    type_audience_targeted,
+                    name_audience_targeted,
+                };
+                return acc;
+            }, {} as Record<string, any>);
 
-                    const name_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.name)
-                        .filter(Boolean)
-                        .join(';');
-
-                    const { audience_details, ...restOfValue } = value;
-                    acc[key] = {
-                        ...restOfValue,
-                        daily_budget: parseInt(value.daily_budget || 0),
-                        audience_type: value?.audience_type || 'targeted',
-                        event_id: selectedEvent || null,
-                        platform_id: Number(key),
-                        user_id: isAdmin ? value?.user_id : auth?.user?.id,
-                        type_audience_targeted: type_audience_targeted,
-                        name_audience_targeted: name_audience_targeted,
-                    };
-                    return acc;
-                },
-                {} as Record<string, any>,
-            );
-
-        if (!selectedEvent) {
-            toast.error('Pilih event terlebih dahulu!');
-            return;
-        }
-
-        if (Object.keys(filteredData).length === 0) {
-            toast.error('Isi minimal satu tab sebelum menyimpan!');
-            return;
-        }
+        if (!selectedEvent)                     { toast.error('Pilih event terlebih dahulu!'); return; }
+        if (Object.keys(filteredData).length === 0) { toast.error('Isi minimal satu tab sebelum menyimpan!'); return; }
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
@@ -207,6 +171,7 @@ export default function PerencanaanIklan() {
     { 
         ...filteredData, 
         ad_schedule_time: adScheduleTime, 
+        batch: batchValue, 
         image_flayer: imageFlayer, 
         mode 
     },
@@ -220,22 +185,20 @@ export default function PerencanaanIklan() {
         );
     };
 
-    const selectedEventData = filteredEvents.find(
-    (event) => String(event.id) === selectedEvent
-    )
+    const selectedEventData = filteredEvents.find((event) => String(event.id) === selectedEvent);
 
+    // ============================================================
+    // RENDER TARGETING — hanya lokasi pakai LocationAutocompleteInput
+    // ============================================================
     const renderTargetingFields = (platformData: any) => {
-        const targetType = platformData?.audience_type || 'targeted';
+        const targetType  = platformData?.audience_type || 'targeted';
         const showTargeted = targetType === 'targeted' || targetType === 'combined';
-        const showBroad = targetType === 'broad' || targetType === 'combined';
-
-        
-
+        const showBroad    = targetType === 'broad'    || targetType === 'combined';
 
         return (
             <div className="mt-6 space-y-4 border-t pt-4">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    {/* AGE TARGETED */}
+                    {/* TARGETED */}
                     {showTargeted && (
                         <div className="space-y-4">
                             <div>
@@ -268,52 +231,44 @@ export default function PerencanaanIklan() {
                                 </div>
                             </div>
 
+                            {/* ✅ Lokasi Targeted — dengan history suggestion */}
                             <div>
                                 <Label>Lokasi (Targeted)</Label>
-                                <Input
-                                    placeholder="Masukkan lokasi audiens"
+                                <LocationAutocompleteInput
                                     value={platformData?.location_targeted || ''}
-                                    onChange={(e) => handleInputChange('location_targeted', e.target.value)}
+                                    onChange={(val) => handleInputChange('location_targeted', val)}
+                                    historySuggestions={locationTargetedHistory}
                                 />
                             </div>
 
                             <div>
                                 <Label>Detail Peserta</Label>
                                 <div className="space-y-3">
-                                    {/* 1. Ambil array 'audience_details' dari platformData */}
                                     {(platformData?.audience_details || []).map((audience: any, index: number) => (
                                         <div key={index} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr,1fr,auto]">
-                                            {/* Input Select untuk Tipe */}
                                             <Select value={audience.type} onValueChange={(val) => handleAudienceRowChange(index, 'type', val)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Jenis audiens" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - lain'].map(
-                                                        (item) => (
-                                                            <SelectItem key={item} value={item}>
-                                                                {item}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
+                                                    {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - lain'].map((item) => (
+                                                        <SelectItem key={item} value={item}>{item}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
 
-                                            {/* Input Teks untuk Nama/Detail */}
+                                            {/* ✅ Detail audiens — Input biasa (tidak ada suggestion) */}
                                             <Input
                                                 placeholder="Detail audiens"
                                                 value={audience.name}
                                                 onChange={(e) => handleAudienceRowChange(index, 'name', e.target.value)}
                                             />
 
-                                            {/* Tombol Hapus Baris (perlu import Trash2) */}
                                             <Button type="button" variant="destructive" size="icon" onClick={() => removeAudienceRow(index)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     ))}
-
-                                    {/* 2. Tombol untuk menambah baris baru */}
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -327,7 +282,7 @@ export default function PerencanaanIklan() {
                         </div>
                     )}
 
-                    {/* AGE BROAD */}
+                    {/* BROAD */}
                     {showBroad && (
                         <div className="space-y-4">
                             <div>
@@ -360,11 +315,13 @@ export default function PerencanaanIklan() {
                                 </div>
                             </div>
 
+                            {/* ✅ Lokasi Broad — dengan history suggestion */}
                             <div>
                                 <Label>Lokasi (Broad)</Label>
-                                <Input
+                                <LocationAutocompleteInput
                                     value={platformData?.location_broad || ''}
-                                    onChange={(e) => handleInputChange('location_broad', e.target.value)}
+                                    onChange={(val) => handleInputChange('location_broad', val)}
+                                    historySuggestions={locationBroadHistory}
                                 />
                             </div>
                         </div>
@@ -374,12 +331,14 @@ export default function PerencanaanIklan() {
         );
     };
 
+    // ============================================================
+    // RENDER FORM CONTENT — budget & target pakai Input biasa
+    // ============================================================
     const renderFormContent = () => {
         const currentData = formState[tab] || {};
 
         return (
             <div className="mt-6">
-                {/* Kolom kiri (di mobile menjadi 1 kolom penuh) */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-6">
                         <div className="space-y-3">
@@ -389,10 +348,7 @@ export default function PerencanaanIklan() {
                                     <Button variant="outline" className={cn('w-full justify-start', !range?.from && 'text-muted-foreground')}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {currentData.start_date && currentData.end_date
-                                            ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(
-                                                new Date(currentData.end_date),
-                                                'dd MMM yyyy',
-                                            )}`
+                                            ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(new Date(currentData.end_date), 'dd MMM yyyy')}`
                                             : 'Pilih tanggal mulai dan selesai'}
                                     </Button>
                                 </PopoverTrigger>
@@ -419,14 +375,10 @@ export default function PerencanaanIklan() {
                         <div className="space-y-3">
                             <Label>Tujuan Iklan</Label>
                             <Select required value={currentData.goals_id || ''} onValueChange={(val) => handleInputChange('goals_id', val)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih tujuan iklan" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Pilih tujuan iklan" /></SelectTrigger>
                                 <SelectContent>
                                     {goals?.map((goal) => (
-                                        <SelectItem key={goal.id} value={String(goal.id)}>
-                                            {goal.name}
-                                        </SelectItem>
+                                        <SelectItem key={goal.id} value={String(goal.id)}>{goal.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -439,9 +391,7 @@ export default function PerencanaanIklan() {
                                 value={currentData.audience_type || 'targeted'}
                                 onValueChange={(val) => handleInputChange('audience_type', val)}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih jenis audiens" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Pilih jenis audiens" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="targeted">Targeted</SelectItem>
                                     <SelectItem value="broad">Broad</SelectItem>
@@ -451,32 +401,26 @@ export default function PerencanaanIklan() {
                         </div>
                     </div>
 
-                    {/* Kolom kanan (di mobile turun ke bawah jadi 1 kolom juga) */}
                     <div className="space-y-6">
+                        {/* ✅ Budget Harian — Input biasa */}
                         <div className="space-y-3">
                             <Label>Budget Harian</Label>
                             <Input
-                                type="text"
-                                inputMode="numeric"
                                 placeholder="Rp. 0"
+                                inputMode="numeric"
                                 maxLength={13}
-                                required
                                 value={formatRupiah(currentData.daily_budget) || ''}
-                                onChange={(e) => {
-                                    const raw = e.target.value.replace(/[^0-9]/g, '');
-                                    handleInputChange('daily_budget', raw);
-                                }}
+                                onChange={(e) => handleInputChange('daily_budget', toPlainNumber(e.target.value))}
                             />
                         </div>
 
+                        {/* ✅ Target Peserta — Input biasa */}
                         <div className="space-y-3">
                             <Label>Target Peserta (jumlah)</Label>
                             <Input
-                                type="text"
+                                placeholder="Masukkan jumlah target audiens"
                                 inputMode="numeric"
                                 maxLength={10}
-                                required
-                                placeholder="Masukkan jumlah target audiens"
                                 value={formatNol(currentData.audience_target) || ''}
                                 onChange={(e) => handleInputChange('audience_target', toPlainNumber(e.target.value))}
                             />
@@ -484,7 +428,6 @@ export default function PerencanaanIklan() {
                     </div>
                 </div>
 
-                {/* Targeting fields full width */}
                 <div className="col-span-2">{renderTargetingFields(currentData)}</div>
             </div>
         );
@@ -502,7 +445,6 @@ export default function PerencanaanIklan() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-8">
-                                {/* Pilihan user & event */}
                                 <div>
                                     {isAdmin && (
                                         <div className="mb-4">
@@ -513,10 +455,7 @@ export default function PerencanaanIklan() {
                                                     setFormState((prev) => {
                                                         const updated = { ...prev };
                                                         Object.keys(updated).forEach((key) => {
-                                                            updated[Number(key)] = {
-                                                                ...updated[Number(key)],
-                                                                user_id: val,
-                                                            };
+                                                            updated[Number(key)] = { ...updated[Number(key)], user_id: val };
                                                         });
                                                         return updated;
                                                     });
@@ -526,58 +465,46 @@ export default function PerencanaanIklan() {
                                                     setSelectedEvent('');
                                                 }}
                                             >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih user" />
-                                                </SelectTrigger>
+                                                <SelectTrigger><SelectValue placeholder="Pilih user" /></SelectTrigger>
                                                 <SelectContent>
                                                     {users?.map((user) => (
-                                                        <SelectItem key={user.id} value={String(user.id)}>
-                                                            {user.name}
-                                                        </SelectItem>
+                                                        <SelectItem key={user.id} value={String(user.id)}>{user.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     )}
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Nama Event */}
-                                    <div>
-                                        <Label>Nama Event</Label>
-                                        <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih event" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredEvents.length > 0 ? (
-                                            filteredEvents.map((event) => (
-                                                <SelectItem key={event.id} value={String(event.id)}>
-                                                {event.name}
-                                                </SelectItem>
-                                            ))
-                                            ) : (
-                                            <SelectItem value="none" disabled>
-                                                Tidak ada event
-                                            </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {/* Batch manual */}
-                                    <div>
-                                            <Label>Batch</Label>
-                                        <Input
-                                        type="text"
-                                        value={
-                                            selectedEventData?.batch
-                                                ? `Batch ${Number(selectedEventData.batch) }`
-                                                : "-"
-                                        }
-                                        readOnly
-                                        className="bg-muted"
-                                    />
-                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <Label>Nama Event</Label>
+                                            <Select value={selectedEvent} onValueChange={(val) => setSelectedEvent(val)}>
+                                                <SelectTrigger><SelectValue placeholder="Pilih event" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {filteredEvents.length > 0 ? (
+                                                        filteredEvents.map((event) => (
+                                                            <SelectItem key={event.id} value={String(event.id)}>{event.name}</SelectItem>
+                                                        ))
+                                                    ) : (
+                                                        <SelectItem value="none" disabled>Tidak ada event</SelectItem>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+    <Label>Batch Iklan</Label>
+    <Input
+        type="text"
+        name="batch"
+        value={batchValue}  // ← BENAR
+        onChange={(e) => setBatchValue(e.target.value)}  // ← BENAR
+        placeholder="Masukkan batch iklan"
+        required
+    />
+    <p className="text-xs text-gray-500 mt-1">
+        Versi/nomor rencana iklan untuk event ini
+    </p>
+</div>
                                     </div>
 
                                     <div className="mt-4">
@@ -596,33 +523,20 @@ export default function PerencanaanIklan() {
                                         <Label>Gambar Flayer</Label>
                                         <Input
                                             type="file"
-                                            placeholder="Masukkan Flayer Gambar"
-                                            className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                            className="appearance-none bg-background"
                                             onChange={(e) => setImageFlayer(e.target.files?.[0] || null)}
                                         />
                                     </div>
                                 </div>
 
-                                {/* Tabs */}
-                                <Tabs
-                                    value={String(tab)}
-                                    onValueChange={handleTabChange}
-                                >
-                                    <TabsList
-                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
-                                        style={{ scrollbarWidth: "none" }}
-                                    >
+                                <Tabs value={String(tab)} onValueChange={handleTabChange}>
+                                    <TabsList className="w-full flex flex-row gap-3 overflow-x-auto justify-start" style={{ scrollbarWidth: 'none' }}>
                                         {platforms.map((platform) => (
-                                            <TabsTrigger
-                                                key={platform.id}
-                                                value={String(platform.id)}
-                                                className="px-20"
-                                            >
+                                            <TabsTrigger key={platform.id} value={String(platform.id)} className="px-20">
                                                 {platform.name}
                                             </TabsTrigger>
                                         ))}
                                     </TabsList>
-
                                     {platforms.map((platform) => (
                                         <TabsContent key={platform.id} value={String(platform.id)}>
                                             {renderFormContent()}

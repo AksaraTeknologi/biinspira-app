@@ -13,6 +13,7 @@ class AdPlan extends Model
     protected $fillable = [
         'user_id',
         'event_id',
+        'batch',
         'status',
         "ad_schedule_time",
         "title_flayer",

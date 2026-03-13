@@ -19,11 +19,9 @@ Route::get('/', function () {
     $user = auth()->user();
 
     if (! $user) {
-        // show login page
         return redirect()->route('login');
     }
 
-    // redirect based on role
     if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
         return redirect()->route('admin.marketing.dashboard');
     }
@@ -32,13 +30,16 @@ Route::get('/', function () {
         return redirect()->route('user.dashboard');
     }
 
-    // fallback for authenticated users without those roles
     return redirect()->route('user.dashboard');
 })->name('home');
 
+// ─────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard')->name('admin.home');
     Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('admin.marketing.print');
+
     Route::controller(UserController::class)->group(function () {
         Route::get('/users', 'index')->name('admin.users.index');
         Route::get('/users/create', 'create')->name('admin.users.create');
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
         Route::post('/users/update/{id}', 'update')->name('admin.users.update');
         Route::delete('/users/destroy/{id}', 'destroy')->name('admin.users.destroy');
     });
+
     Route::prefix('marketing')->group(function () {
         Route::controller(MasterEventController::class)->group(function () {
             Route::get('/event', 'index')->name('admin.events.index');
@@ -56,6 +58,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::post('/event/update/{id}', 'update')->name('admin.events.update');
             Route::delete('/event/destroy/{id}', 'destroy')->name('admin.events.destroy');
         });
+
         Route::controller(MasterPlatformController::class)->group(function () {
             Route::get('/platform', 'index')->name('admin.platforms.index');
             Route::get('/platform/create', 'create')->name('admin.platforms.create');
@@ -64,6 +67,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::post('/platform/update/{id}', 'update')->name('admin.platforms.update');
             Route::delete('/platform/destroy/{id}', 'destroy')->name('admin.platforms.destroy');
         });
+
         Route::controller(MasterAdGoalController::class)->group(function () {
             Route::get('/adgoals', 'index')->name('admin.adgoals.index');
             Route::get('/adgoals/create', 'create')->name('admin.adgoals.create');
@@ -72,6 +76,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::post('/adgoals/update/{id}', 'update')->name('admin.adgoals.update');
             Route::delete('/adgoals/destroy/{id}', 'destroy')->name('admin.adgoals.destroy');
         });
+
         Route::controller(AdPlanPlatformController::class)->group(function () {
             Route::get('/list', 'index')->name('admin.marketing.index');
             Route::get('/create', 'create')->name('admin.marketing.create');
@@ -80,20 +85,30 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
             Route::post("/update/{id}/{mode}", "update")->name("admin.marketing.update.mode");
             Route::delete("/delete/{id}", "destroy")->name("admin.marketing.destroy");
         });
+
         Route::controller(AdResultPlatformController::class)->group(function () {
             Route::get("/result/{id_event}/{id_ad_plan}", "resultForm")->name("admin.marketing.result");
             Route::post("/result/store", "storeOrUpdate")->name("admin.marketing.result.store");
         });
+
         Route::controller(AdEvaluationController::class)->group(function () {
             Route::get("/evaluation/{id}", "evaluationForm")->name("admin.marketing.evaluation");
             Route::post("/evaluation/store", "storeOrUpdate")->name("admin.marketing.evaluation.storeOrUpdate");
         });
-        Route::get('/dashboard', [DashboardController::class, "dashboardMarketing"])->name("admin.marketing.dashboard");
+
+        Route::get('/dashboard', [DashboardController::class, 'dashboardMarketing'])->name('admin.marketing.dashboard');
         Route::get('/marketing/show/{id}', [FormController::class, 'show'])->name('admin.marketing.show');
     });
+
     Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
+
+    // ✅ BARU: Halaman grafik peserta per event (admin)
+    Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('admin.audience.chart');
 });
 
+// ─────────────────────────────────────────────
+// USER ROUTES
+// ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
     Route::redirect('/', 'user/dashboard')->name('home');
     Route::get('marketing/dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
@@ -105,18 +120,20 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::get('/marketing/create', 'create')->name('marketing.create');
         Route::post('/marketing/store', 'store')->name('marketing.store');
         Route::get("/marketing/edit/{id}", "edit")->name("marketing.edit");
-        // Route::post("/marketing/update/{id}", "update")->name("marketing.update");
         Route::post("/update/{id}/{mode}", "update")->name("marketing.update.mode");
         Route::delete("/marketing/delete/{id}", "destroy")->name("marketing.destroy");
     });
+
     Route::controller(AdResultPlatformController::class)->group(function () {
         Route::get("/marketing/result/{id_event}/{id_ad_plan}", "resultForm")->name("marketing.result");
         Route::post("/marketing/result/store", "storeOrUpdate")->name("marketing.result.store");
     });
+
     Route::controller(AdEvaluationController::class)->group(function () {
         Route::get("/marketing/evaluation/{id}", "evaluationForm")->name("marketing.evaluation");
         Route::post("/marketing/evaluation/store", "storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
     });
+
     Route::controller(MasterEventController::class)->group(function () {
         Route::get('/marketing/event', 'index')->name('events.index');
         Route::get('/marketing/event/create', 'create')->name('events.create');
@@ -125,6 +142,9 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
         Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
     });
+
+    // ✅ BARU: Halaman grafik peserta per event (user)
+    Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('audience.chart');
 });
 
 require __DIR__ . '/settings.php';

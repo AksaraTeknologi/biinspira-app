@@ -19,6 +19,11 @@ import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGri
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
+const DASHBOARD_CHILD_PATHS: Record<string, string[]> = {
+    admin: ['/admin/audience-chart'],
+    user:  ['/user/audience-chart'],
+};
+
 const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
     {
         title: 'User',
@@ -40,19 +45,6 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
             { title: 'Transaksi', href: route('admin.transactions.index'), icon: Receipt },
         ],
     },
-    // {
-    //     title: 'Affiliatte',
-    //     href: '/admin/hasil',
-    //     icon: BookCheck,
-    //     roles: ['admin'],
-    // },
-    // {
-    //     title: 'User',
-    //     href: route("admin.users.index"),
-    //     icon: CircleUserRound,
-    //     roles: ['admin'],
-    // },
-
     // role: user
     {
         title: 'Marketing',
@@ -72,43 +64,40 @@ export function AppSidebar() {
     const { isCollapsed, toggleSidebar } = useSidebar();
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
-    const mainNavItems = allNavItems.filter((item) => item.roles.includes(role)); //daftar menu sidebar
+    const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
 
     const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+    const currentUrl = page.url.replace(/\/$/, '');
+
+    const isDashboardChildPath = (): boolean => {
+        const paths = DASHBOARD_CHILD_PATHS[role] ?? [];
+        return paths.some(p => currentUrl === p || currentUrl.startsWith(p + '/'));
+    };
+
     // === Helper: Hitung parent path ===
     const getParentPath = (item: NavItem & { children?: NavItem[] }): string => {
-        // Jika item punya href, gunakan itu sebagai parent
         if (item.href) {
             return new URL(item.href, window.location.origin).pathname;
         }
-
-        // Jika tidak punya href, ambil dari prefix child → /admin/{menu}
         if (item.children && item.children.length > 0) {
             const firstChild = item.children[0];
-            const segments = new URL(firstChild.href, window.location.origin).pathname.split('/').filter(Boolean); // buang string kosong
-
-            // Ambil hanya /admin/marketing
+            const segments = new URL(firstChild.href, window.location.origin).pathname.split('/').filter(Boolean);
             return '/' + segments.slice(0, 2).join('/');
         }
-
         return '';
     };
 
     // === Helper: cek apakah submenu terbuka ===
     const checkIsSubMenuOpen = (item: NavItem & { children?: NavItem[] }) => {
         const currentPath = new URL(page.url, window.location.origin).pathname;
-
-        // If a parent has children, keep it open when any child route is active.
         if (item.children && item.children.length > 0) {
             return item.children.some((child) => {
                 const childPath = new URL(child.href, window.location.origin).pathname;
                 return currentPath === childPath || currentPath.startsWith(childPath + '/');
             });
         }
-
         const parentPath = getParentPath(item);
-
         if (!parentPath) return false;
         return currentPath.startsWith(parentPath + '/') || currentPath === parentPath;
     };
@@ -125,7 +114,6 @@ export function AppSidebar() {
                     <SidebarHeader>
                         <SidebarMenu>
                             <SidebarMenuItem className="flex flex-row items-center justify-between">
-                                {/* Logo */}
                                 <SidebarMenuButton size="lg" className={`${isCollapsed ? 'hidden' : 'flex'}`} asChild>
                                     {role === 'user' ? (
                                         <Link href="/user/dashboard" prefetch>
@@ -141,8 +129,6 @@ export function AppSidebar() {
                                         </Link>
                                     )}
                                 </SidebarMenuButton>
-
-                                {/* Collapse Trigger */}
                                 <SidebarTrigger
                                     onClick={toggleSidebar}
                                     className={`rounded-lg p-2 transition-colors hover:bg-background ${isCollapsed ? 'm-auto' : ''}`}
@@ -158,11 +144,14 @@ export function AppSidebar() {
                         >
                             {mainNavItems.map((item, i) => {
                                 const isOpen = openIndex === i;
+
                                 const isGroupOpen = (() => {
                                     let open = checkIsSubMenuOpen(item);
-                                    const currentUrl = page.url.replace(/\/$/, '');
 
                                     if (item.title === 'Marketing') {
+                                        // ✅ Tetap buka saat di halaman turunan Dashboard
+                                        if (isDashboardChildPath()) open = true;
+
                                         try {
                                             if (role === 'user') {
                                                 const indexBase = route('user.marketing.index')
@@ -189,7 +178,6 @@ export function AppSidebar() {
                                                     .replace(/\/$/, '');
                                                 const editRegex = /^\/user\/marketing\/[^/]+\/edit$/;
 
-                                                // Perbaikan: gunakan variable `open` bukan `active`
                                                 if (
                                                     currentUrl === indexBase ||
                                                     currentUrl === showBase ||
@@ -205,7 +193,7 @@ export function AppSidebar() {
                                                     currentUrl.startsWith(editBase) ||
                                                     editRegex.test(currentUrl)
                                                 ) {
-                                                    open = true; // Perbaikan: set `open` bukan `active`
+                                                    open = true;
                                                 }
                                             }
                                         } catch {
@@ -226,7 +214,6 @@ export function AppSidebar() {
                                             className={`rounded-lg p-1.5 ${isGroupOpen ? 'bg-sidebar-primary text-background hover:bg-sidebar-primary' : 'hover:bg-sidebar-primary'} ${isOpen ? 'bg-primary' : ''} `}
                                         >
                                             {item.children ? (
-                                                // jika punya submenu, jadikan tombol collapsible tanpa link
                                                 <CollapsibleTrigger asChild>
                                                     <SidebarMenuButton
                                                         tooltip={isCollapsed ? item.title : undefined}
@@ -242,7 +229,6 @@ export function AppSidebar() {
                                                     </SidebarMenuButton>
                                                 </CollapsibleTrigger>
                                             ) : (
-                                                // jika tidak punya submenu, jadikan Link biasa
                                                 <SidebarMenuButton
                                                     tooltip={isCollapsed ? item.title : undefined}
                                                     className={`hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary ${isGroupOpen ? 'text-gray-100 hover:bg-sidebar-primary' : ''}`}
@@ -264,16 +250,15 @@ export function AppSidebar() {
                                                     >
                                                         {item.children.map((sub, j) => {
                                                             const isSubActive = (() => {
-                                                                const currentUrl = page.url.replace(/\/$/, '');
                                                                 const subHref = sub.href.replace(window.location.origin, '').replace(/\/$/, '');
-                                                                // return currentUrl === subHref || currentUrl.startsWith(subHref);
-                                                                // })();
-                                                                // const isSubActive = (() => {
-                                                                // const currentUrl = page.url.replace(/\/$/, "");
-                                                                // const subHref = sub.href.replace(window.location.origin, "").replace(/\/$/, "");
                                                                 let active = currentUrl === subHref || currentUrl.startsWith(subHref);
 
-                                                                // biarkan isSubActive pada 'Daftar Iklan' juga saat berada di create/edit untuk role terkait
+                                                                // ✅ Dashboard aktif saat di halaman turunannya
+                                                                if (sub.title === 'Dashboard' && isDashboardChildPath()) {
+                                                                    active = true;
+                                                                }
+
+                                                                // Daftar Iklan aktif saat di create/edit/result/eval
                                                                 if (sub.title === 'Daftar Iklan') {
                                                                     try {
                                                                         if (role === 'admin') {
