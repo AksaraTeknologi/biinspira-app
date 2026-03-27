@@ -207,6 +207,8 @@ class DashboardController extends Controller
                     ->get()
                     ->keyBy('ad_plan_id');
 
+                    
+
         return $plans->map(function ($plan) use ($results) {
             $result   = $results->get($plan->id);
             $audience = $result ? (int) $result->checkout_count : 0;
@@ -243,95 +245,95 @@ class DashboardController extends Controller
         });
     }
 
-    private function getRawDataGraphic()
-    {
-        $query = AdResultPlatform::with([
-            'result:id,ad_plan_id,checkout_count,revenue',
-            'result.plan.user:id,name',
-            'result.plan.planPlatforms:id,ad_plan_id,end_date,audience_target',
-        ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
+private function getRawDataGraphic()
+{
+    $query = AdResult::with([
+        'plan.user:id,name',
+        'plan.event:id,name',
+    ])->select('id','ad_plan_id','checkout_count','revenue','created_at');
 
-        $user = Auth::user();
-        $userName = null;
-        if ($user) {
-            $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
-            $userName = $roles->first() ? strtolower($roles->first()) : null;
-        }
+    $user = Auth::user();
 
-        if ($userName !== 'admin') {
-            $query->whereHas('result.plan.user', function ($q) {
-                $q->where('id', Auth::user()->id);
-            });
-        }
-
-        $query->whereHas(
-            'result.plan.planPlatforms',
-            fn($q) =>
-            $q->whereBetween('end_date', [
-                now()->subMonths(11)->startOfMonth(),
-                now()->endOfMonth()
-            ])
-        );
-
-        $raw = $query->get()->map(function ($item, $key) {
-            $platforms = $item->result->plan->planPlatforms;
-
-            return [
-                'id'          => $item->result?->id,
-                'event_name'  => $item->result->plan->event?->name,
-                'event_label' => $key + 1,
-                'date'        => optional($platforms->first()?->end_date)->toDateString(),
-                'month_key'   => optional($platforms->first()?->end_date)->format('Y-m'),
-                'month_label' => optional($platforms->first()?->end_date)->format('M'),
-                'pendapatan'  => (int) $item->result?->revenue,
-                'pengeluaran' => (int) $item->total_cost,
-                'audience'    => (int) $item->result?->checkout_count,
-                'user'        => ucfirst(strtolower($item->result->plan->user?->name)),
-            ];
+    if (!$user->hasRole('admin')) {
+        $query->whereHas('plan', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
         });
+    }
 
-        $bulanan = $raw
-            ->groupBy('month_key')
-            ->map(fn($i) => [
-                'user'        => $i->first()['user'],
-                'month'       => $i->first()['month_label'],
-                'pendapatan'  => $i->sum('pendapatan'),
-                'pengeluaran' => $i->sum('pengeluaran'),
-                'audience'    => $i->sum('audience'),
-            ])
-            ->sortKeys()
-            ->values();
+    // 🔥 ambil semua result dulu
+    $results = $query->get();
 
-        $mingguan = $this->groupByWeek($raw)
-            ->map(function ($items, $weekKey) {
-                $firstDate = Carbon::parse($items->first()['date']);
-                return [
-                    'week'        => 'Minggu ' . $firstDate->weekOfMonth,
-                    'month'       => $firstDate->format('M'),
-                    'year'        => $firstDate->year,
-                    'pendapatan'  => $items->sum('pendapatan'),
-                    'pengeluaran' => $items->sum('pengeluaran'),
-                    'audience'    => $items->sum('audience'),
-                ];
-            })
-            ->values();
+    // 🔥 AGGREGATE LANGSUNG DARI DB (INI KUNCI UTAMA)
+    $costMap = AdResultPlatform::selectRaw('ad_result_id, SUM(total_cost) as total')
+        ->groupBy('ad_result_id')
+        ->pluck('total', 'ad_result_id');
 
-        $event = $this->groupByEvent($raw)
-            ->map(fn($i) => [
-                'event_name'  => $i->first()['event_name'],
-                'event_label' => "E" . $i->first()['event_label'],
-                'pendapatan'  => $i->sum('pendapatan'),
-                'pengeluaran' => $i->sum('pengeluaran'),
-                'audience'    => $i->sum('audience'),
-            ])
-            ->values();
+    $raw = $results->map(function ($item, $key) use ($costMap) {
 
         return [
-            'bulanan'  => $bulanan,
-            'mingguan' => $mingguan,
-            'event'    => $event,
+            'id' => $item->id,
+            'event_name' => $item->plan->event?->name,
+            'event_label' => $key + 1,
+
+            'date' => $item->created_at->toDateString(),
+            'month_key' => $item->created_at->format('Y-m'),
+            'month_label' => $item->created_at->format('M'),
+
+            'pendapatan' => (int) $item->revenue,
+
+            // 🔥 FIX FINAL (NO MORE NGACO)
+            'pengeluaran' => (int) ($costMap[$item->id] ?? 0),
+
+            'audience' => (int) $item->checkout_count,
+
+            'user' => ucfirst(strtolower(
+                $item->plan->user?->name
+            )),
         ];
-    }
+    });
+
+    $bulanan = $raw
+        ->groupBy('month_key')
+        ->map(fn($i) => [
+            'user' => $i->first()['user'],
+            'month' => $i->first()['month_label'],
+            'pendapatan' => $i->sum('pendapatan'),
+            'pengeluaran' => $i->sum('pengeluaran'),
+            'audience' => $i->sum('audience'),
+        ])
+        ->sortKeys()
+        ->values();
+
+    $mingguan = $this->groupByWeek($raw)
+        ->map(function ($items) {
+            $firstDate = Carbon::parse($items->first()['date']);
+            return [
+                'week' => 'Minggu ' . $firstDate->weekOfMonth,
+                'month' => $firstDate->format('M'),
+                'year' => $firstDate->year,
+                'pendapatan' => $items->sum('pendapatan'),
+                'pengeluaran' => $items->sum('pengeluaran'),
+                'audience' => $items->sum('audience'),
+            ];
+        })
+        ->values();
+
+    $event = $this->groupByEvent($raw)
+        ->map(fn($i) => [
+            'event_name' => $i->first()['event_name'],
+            'event_label' => "E" . $i->first()['event_label'],
+            'pendapatan' => $i->sum('pendapatan'),
+            'pengeluaran' => $i->sum('pengeluaran'),
+            'audience' => $i->sum('audience'),
+        ])
+        ->values();
+
+    return [
+        'bulanan' => $bulanan,
+        'mingguan' => $mingguan,
+        'event' => $event,
+    ];
+}
 
     private function getTableData()
     {

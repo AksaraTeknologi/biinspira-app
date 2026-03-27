@@ -133,11 +133,10 @@ function UserCard({ userData, colorClass, rank }: { userData: AudiencePerUser; c
                                     {ev.batches.map((batch) => (
                                         <div
                                             key={batch.batch_number}
-                                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs border ${
-                                                batch.has_result
+                                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs border ${batch.has_result
                                                     ? 'bg-gray-50 border-gray-200'
                                                     : 'bg-gray-50 border-dashed border-gray-200 text-gray-400'
-                                            }`}
+                                                }`}
                                         >
                                             <span className="font-medium">Batch {batch.batch_number}</span>
                                             <span className="text-gray-400">·</span>
@@ -170,9 +169,9 @@ export default function AudienceChartPage() {
     };
 
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
-    const [selectedIndex, setSelectedIndex]       = useState<number | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     // User yang sedang di-expand di panel filter
-    const [activeUserId, setActiveUserId]         = useState<string | null>(null);
+    const [activeUserId, setActiveUserId] = useState<string | null>(null);
 
     const toggleEvent = (id: number) => {
         setSelectedEventIds(prev =>
@@ -215,8 +214,8 @@ export default function AudienceChartPage() {
 
     // Summary
     const totalAudience = filteredData.reduce((s, d) => s + d.audience, 0);
-    const topBatch      = [...filteredData].sort((a, b) => b.audience - a.audience)[0] ?? null;
-    const avgAudience   = filteredData.length ? Math.round(totalAudience / filteredData.length) : 0;
+    const topBatch = [...filteredData].sort((a, b) => b.audience - a.audience)[0] ?? null;
+    const avgAudience = filteredData.length ? Math.round(totalAudience / filteredData.length) : 0;
 
     const defaultIncrease = filteredData.length > 1
         ? parseFloat((((filteredData[filteredData.length - 1].audience - filteredData[filteredData.length - 2].audience) /
@@ -238,10 +237,10 @@ export default function AudienceChartPage() {
 
     const chartData = useMemo(() => filteredData.map((d) => ({
         ...d,
-        color:            eventColorMap[d.event_id] ?? "#6BAED6",
+        color: eventColorMap[d.event_id] ?? "#6BAED6",
         PendapatanHeight: d.audience,
-        EfisiensiH:       d.audience,
-        Audience:         d.audience,
+        EfisiensiH: d.audience,
+        Audience: d.audience,
     })), [filteredData, eventColorMap]);
 
     const handleBarClick = useCallback((_: any, index: number) => {
@@ -315,106 +314,182 @@ export default function AudienceChartPage() {
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
 
                     {/* ── Panel Filter (dengan slide user) ── */}
-                    <div className={`flex flex-row gap-3 transition-all duration-300 ${activeUserId ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
+                    {/* ── Panel Filter ── */}
+                    <div className="flex flex-col gap-3 lg:col-span-1">
 
                         {/* Card Filter utama */}
-                        <Card className="flex-1 h-fit">
+                        <Card className="w-full h-fit">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="text-sm font-semibold">Filter</CardTitle>
+
                                     {(selectedEventIds.length > 0 || activeUserId) && (
-                                        <button onClick={clearFilter} className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1">
+                                        <button
+                                            onClick={clearFilter}
+                                            className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1"
+                                        >
                                             <X className="h-3 w-3" /> Reset
                                         </button>
                                     )}
+
                                 </div>
+
                                 {selectedEventIds.length > 0 && (
-                                    <p className="text-xs text-gray-400">{selectedEventIds.length} event dipilih</p>
+                                    <p className="text-xs text-gray-400">
+                                        {selectedEventIds.length} event dipilih
+                                    </p>
                                 )}
+
                             </CardHeader>
+
                             <CardContent className="flex flex-col gap-4">
 
-                                {/* Divider */}
                                 <div className="border-t" />
 
-                                {/* Section: Filter User */}
+                                {/* USER LIST */}
                                 <div>
-                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">User</p>
+
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                        User
+                                    </p>
+
                                     <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+
                                         {audiencePerUser.map((u, i) => {
-                                            const isActive = activeUserId === u.user_id;
+
+                                            const isActive = activeUserId === u.user_id
+
                                             return (
+
                                                 <button
                                                     key={u.user_id}
                                                     onClick={() => setActiveUserId(isActive ? null : u.user_id)}
-                                                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all flex items-center justify-between ${
-                                                        isActive
+                                                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all flex items-center justify-between ${isActive
                                                             ? "border-blue-500 bg-blue-50 text-blue-700"
                                                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                                    }`}
+                                                        }`}
                                                 >
+
                                                     <div className="flex items-center gap-2 min-w-0">
+
                                                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${USER_COLORS[i % USER_COLORS.length]}`}>
                                                             {u.user_name.charAt(0).toUpperCase()}
                                                         </div>
+
                                                         <div className="min-w-0">
                                                             <p className="font-medium truncate">{u.user_name}</p>
-                                                            <p className="text-xs text-gray-400">{u.events.length} event · {u.total.toLocaleString("id-ID")} peserta</p>
+                                                            <p className="text-xs text-gray-400">
+                                                                {u.events.length} event · {u.total.toLocaleString("id-ID")} peserta
+                                                            </p>
                                                         </div>
+
                                                     </div>
-                                                    <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-transform ${isActive ? 'rotate-90 text-blue-500' : 'text-gray-300'}`} />
+
+                                                    <ChevronRight
+                                                        className={`h-4 w-4 flex-shrink-0 transition-transform ${isActive ? 'rotate-90 text-blue-500' : 'text-gray-300'
+                                                            }`}
+                                                    />
+
                                                 </button>
-                                            );
+
+                                            )
+
                                         })}
+
                                     </div>
                                 </div>
 
                             </CardContent>
                         </Card>
 
-                        {/* Panel Slide — event milik user yang dipilih */}
+
+                        {/* PANEL EVENT (muncul di bawah filter, bukan di samping) */}
                         {activeUserId && activeUserData && (
-                            <Card className="flex-1 h-fit border-gray-200 bg-white animate-in slide-in-from-left-2 duration-200">
+
+                            <Card className="w-full border-gray-200 bg-white animate-in slide-in-from-top-2 duration-200">
+
                                 <CardHeader>
+
                                     <div className="flex items-center justify-between">
+
                                         <div>
-                                            <CardTitle className="text-sm font-semibold">{activeUserData.user_name}</CardTitle>
-                                            <p className="text-xs text-gray-900">Pilih event untuk filter grafik</p>
+                                            <CardTitle className="text-sm font-semibold">
+                                                {activeUserData.user_name}
+                                            </CardTitle>
+
+                                            <p className="text-xs text-gray-900">
+                                                Pilih event untuk filter grafik
+                                            </p>
+
                                         </div>
-                                        <button onClick={() => setActiveUserId(null)} className="text-gray-400 hover:text-gray-600">
+
+                                        <button
+                                            onClick={() => setActiveUserId(null)}
+                                            className="text-gray-400 hover:text-gray-600"
+                                        >
                                             <X className="h-4 w-4" />
                                         </button>
+
                                     </div>
+
                                 </CardHeader>
+
+
                                 <CardContent>
+
                                     <div className="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto pr-1">
+
                                         {activeUserData.events.map((ev) => {
-                                            const isSelected = selectedEventIds.includes(ev.event_id);
+
+                                            const isSelected = selectedEventIds.includes(ev.event_id)
+
                                             return (
+
                                                 <button
                                                     key={ev.event_id}
                                                     onClick={() => toggleEvent(ev.event_id)}
-                                                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all ${
-                                                        isSelected
+                                                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all ${isSelected
                                                             ? "border-blue-500 bg-blue-100 text-blue-700"
                                                             : "border-blue-100 bg-white hover:border-blue-300 hover:bg-blue-50"
-                                                    }`}
+                                                        }`}
                                                 >
+
                                                     <div className="flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: eventColorMap[ev.event_id] }} />
-                                                        <p className="font-medium truncate">{ev.event_name}</p>
-                                                        {isSelected && <Badge className="ml-auto text-[10px] py-0 h-4 bg-blue-500">aktif</Badge>}
+
+                                                        <span
+                                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                            style={{ backgroundColor: eventColorMap[ev.event_id] }}
+                                                        />
+
+                                                        <p className="font-medium truncate">
+                                                            {ev.event_name}
+                                                        </p>
+
+                                                        {isSelected && (
+                                                            <Badge className="ml-auto text-[10px] py-0 h-4 bg-blue-500">
+                                                                aktif
+                                                            </Badge>
+                                                        )}
+
                                                     </div>
+
                                                     <p className="text-xs text-gray-400 mt-0.5 pl-4">
                                                         {ev.batches.length} batch · {ev.total.toLocaleString("id-ID")} peserta
                                                     </p>
+
                                                 </button>
-                                            );
+
+                                            )
+
                                         })}
+
                                     </div>
+
                                 </CardContent>
                             </Card>
+
                         )}
+
                     </div>
 
                     {/* ── Grafik ── */}
