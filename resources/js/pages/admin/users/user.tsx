@@ -41,6 +41,7 @@ import * as React from 'react';
 
 interface User {
   id: string;
+  avatar?: string;
   name: string;
   email: string;
 }
@@ -89,6 +90,19 @@ export default function UserPage() {
       ),
       enableSorting: false,
       enableHiding: false,
+    },
+    {
+      accessorKey: 'avatar',
+      header: 'Avatar',
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          <img
+          src={`/storage/${row.original.avatar}`}
+          alt={row.original.name}
+          className="h-10 w-10 rounded-full"
+        />
+        </div>
+      ),
     },
     {
       accessorKey: 'nama',
