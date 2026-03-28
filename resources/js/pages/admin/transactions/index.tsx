@@ -30,13 +30,6 @@ import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
 import { columns, Invoice } from './columns';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Transaksi',
-        href: '/admin/transactions',
-    },
-];
-
 interface PlatformOption {
     key: string;
     label: string;
@@ -45,6 +38,8 @@ interface PlatformOption {
 interface TransactionsProps {
     invoices?: Invoice[];
     availablePlatforms: PlatformOption[];
+    routeName?: string;
+    isUserRestricted?: boolean;
     filters?: {
         platform?: string;
         start_date?: string;
@@ -242,7 +237,15 @@ function InvoiceTable({ invoices }: { invoices: Invoice[] }) {
     );
 }
 
-export default function Transactions({ invoices, availablePlatforms, filters, flash }: TransactionsProps) {
+export default function Transactions({ invoices, availablePlatforms, routeName, isUserRestricted, filters, flash }: TransactionsProps) {
+    const resolvedRouteName = routeName ?? 'admin.transactions.index';
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Transaksi',
+            href: resolvedRouteName === 'user.transactions.index' ? '/user/transactions' : '/admin/transactions',
+        },
+    ];
+
     const [selectedPlatform, setSelectedPlatform] = React.useState(filters?.platform ?? 'all');
     const [date, setDate] = React.useState<DateRange | undefined>(() => ({
         from: filters?.start_date ? new Date(filters.start_date) : subMonths(new Date(), 1),
@@ -259,7 +262,7 @@ export default function Transactions({ invoices, availablePlatforms, filters, fl
 
     const applyFilter = () => {
         router.get(
-            route('admin.transactions.index'),
+            route(resolvedRouteName),
             {
                 platform: selectedPlatform,
                 start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
@@ -275,18 +278,19 @@ export default function Transactions({ invoices, availablePlatforms, filters, fl
     const resetFilter = () => {
         const defaultFrom = subMonths(new Date(), 1);
         const defaultTo = new Date();
+        const defaultPlatform = isUserRestricted ? (availablePlatforms[0]?.key ?? 'all') : 'all';
         const defaultRange: DateRange = {
             from: defaultFrom,
             to: defaultTo,
         };
 
-        setSelectedPlatform('all');
+        setSelectedPlatform(defaultPlatform);
         setDate(defaultRange);
 
         router.get(
-            route('admin.transactions.index'),
+            route(resolvedRouteName),
             {
-                platform: 'all',
+                platform: defaultPlatform,
                 start_date: format(defaultFrom, 'yyyy-MM-dd'),
                 end_date: format(defaultTo, 'yyyy-MM-dd'),
             },
@@ -359,7 +363,7 @@ export default function Transactions({ invoices, availablePlatforms, filters, fl
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                        <Select value={selectedPlatform} onValueChange={setSelectedPlatform} disabled={isUserRestricted}>
                             <SelectTrigger className="w-[180px] bg-input">
                                 <SelectValue placeholder="Pilih Platform" />
                             </SelectTrigger>

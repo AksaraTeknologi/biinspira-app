@@ -42,6 +42,10 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    transactionAccess?: {
+        can_view?: boolean;
+        platform_key?: string | null;
+    };
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;

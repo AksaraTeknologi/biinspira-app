@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -28,7 +31,11 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $platforms = config('services.platforms');
-        $allowedPlatforms = array_merge(['all'], array_keys($platforms));
+        $user = $request->user();
+        $isUserRole = $user?->hasRole('user') === true;
+        $userPlatformKey = $isUserRole ? $this->resolveUserPlatformKey($user, $platforms) : null;
+        $hasUserPlatformAccess = $userPlatformKey !== null && $this->hasPlatformCredentials($platforms[$userPlatformKey] ?? null);
+        $allowedPlatforms = array_merge(['all'], $hasUserPlatformAccess ? [$userPlatformKey] : array_keys($platforms));
         $defaultStartDate = now()->subMonth()->startOfDay()->toDateString();
         $defaultEndDate = now()->endOfDay()->toDateString();
 
@@ -38,13 +45,19 @@ class TransactionController extends Controller
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ]);
 
-        $selectedPlatform = $validated['platform'] ?? 'all';
+        $selectedPlatform = $isUserRole
+            ? ($hasUserPlatformAccess ? $userPlatformKey : 'none')
+            : ($validated['platform'] ?? 'all');
         $startDate = $validated['start_date'] ?? $defaultStartDate;
         $endDate = $validated['end_date'] ?? $defaultEndDate;
 
         // Build available platform list eagerly and keep UI order consistent with platformLabels.
         $availablePlatforms = [];
         foreach ($this->platformLabels as $key => $label) {
+            if ($isUserRole && $key !== $userPlatformKey) {
+                continue;
+            }
+
             $platform = $platforms[$key] ?? null;
             if (!is_array($platform)) {
                 continue;
@@ -60,12 +73,20 @@ class TransactionController extends Controller
 
         return Inertia::render('admin/transactions/index', [
             'availablePlatforms' => $availablePlatforms,
+            'routeName' => $isUserRole ? 'user.transactions.index' : 'admin.transactions.index',
+            'isUserRestricted' => $isUserRole,
             'filters' => [
                 'platform' => $selectedPlatform,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ],
-            'invoices' => Inertia::defer(fn() => $this->fetchInvoices($platforms, $selectedPlatform, $startDate, $endDate)),
+            'invoices' => Inertia::defer(function () use ($platforms, $selectedPlatform, $startDate, $endDate, $isUserRole, $hasUserPlatformAccess): array {
+                if ($isUserRole && ! $hasUserPlatformAccess) {
+                    return [];
+                }
+
+                return $this->fetchInvoices($platforms, $selectedPlatform, $startDate, $endDate);
+            }),
         ]);
     }
 
@@ -75,6 +96,8 @@ class TransactionController extends Controller
         $perPage = 100;
         $startTimestamp = strtotime($startDate . ' 00:00:00');
         $endTimestamp = strtotime($endDate . ' 23:59:59');
+        $requestStartDate = Carbon::parse($startDate)->subDay()->toDateString();
+        $requestEndDate = Carbon::parse($endDate)->addDay()->toDateString();
 
         $targetPlatforms = $selectedPlatform === 'all'
             ? $platforms
@@ -101,8 +124,10 @@ class TransactionController extends Controller
                             'status' => 'paid',
                             'page' => $page,
                             'per_page' => $perPage,
-                            'start_date' => $startDate,
-                            'end_date' => $endDate,
+                            // Use a buffered window for upstream APIs because some platforms
+                            // apply timezone or exclusive boundary filtering.
+                            'start_date' => $requestStartDate,
+                            'end_date' => $requestEndDate,
                         ]);
 
                     if (!$response->successful()) {
@@ -232,5 +257,46 @@ class TransactionController extends Controller
     private function resolveInvoicesEndpoint(string $platformKey): string
     {
         return $platformKey === 'smartcounting' || $platformKey === 'biinspira' ? 'purchases' : 'invoices';
+    }
+
+    private function resolveUserPlatformKey(?User $user, array $platforms): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $platformKeys = array_keys($platforms);
+        $emailUsername = Str::before((string) $user->email, '@');
+        $candidates = [
+            $this->normalizePlatformKey($user->name),
+            $this->normalizePlatformKey($emailUsername),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate !== null && in_array($candidate, $platformKeys, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizePlatformKey(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        $normalized = Str::of($value)
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]/', '')
+            ->toString();
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private function hasPlatformCredentials(mixed $platform): bool
+    {
+        return is_array($platform) && ! empty($platform['base_url']) && ! empty($platform['token']);
     }
 }
