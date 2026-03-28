@@ -3,35 +3,40 @@
 use App\Http\Controllers\AdEvaluationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterEventController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterPlatformController;
-use App\Http\Controllers\UserPagesController;
 use App\Http\Controllers\AdPlanPlatformController;
 use App\Http\Controllers\AdResultPlatformController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
+use App\Http\Controllers\TvDashboardController;
 use App\Http\Controllers\TransactionController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $user = auth()->user();
+    $user = Auth::user();
 
     if (! $user) {
         return redirect()->route('login');
     }
 
-    if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+    $roles = method_exists($user, 'getRoleNames')
+        ? call_user_func([$user, 'getRoleNames'])
+        : collect();
+
+    if ($roles->contains('admin')) {
         return redirect()->route('admin.marketing.dashboard');
     }
 
-    if (method_exists($user, 'hasRole') && $user->hasRole('user')) {
+    if ($roles->contains('user')) {
         return redirect()->route('user.dashboard');
     }
 
     return redirect()->route('user.dashboard');
 })->name('home');
+
+Route::get('/statistics', [TvDashboardController::class, 'index'])->name('tv.statistics');
 
 // ─────────────────────────────────────────────
 // ADMIN ROUTES
@@ -133,6 +138,8 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::get("/marketing/evaluation/{id}", "evaluationForm")->name("marketing.evaluation");
         Route::post("/marketing/evaluation/store", "storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
     });
+
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
     Route::controller(MasterEventController::class)->group(function () {
         Route::get('/marketing/event', 'index')->name('events.index');

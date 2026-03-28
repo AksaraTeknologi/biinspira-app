@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react'; // Import Eye and EyeOff icons
 import { FormEventHandler, useState } from 'react';
 
@@ -97,6 +97,10 @@ export default function Login({ status }: LoginProps) {
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Login
+                    </Button>
+
+                    <Button asChild variant="outline" className="w-full" tabIndex={5}>
+                        <Link href={route('tv.statistics')}>Lihat Statistik</Link>
                     </Button>
                 </div>
 

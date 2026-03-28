@@ -19,9 +19,14 @@ import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGri
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
+type TransactionAccess = {
+    can_view?: boolean;
+    platform_key?: string | null;
+};
+
 const DASHBOARD_CHILD_PATHS: Record<string, string[]> = {
     admin: ['/admin/audience-chart'],
-    user:  ['/user/audience-chart'],
+    user: ['/user/audience-chart'],
 };
 
 const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
@@ -55,6 +60,7 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
             { title: 'Dashboard', href: route('user.dashboard'), icon: LayoutGrid },
             { title: 'Daftar Iklan', href: route('user.marketing.index'), icon: List },
             { title: 'Event', href: route('user.events.index'), icon: CalendarSearch },
+            { title: 'Transaksi', href: route('user.transactions.index'), icon: Receipt },
         ],
     },
 ];
@@ -62,9 +68,10 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
 export function AppSidebar() {
     const page = usePage();
     const { isCollapsed, toggleSidebar } = useSidebar();
-    const { auth } = usePage<SharedData>().props;
+    const { auth, transactionAccess } = usePage<SharedData & { transactionAccess?: TransactionAccess }>().props;
     const role = auth.role[0];
     const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
+    const canViewUserTransactions = transactionAccess?.can_view === true;
 
     const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -72,7 +79,7 @@ export function AppSidebar() {
 
     const isDashboardChildPath = (): boolean => {
         const paths = DASHBOARD_CHILD_PATHS[role] ?? [];
-        return paths.some(p => currentUrl === p || currentUrl.startsWith(p + '/'));
+        return paths.some((p) => currentUrl === p || currentUrl.startsWith(p + '/'));
     };
 
     // === Helper: Hitung parent path ===
@@ -143,12 +150,19 @@ export function AppSidebar() {
                             className={`rounded-lg bg-background dark:border dark:border-muted-foreground dark:bg-sidebar dark:active:bg-sidebar ${isCollapsed ? 'p-0' : 'p-2'} `}
                         >
                             {mainNavItems.map((item, i) => {
+                                const visibleChildren =
+                                    item.children?.filter((child) => !(role === 'user' && child.title === 'Transaksi' && !canViewUserTransactions)) ??
+                                    [];
+                                const navItem = {
+                                    ...item,
+                                    children: visibleChildren.length > 0 ? visibleChildren : undefined,
+                                };
                                 const isOpen = openIndex === i;
 
                                 const isGroupOpen = (() => {
-                                    let open = checkIsSubMenuOpen(item);
+                                    let open = checkIsSubMenuOpen(navItem);
 
-                                    if (item.title === 'Marketing') {
+                                    if (navItem.title === 'Marketing') {
                                         // ✅ Tetap buka saat di halaman turunan Dashboard
                                         if (isDashboardChildPath()) open = true;
 
@@ -213,15 +227,15 @@ export function AppSidebar() {
                                         <SidebarMenuItem
                                             className={`rounded-lg p-1.5 ${isGroupOpen ? 'bg-sidebar-primary text-background hover:bg-sidebar-primary' : 'hover:bg-sidebar-primary'} ${isOpen ? 'bg-primary' : ''} `}
                                         >
-                                            {item.children ? (
+                                            {navItem.children ? (
                                                 <CollapsibleTrigger asChild>
                                                     <SidebarMenuButton
-                                                        tooltip={isCollapsed ? item.title : undefined}
+                                                        tooltip={isCollapsed ? navItem.title : undefined}
                                                         className={`w-full justify-between hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary ${isGroupOpen ? 'bg-gray-100 text-black' : `${isOpen ? 'text-gray-100' : ''}`} `}
                                                     >
                                                         <div className="flex w-full cursor-pointer items-center gap-2">
-                                                            {item.icon && <item.icon className="h-5 w-5" />}
-                                                            {!isCollapsed && <span>{item.title}</span>}
+                                                            {navItem.icon && <navItem.icon className="h-5 w-5" />}
+                                                            {!isCollapsed && <span>{navItem.title}</span>}
                                                         </div>
                                                         <ChevronRight
                                                             className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''} ${isGroupOpen ? 'rotate-90' : ''} `}
@@ -230,25 +244,25 @@ export function AppSidebar() {
                                                 </CollapsibleTrigger>
                                             ) : (
                                                 <SidebarMenuButton
-                                                    tooltip={isCollapsed ? item.title : undefined}
+                                                    tooltip={isCollapsed ? navItem.title : undefined}
                                                     className={`hover:bg-sidebar-primary hover:text-gray-100 active:bg-sidebar-primary ${isGroupOpen ? 'text-gray-100 hover:bg-sidebar-primary' : ''}`}
                                                     asChild
                                                 >
-                                                    <Link href={item.href || '#'} className={`flex w-full items-center gap-2`}>
-                                                        {item.icon && <item.icon className="h-5 w-5" />}
-                                                        {!isCollapsed && <span>{item.title}</span>}
+                                                    <Link href={navItem.href || '#'} className={`flex w-full items-center gap-2`}>
+                                                        {navItem.icon && <navItem.icon className="h-5 w-5" />}
+                                                        {!isCollapsed && <span>{navItem.title}</span>}
                                                     </Link>
                                                 </SidebarMenuButton>
                                             )}
 
                                             {/* Sub menu */}
-                                            {item.children && (
+                                            {navItem.children && (
                                                 <CollapsibleContent>
                                                     <SidebarMenuSub
                                                         className={`border-0 pt-2 ${isCollapsed ? '-ml-2.5 w-13' : 'ml-3'}`}
                                                         style={{ overflow: 'visible' }}
                                                     >
-                                                        {item.children.map((sub, j) => {
+                                                        {navItem.children.map((sub, j) => {
                                                             const isSubActive = (() => {
                                                                 const subHref = sub.href.replace(window.location.origin, '').replace(/\/$/, '');
                                                                 let active = currentUrl === subHref || currentUrl.startsWith(subHref);

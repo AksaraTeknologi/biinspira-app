@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -37,6 +39,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $roles = $user?->getRoleNames() ?? collect();
+        $isUserRole = $roles->contains('user');
+        $platforms = config('services.platforms', []);
+        $userPlatformKey = $isUserRole ? $this->resolveUserPlatformKey($user, $platforms) : null;
+        $canViewTransactions = ! $isUserRole || ($userPlatformKey !== null && $this->hasPlatformCredentials($platforms[$userPlatformKey] ?? null));
+
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return [
@@ -57,6 +66,51 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error')
             ],
+            'transactionAccess' => [
+                'can_view' => $canViewTransactions,
+                'platform_key' => $userPlatformKey,
+            ],
         ];
+    }
+
+    private function resolveUserPlatformKey(?User $user, array $platforms): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $platformKeys = array_keys($platforms);
+        $emailUsername = Str::before((string) $user->email, '@');
+        $candidates = [
+            $this->normalizePlatformKey($user->name),
+            $this->normalizePlatformKey($emailUsername),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate !== null && in_array($candidate, $platformKeys, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizePlatformKey(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        $normalized = Str::of($value)
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]/', '')
+            ->toString();
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private function hasPlatformCredentials(mixed $platform): bool
+    {
+        return is_array($platform) && ! empty($platform['base_url']) && ! empty($platform['token']);
     }
 }
