@@ -225,7 +225,6 @@ export default function Marketing() {
             <TableRow>
                 <TableHead>Aksi</TableHead>
                 <TableHead>User</TableHead>
-                <TableHead>Avatar</TableHead>
                 <TableHead>Event</TableHead>
                 <TableHead>Flayer Iklan</TableHead>
                 <TableHead>Jam Tayang Iklan</TableHead>
@@ -301,21 +300,7 @@ export default function Marketing() {
                             </TableCell>
 
                             <TableCell>{plan.user?.name || "-"}</TableCell>
- 
-                            {/* AVATAR */}
-                            <TableCell>
-                                {plan.avatar ? (
-                                    <img
-                                        src={plan.avatar}
-                                        alt={plan.user?.name}
-                                        className="h-10 w-10 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold">
-                                        {plan.user?.name?.charAt(0) || "-"}
-                                    </div>
-                                )}
-                            </TableCell>
+
 
                             {/* EVENT */}
                             <TableCell>{plan.event?.name || "-"}</TableCell>
