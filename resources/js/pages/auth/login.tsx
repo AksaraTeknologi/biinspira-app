@@ -94,12 +94,12 @@ export default function Login({ status }: LoginProps) {
                         <InputError message={errors.password} />
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
+                    <Button type="submit" className="mt-4 w-full transition" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Login
                     </Button>
 
-                    <Button asChild variant="outline" className="w-full" tabIndex={5}>
+                    <Button asChild variant="outline" className="bg-opacity-10 w-full transition hover:bg-foreground/5" tabIndex={5}>
                         <Link href={route('tv.statistics')}>Lihat Statistik</Link>
                     </Button>
                 </div>
