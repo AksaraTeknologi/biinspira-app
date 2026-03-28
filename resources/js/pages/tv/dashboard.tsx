@@ -112,11 +112,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                 >
                                     <div className="mb-2.5 flex items-center justify-between">
                                         <h2 className="text-2xl font-semibold text-slate-800">{item.label}</h2>
-                                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-slate-300 bg-white">
+                                        <div className="flex min-h-9 items-center justify-end">
                                             {item.logo ? (
-                                                <img src={item.logo} alt={item.label} className="h-full w-full object-cover" />
+                                                <img src={item.logo} alt={item.label} className="max-h-9 w-auto max-w-28 object-contain" />
                                             ) : (
-                                                <span className="text-xs font-bold text-slate-600">{item.label.slice(0, 2).toUpperCase()}</span>
+                                                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white">
+                                                    <span className="text-xs font-bold text-slate-600">{item.label.slice(0, 2).toUpperCase()}</span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

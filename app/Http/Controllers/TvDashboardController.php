@@ -326,13 +326,40 @@ class TvDashboardController extends Controller
             ->whereNotNull('avatar')
             ->get();
 
+        $platformAliases = [
+            'biinspira' => ['biinspira'],
+            'smartcounting' => ['smartcounting', 'smartcountingacademy'],
+            'kompeten' => ['kompeten', 'kompetenidn'],
+            'sekolahpajak' => ['sekolahpajak'],
+            'talenta' => ['talenta'],
+            'skillgrow' => ['skillgrow'],
+            'aksademy' => ['aksademy'],
+        ];
+
         foreach ($this->platformLabels as $platformKey => $_label) {
+            $aliases = $platformAliases[$platformKey] ?? [$platformKey];
+
             $matchedUser = $users->first(function (User $user) use ($platformKey): bool {
                 $nameKey = $this->normalizePlatformKey((string) $user->name);
                 $emailKey = $this->normalizePlatformKey(Str::before((string) $user->email, '@'));
 
                 return $nameKey === $platformKey || $emailKey === $platformKey;
             });
+
+            if (! $matchedUser) {
+                $matchedUser = $users->first(function (User $user) use ($aliases): bool {
+                    $nameKey = $this->normalizePlatformKey((string) $user->name);
+                    $emailKey = $this->normalizePlatformKey(Str::before((string) $user->email, '@'));
+
+                    foreach ($aliases as $alias) {
+                        if (str_contains($nameKey, $alias) || str_contains($emailKey, $alias)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
 
             if (! $matchedUser || ! $matchedUser->avatar) {
                 continue;
