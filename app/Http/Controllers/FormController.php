@@ -22,107 +22,107 @@ use Carbon\Carbon;
 
 class FormController extends Controller
 {
-protected function calculateCurrentTotals(AdPlan $plan)
-{
-    $checkout = $plan->results?->sum('checkout_count') ?? 0;
-    $revenue  = $plan->results?->sum('revenue') ?? 0;
-    $cost     = $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0;
+    protected function calculateCurrentTotals(AdPlan $plan)
+    {
+        $checkout = $plan->results?->sum('checkout_count') ?? 0;
+        $revenue  = $plan->results?->sum('revenue') ?? 0;
+        $cost     = $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0;
 
-    return compact('checkout', 'revenue', 'cost');
-}
+        return compact('checkout', 'revenue', 'cost');
+    }
 
-protected function getPreviousPlans(AdPlan $plan)
-{
-    // Ambil tanggal sekarang dari plan
-    $currentDate = $plan->created_at;
+    protected function getPreviousPlans(AdPlan $plan)
+    {
+        // Ambil tanggal sekarang dari plan
+        $currentDate = $plan->created_at;
 
-    // Hitung range bulan: bulan sebelumnya sampai bulan sekarang
-    $startOfPrevMonth   = Carbon::parse($currentDate)->subMonth()->startOfMonth();
-    $endOfCurrentMonth  = Carbon::parse($currentDate)->endOfMonth();
+        // Hitung range bulan: bulan sebelumnya sampai bulan sekarang
+        $startOfPrevMonth   = Carbon::parse($currentDate)->subMonth()->startOfMonth();
+        $endOfCurrentMonth  = Carbon::parse($currentDate)->endOfMonth();
 
-    // Ambil semua plan dari user yang sama, event yang sama, dan dalam range bulan
-    $plans = AdPlan::with(['event', 'results.resultPlatforms.metrics'])
-        ->where('user_id', $plan->user_id)
-        ->where('event_id', $plan->event_id) // pastikan event sama
-        ->where('id', '<>', $plan->id)      // exclude plan sekarang
-        ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
-        ->orderBy('created_at', 'asc')
-        ->get();
+        // Ambil semua plan dari user yang sama, event yang sama, dan dalam range bulan
+        $plans = AdPlan::with(['event', 'results.resultPlatforms.metrics'])
+            ->where('user_id', $plan->user_id)
+            ->where('event_id', $plan->event_id) // pastikan event sama
+            ->where('id', '<>', $plan->id)      // exclude plan sekarang
+            ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-    return $plans;
-}
+        return $plans;
+    }
 
-protected function buildEventGraph($plans)
-{
-    return $plans->map(fn($plan, $index) => [
-        'event_name'  => $plan->event->name ?? 'Event',
-        'event_label' => 'B' . ($index + 1),
-        'pendapatan'  => $plan->results?->sum('revenue') ?? 0,
-        'pengeluaran' => $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0,
-        'audience'    => $plan->results?->sum('checkout_count') ?? 0,
-    ]);
-}
+    protected function buildEventGraph($plans)
+    {
+        return $plans->map(fn($plan, $index) => [
+            'event_name'  => $plan->event->name ?? 'Event',
+            'event_label' => 'B' . ($index + 1),
+            'pendapatan'  => $plan->results?->sum('revenue') ?? 0,
+            'pengeluaran' => $plan->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0,
+            'audience'    => $plan->results?->sum('checkout_count') ?? 0,
+        ]);
+    }
 
-public function show($id)
-{
- $plan = AdPlan::with([
-        'user',
-        'event',
-        'planPlatforms.platform',
-        'planPlatforms.goal',
-        'results.resultPlatforms.platform',
-        'results.resultPlatforms.metrics',
-        'evaluations'
-    ])->findOrFail($id);
+    public function show($id)
+    {
+        $plan = AdPlan::with([
+            'user',
+            'event',
+            'planPlatforms.platform',
+            'planPlatforms.goal',
+            'results.resultPlatforms.platform',
+            'results.resultPlatforms.metrics',
+            'evaluations'
+        ])->findOrFail($id);
 
-    $totals = $this->calculateCurrentTotals($plan);
+        $totals = $this->calculateCurrentTotals($plan);
 
-$currentDate = $plan->created_at;
-$startOfPrevMonth = Carbon::parse($currentDate)->subMonth()->startOfMonth();
-$endOfCurrentMonth = Carbon::parse($currentDate)->endOfMonth();
+        $currentDate = $plan->created_at;
+        $startOfPrevMonth = Carbon::parse($currentDate)->subMonth()->startOfMonth();
+        $endOfCurrentMonth = Carbon::parse($currentDate)->endOfMonth();
 
-$plansForGraph = AdPlan::with(['results.resultPlatforms'])
-    ->where('user_id', $plan->user_id)
-    ->where('event_id', $plan->event_id)
-    ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
-    ->get();
+        $plansForGraph = AdPlan::with(['results.resultPlatforms'])
+            ->where('user_id', $plan->user_id)
+            ->where('event_id', $plan->event_id)
+            ->whereBetween('created_at', [$startOfPrevMonth, $endOfCurrentMonth])
+            ->get();
 
-$graphBulanan = $plansForGraph
-    ->groupBy(fn($p) => $p->created_at->format('M-Y'))
-    ->map(fn($plansInMonth, $month) => [
-        'month' => $month,
-        'pendapatan' => $plansInMonth->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
-        'pengeluaran' => $plansInMonth->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
-        'audience' => $plansInMonth->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
-    ])
-    ->values();
+        $graphBulanan = $plansForGraph
+            ->groupBy(fn($p) => $p->created_at->format('M-Y'))
+            ->map(fn($plansInMonth, $month) => [
+                'month' => $month,
+                'pendapatan' => $plansInMonth->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
+                'pengeluaran' => $plansInMonth->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
+                'audience' => $plansInMonth->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
+            ])
+            ->values();
 
-$graphMingguan = $plansForGraph
-    ->groupBy(fn($p) => 'Week ' . Carbon::parse($p->created_at)->weekOfMonth)
-    ->map(fn($plansInWeek, $week) => [
-        'week' => $week,
-        'pendapatan' => $plansInWeek->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
-        'pengeluaran' => $plansInWeek->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
-        'audience' => $plansInWeek->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
-    ])
-    ->values();
+        $graphMingguan = $plansForGraph
+            ->groupBy(fn($p) => 'Week ' . Carbon::parse($p->created_at)->weekOfMonth)
+            ->map(fn($plansInWeek, $week) => [
+                'week' => $week,
+                'pendapatan' => $plansInWeek->sum(fn($p) => $p->results?->sum('revenue') ?? 0),
+                'pengeluaran' => $plansInWeek->sum(fn($p) => $p->results?->sum(fn($r) => $r->resultPlatforms?->sum('total_cost') ?? 0) ?? 0),
+                'audience' => $plansInWeek->sum(fn($p) => $p->results?->sum('checkout_count') ?? 0),
+            ])
+            ->values();
 
-// Graph event (sesuai function buildEventGraph)
-$eventGraph = $this->buildEventGraph($plansForGraph);
+        // Graph event (sesuai function buildEventGraph)
+        $eventGraph = $this->buildEventGraph($plansForGraph);
 
-$graphData = [
-    'bulanan' => $graphBulanan,
-    'mingguan' => $graphMingguan, // gunakan hasil hitung otomatis
-    'event' => $eventGraph,
-];
-$previousPlan = null;
+        $graphData = [
+            'bulanan' => $graphBulanan,
+            'mingguan' => $graphMingguan, // gunakan hasil hitung otomatis
+            'event' => $eventGraph,
+        ];
+        $previousPlan = null;
 
-if (!is_null($plan->batch)) {
-    $previousPlan = AdPlan::where('batch', '<', $plan->batch)
-        ->where('event_id', $plan->event_id)
-        ->orderBy('batch', 'desc')
-        ->first();
-}
+        if (!is_null($plan->batch)) {
+            $previousPlan = AdPlan::where('batch', '<', $plan->batch)
+                ->where('event_id', $plan->event_id)
+                ->orderBy('batch', 'desc')
+                ->first();
+        }
         return Inertia::render('admin/marketing-show', [
             'graphData' => $graphData,
 
@@ -130,15 +130,15 @@ if (!is_null($plan->batch)) {
                 'id'           => $plan->id ?? null,
                 'user_name'    => $plan->user->name ?? null,
                 'name_event'   => $plan->event->name ?? null,
-                'batch' => $plan->batch ?? null, 
-                'previous_batch' => $previousPlan?->batch ?? null, 
+                'batch' => $plan->batch ?? null,
+                'previous_batch' => $previousPlan?->batch ?? null,
                 'event_batch' => $plan->event?->batch ?? null,
                 'status'       => $plan->status ?? null,
                 'ad_schedule_time' => $plan->ad_schedule_time ?? null,
                 'title_flayer' => $plan->title_flayer ?? null,
                 'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
 
-           
+
 
                 'platforms'    => $plan->planPlatforms->map(function ($pp) {
                     return [
@@ -162,14 +162,20 @@ if (!is_null($plan->batch)) {
 
                 'result' => $plan->results->map(function ($r) {
                     return [
+                        
                         'checkout_count' => $r->checkout_count !== null ? number_format((float)$r->checkout_count, 0, ',', '.') : null,
                         'revenue'        => $r->revenue !== null ? number_format((float)$r->revenue, 0, ',', '.') : null,
 
                         'result_platforms' => $r->resultPlatforms->map(function ($rp) {
                             return [
-                                'result'       => $rp->result !== null ? number_format((float)$rp->result, 0, ',', '.') : null,
-                                'total_cost'   => $rp->total_cost !== null ? number_format((float)$rp->total_cost, 0, ',', '.') : null,
-                                'platform_name' => $rp->platform->name,
+                                'result' => is_numeric($rp->result)
+                                    ? number_format((float)$rp->result, 0, ',', '.')
+                                    : null,
+
+                                'total_cost' => is_numeric($rp->total_cost)
+                                    ? number_format((float)$rp->total_cost, 0, ',', '.')
+                                    : null,
+                               'platform_name' => optional($rp->platform)->name,
 
                                 'metrics' => $rp->metrics->map(function ($m) {
                                     return [
@@ -208,8 +214,8 @@ if (!is_null($plan->batch)) {
                 }),
             ]
 
-            
-            
+
+
         ]);
     }
 
