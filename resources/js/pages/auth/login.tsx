@@ -1,5 +1,5 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react'; // Import Eye and EyeOff icons
+import { Head, useForm } from '@inertiajs/react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
@@ -99,9 +99,9 @@ export default function Login({ status }: LoginProps) {
                         Login
                     </Button>
 
-                    <Button asChild variant="outline" className="bg-opacity-10 w-full transition hover:bg-foreground/5" tabIndex={5}>
+                    {/* <Button asChild variant="outline" className="bg-opacity-10 w-full transition hover:bg-foreground/5" tabIndex={5}>
                         <Link href={route('tv.statistics')}>Lihat Statistik</Link>
-                    </Button>
+                    </Button> */}
                 </div>
 
                 {/* <div className="text-center text-sm text-muted-foreground">
