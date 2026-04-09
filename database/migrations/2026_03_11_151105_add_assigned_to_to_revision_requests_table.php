@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ad_plans', function (Blueprint $table) {
-            if (!Schema::hasColumn('ad_plans', 'batch')) {
-                $table->string('batch')->nullable()->after('event_id');
-            }
+        Schema::table('revision_requests', function (Blueprint $table) {
+            $table->foreignUuid('assigned_to')
+                ->nullable()
+                ->after('created_by')
+                ->constrained('users')
+                ->nullOnDelete();
         });
     }
 
@@ -23,8 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ad_plans', function (Blueprint $table) {
-            $table->dropColumn('batch');
+        Schema::table('revision_requests', function (Blueprint $table) {
+            //
         });
     }
 };

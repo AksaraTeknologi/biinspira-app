@@ -113,4 +113,6 @@ class HandleInertiaRequests extends Middleware
     {
         return is_array($platform) && ! empty($platform['base_url']) && ! empty($platform['token']);
     }
+
+    
 }
