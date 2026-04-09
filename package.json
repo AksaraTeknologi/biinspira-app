@@ -26,6 +26,7 @@
         "@conform-to/react": "^1.13.2",
         "@conform-to/zod": "^1.13.2",
         "@headlessui/react": "^2.2.0",
+        "@hello-pangea/dnd": "^18.0.1",
         "@hookform/resolvers": "^5.2.2",
         "@inertiajs/react": "^2.0.0",
         "@radix-ui/react-alert-dialog": "^1.1.15",

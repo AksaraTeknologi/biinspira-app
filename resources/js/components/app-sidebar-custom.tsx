@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarSearch, ChevronRight, CircleUserRound, LaptopMinimal, LayoutGrid, List, PartyPopper, Receipt, Target } from 'lucide-react';
+import { CalendarSearch, ChevronRight, CircleUserRound, Drill, KanbanSquareDashed, KanbanSquareIcon, LaptopMinimal, LayoutGrid, List, PartyPopper, Receipt, Target } from 'lucide-react';
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
@@ -31,10 +31,22 @@ const DASHBOARD_CHILD_PATHS: Record<string, string[]> = {
 
 const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
     {
-        title: 'User',
-        href: route('admin.users.index'),
+        title: 'User Setting',
+        href: '',
         icon: CircleUserRound,
         roles: ['admin'],
+        children: [
+            {
+                title: 'User',
+                href: route('admin.users.index'),
+                icon: CircleUserRound,
+            },
+            {
+                title: 'Technician',
+                href: route('technicians.index'),
+                icon: Drill,
+            },
+        ],
     },
     {
         title: 'Marketing',
@@ -62,6 +74,12 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
             { title: 'Event', href: route('user.events.index'), icon: CalendarSearch },
             { title: 'Transaksi', href: route('user.transactions.index'), icon: Receipt },
         ],
+    },
+    {
+        title: 'Ticketing Website',
+        href: route('requests.index'),
+        icon: KanbanSquareIcon,
+        roles: ['admin', 'user', 'technician'],
     },
 ];
 
@@ -113,9 +131,8 @@ export function AppSidebar() {
         <Sidebar collapsible="icon" variant="inset">
             <div className="relative z-0 w-full">
                 <div
-                    className={`absolute z-10 mt-2 ml-2 h-[95vh] rounded-lg border border-sidebar bg-sidebar shadow-lg transition-all duration-300 lg:mt-0.5 ${
-                        isCollapsed ? 'w-15.5' : 'w-60'
-                    }`}
+                    className={`absolute z-10 mt-2 ml-2 h-[95vh] rounded-lg border border-sidebar bg-sidebar shadow-lg transition-all duration-300 lg:mt-0.5 ${isCollapsed ? 'w-15.5' : 'w-60'
+                        }`}
                 >
                     {/* ===== Header ===== */}
                     <SidebarHeader>

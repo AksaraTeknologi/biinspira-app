@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+
+class RevisionRequest extends Model
+{
+    use HasFactory;
+
+    // Field yang bisa diisi mass assignment
+    protected $fillable = [
+        'title',
+        'description',
+        'status',
+        'urgency',
+        'deadline',
+        'related_url',
+        'created_by',
+        'assigned_to',
+        'estimation_start',
+        'estimation_end',
+        'actual_start',
+        'actual_end',
+    ];
+
+    // Hubungan ke user yang bikin request
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // Scopes untuk filter status atau urgency
+    public function scopeStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeUrgency($query, $urgency)
+    {
+        return $query->where('urgency', $urgency);
+    }
+
+        // Relasi ke user yang ditugaskan (assignee)
+    public function assignee()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+        public function attachments()
+    {
+        return $this->hasMany(RevisionAttachment::class);
+    }
+}
