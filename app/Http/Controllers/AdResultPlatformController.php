@@ -79,13 +79,12 @@ class AdResultPlatformController extends Controller
         }
         $data = $validator->validated();
         $adResult = AdResult::updateOrCreate(
-            ['id' => $data['ad_result_id'] ?? null],
-            [
-                'ad_plan_id'     => $data['ad_plan_id'],
-                'checkout_count' => $data['checkout_count'],
-                'revenue'        => $data['revenue'],
-                'media_partner'  => $data['media_partner'] ?? null,
-            ]
+           ['ad_plan_id' => $data['ad_plan_id']], // 🔥 pakai ini
+    [
+        'checkout_count' => $data['checkout_count'],
+        'revenue'        => $data['revenue'],
+        'media_partner'  => $data['media_partner'] ?? null,
+    ]
         );
         foreach ($data['platforms'] as $platformData) {
             $adResultPlatform = AdResultPlatform::updateOrCreate(
