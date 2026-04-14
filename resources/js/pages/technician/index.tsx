@@ -1,182 +1,197 @@
-"use client"
+'use client';
 
-import AppLayout from "@/layouts/app-layout"
-import { Head, useForm } from "@inertiajs/react"
-import { useState } from "react"
-import { Plus, X } from "lucide-react"
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/app-layout';
+import { AddTechnicianModal } from '@/pages/technician/modal/technician-modal-add';
+import { EditTechnicianModal } from '@/pages/technician/modal/technician-modal-edit';
+import { BreadcrumbItem } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
+import {
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    RowSelectionState,
+    SortingState,
+    useReactTable,
+    VisibilityState,
+} from '@tanstack/react-table';
+import { ListFilter } from 'lucide-react';
+import * as React from 'react';
 
-type User = {
-    id: number
-    name: string
-    email: string
-    phone?: string
+import { Button } from '@/components/ui/button';
+
+interface Technician {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
 }
 
-type Props = {
-    users: User[]
-}
+export default function Index() {
+    const { users } = usePage<{ users: Technician[] }>().props;
 
-export default function Index({ users }: Props) {
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = React.useState('');
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
-    const [open, setOpen] = useState(false)
+    const breadcrumbs: BreadcrumbItem[] = [{ title: 'Technicians', href: route('technicians.index') }];
 
-    const { data, setData, post, processing, reset, errors } = useForm({
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-    })
+    const columns: ColumnDef<Technician>[] = [
+        {
+            id: 'Aksi',
+            header: 'Aksi',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <EditTechnicianModal user={row.original} onSuccess={() => router.reload()} />
+                </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            id: 'select',
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: 'name',
+            header: 'Nama',
+            cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
+        },
+        {
+            accessorKey: 'email',
+            header: 'Email',
+            cell: ({ row }) => <div className="font-medium">{row.original.email}</div>,
+        },
+        {
+            accessorKey: 'phone',
+            header: 'Phone',
+            cell: ({ row }) => <div className="font-medium">{row.original.phone || '-'}</div>,
+        },
+    ];
 
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault()
-
-        post("/technicians", {
-            onSuccess: () => {
-                reset()
-                setOpen(false)
-            }
-        })
-    }
+    const table = useReactTable({
+        data: users,
+        columns,
+        state: { sorting, globalFilter, columnVisibility, rowSelection },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    });
 
     return (
-        <AppLayout>
-            <Head title="Manage Technicians" />
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Technician" />
 
-            <div className="p-6 space-y-6">
-
-                {/* HEADER */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-800">
-                            Technician Management
-                        </h1>
-                        <p className="text-sm text-gray-400">
-                            Manage technician accounts
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={() => setOpen(true)}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg"
-                    >
-                        <Plus size={16} />
-                        Add Technician
-                    </button>
+            <div className="p-4">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold">Daftar Technician</h2>
+                    <AddTechnicianModal onSuccess={() => router.reload()} />
                 </div>
 
-                {/* TABLE */}
-                <div className="bg-white rounded-xl shadow border border-gray-100">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-500 border-b">
-                                <th className="p-3">Name</th>
-                                <th className="p-3">Email</th>
-                                <th className="p-3">Phone</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(user => (
-                                <tr key={user.id} className="border-b">
-                                    <td className="p-3 font-medium">{user.name}</td>
-                                    <td className="p-3">{user.email}</td>
-                                    <td className="p-3">{user.phone || "-"}</td>
-                                </tr>
+                <div className="flex items-center gap-2 py-4">
+                    <Input
+                        placeholder="Cari technician..."
+                        value={globalFilter ?? ''}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="max-w-sm bg-input"
+                    />
+                    <div className="ml-auto">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    <ListFilter /> Filter
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {table
+                                    .getAllColumns()
+                                    .filter((column) => column.getCanHide())
+                                    .map((column) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={column.id}
+                                            className="capitalize"
+                                            checked={column.getIsVisible()}
+                                            onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                        >
+                                            {column.id}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-md border">
+                    <Table>
+                        <TableHeader className="bg-border">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
+                        </TableHeader>
 
-                    {users.length === 0 && (
-                        <div className="text-center py-10 text-gray-400">
-                            No technicians yet
-                        </div>
-                    )}
+                        <TableBody className="bg-input">
+                            {table.getRowModel().rows.length ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                                        Tidak ada technician.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
 
-            </div>
-
-            {/* MODAL CREATE */}
-            {open && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-                    <div className="bg-white w-full max-w-md rounded-xl shadow-lg">
-
-                        {/* HEADER */}
-                        <div className="flex justify-between items-center p-4 border-b">
-                            <h2 className="font-semibold">Add Technician</h2>
-                            <button onClick={() => setOpen(false)}>
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        {/* FORM */}
-                        <form onSubmit={submit} className="p-4 space-y-4">
-
-                            <div>
-                                <label className="text-xs text-gray-500">Name</label>
-                                <input
-                                    type="text"
-                                    value={data.name}
-                                    onChange={e => setData("name", e.target.value)}
-                                    className="w-full border rounded-lg p-2 text-sm"
-                                />
-                                {errors.name && (
-                                    <p className="text-red-500 text-xs">{errors.name}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-gray-500">Email</label>
-                                <input
-                                    type="email"
-                                    value={data.email}
-                                    onChange={e => setData("email", e.target.value)}
-                                    className="w-full border rounded-lg p-2 text-sm"
-                                />
-                                {errors.email && (
-                                    <p className="text-red-500 text-xs">{errors.email}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-gray-500">Phone</label>
-                                <input
-                                    type="text"
-                                    value={data.phone}
-                                    onChange={e => setData("phone", e.target.value)}
-                                    className="w-full border rounded-lg p-2 text-sm"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-gray-500">Password</label>
-                                <input
-                                    type="password"
-                                    value={data.password}
-                                    onChange={e => setData("password", e.target.value)}
-                                    className="w-full border rounded-lg p-2 text-sm"
-                                />
-                                {errors.password && (
-                                    <p className="text-red-500 text-xs">{errors.password}</p>
-                                )}
-                            </div>
-
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-                                >
-                                    {processing ? "Saving..." : "Save"}
-                                </button>
-                            </div>
-
-                        </form>
-
+                <div className="flex items-center justify-end space-x-2 py-4">
+                    <div className="flex-1 text-sm text-muted-foreground">
+                        {table.getFilteredSelectedRowModel().rows.length} dari {table.getFilteredRowModel().rows.length} baris terpilih.
                     </div>
-
+                    <div className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                            Next
+                        </Button>
+                    </div>
                 </div>
-            )}
-
+            </div>
         </AppLayout>
-    )
+    );
 }
