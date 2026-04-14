@@ -2,6 +2,12 @@ import { useState } from "react"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { router } from "@inertiajs/react"
 import TaskModal from "./TaskModal"
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu"
 
 /* =========================
    TYPES
@@ -338,6 +344,23 @@ export default function KanbanBoard({
         const config = COLUMN_CONFIG[col]
 
         return (
+               <ContextMenu key={task.id}>
+        <ContextMenuTrigger asChild>
+            <div
+                onClick={(e) => {
+                    e.stopPropagation()
+                    openTask(task)
+                }}
+                className={`
+                    relative bg-white rounded-xl p-3 mb-2 cursor-pointer 
+                    shadow-sm hover:shadow-md transition-all duration-200 break-words
+                    border
+                    ${overdue
+                        ? "border-red-400 bg-red-50 shadow-red-100"
+                        : "border-transparent hover:border-gray-200"
+                    }
+                `}
+            ></div>
             <div
                 key={task.id}
                 onClick={(e) => {
@@ -410,6 +433,39 @@ export default function KanbanBoard({
             </div>
         )
     }
+
+            </ContextMenuTrigger>
+
+        <ContextMenuContent className="w-40">
+            <ContextMenuItem
+                onClick={() => {
+                    openTask(task)
+                }}
+            >
+                ✏️ Edit
+            </ContextMenuItem>
+
+            <ContextMenuItem
+                onClick={() => {
+                    if (confirm("Yakin hapus task ini?")) {
+                        router.delete(`/requests/${task.id}`, {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                showToast("Task berhasil dihapus", "success")
+                            },
+                            onError: () => {
+                                showToast("Gagal hapus task", "error")
+                            }
+                        })
+                    }
+                }}
+                className="text-red-500 focus:text-red-500"
+            >
+                🗑 Delete
+            </ContextMenuItem>
+        </ContextMenuContent>
+    </ContextMenu>
+)
 
     /* =========================
        RENDER
