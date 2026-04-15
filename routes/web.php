@@ -117,41 +117,41 @@ Route::middleware(['auth', 'verified', 'role:admin|technician'])->prefix('admin'
 // USER ROUTES
 // ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.')->group(function () {
-        Route::redirect('/', 'user/dashboard')->name('home');
-        Route::get('marketing/dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
-        Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
-        Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('marketing.print');
+    Route::redirect('/', 'user/dashboard')->name('home');
+    Route::get('marketing/dashboard', [DashboardController::class, 'dashboardUser'])->name('dashboard');
+    Route::get('marketing/show/{id}', [FormController::class, 'show'])->name('marketing.show');
+    Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('marketing.print');
 
-        Route::controller(AdPlanPlatformController::class)->group(function () {
-            Route::get('/marketing/list', 'index')->name('marketing.index');
-            Route::get('/marketing/create', 'create')->name('marketing.create');
-            Route::post('/marketing/store', 'store')->name('marketing.store');
-            Route::get("/marketing/edit/{id}", "edit")->name("marketing.edit");
-            Route::post("/update/{id}/{mode}", "update")->name("marketing.update.mode");
-            Route::delete("/marketing/delete/{id}", "destroy")->name("marketing.destroy");
-        });
-
-        Route::controller(AdResultPlatformController::class)->group(function () {
-            Route::get("/marketing/result/{id_event}/{id_ad_plan}", "resultForm")->name("marketing.result");
-            Route::post("/marketing/result/store", "storeOrUpdate")->name("marketing.result.store");
-        });
-
-        Route::controller(AdEvaluationController::class)->group(function () {
-            Route::get("/marketing/evaluation/{id}", "evaluationForm")->name("marketing.evaluation");
-            Route::post("/marketing/evaluation/store", "storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
-        });
-
-        Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-
-        Route::controller(MasterEventController::class)->group(function () {
-            Route::get('/marketing/event', 'index')->name('events.index');
-            Route::get('/marketing/event/create', 'create')->name('events.create');
-            Route::post('/marketing/event/store', 'store')->name('events.store');
-            Route::get('/marketing/event/edit/{id}', 'edit')->name('events.edit');
-            Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
-            Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
-        });
+    Route::controller(AdPlanPlatformController::class)->group(function () {
+        Route::get('/marketing/list', 'index')->name('marketing.index');
+        Route::get('/marketing/create', 'create')->name('marketing.create');
+        Route::post('/marketing/store', 'store')->name('marketing.store');
+        Route::get("/marketing/edit/{id}", "edit")->name("marketing.edit");
+        Route::post("/update/{id}/{mode}", "update")->name("marketing.update.mode");
+        Route::delete("/marketing/delete/{id}", "destroy")->name("marketing.destroy");
     });
+
+    Route::controller(AdResultPlatformController::class)->group(function () {
+        Route::get("/marketing/result/{id_event}/{id_ad_plan}", "resultForm")->name("marketing.result");
+        Route::post("/marketing/result/store", "storeOrUpdate")->name("marketing.result.store");
+    });
+
+    Route::controller(AdEvaluationController::class)->group(function () {
+        Route::get("/marketing/evaluation/{id}", "evaluationForm")->name("marketing.evaluation");
+        Route::post("/marketing/evaluation/store", "storeOrUpdate")->name("marketing.evaluation.storeOrUpdate");
+    });
+
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+    Route::controller(MasterEventController::class)->group(function () {
+        Route::get('/marketing/event', 'index')->name('events.index');
+        Route::get('/marketing/event/create', 'create')->name('events.create');
+        Route::post('/marketing/event/store', 'store')->name('events.store');
+        Route::get('/marketing/event/edit/{id}', 'edit')->name('events.edit');
+        Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
+        Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
+    });
+});
 // ✅ BARU: Halaman grafik peserta per event (user)
 Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('audience.chart');
 
@@ -176,8 +176,20 @@ Route::middleware(['auth'])->group(function () {
         [RevisionRequestController::class, 'updateStatus']
     );
 
-    Route::get('/requests/create', [RevisionRequestController::class, 'create']);
-    Route::post('/requests', [RevisionRequestController::class, 'store']);
+    Route::get('/requests/create', [RevisionRequestController::class, 'create'])
+        ->name('requests.create');
+
+    Route::post('/requests', [RevisionRequestController::class, 'store'])
+        ->name('requests.store');
+
+    Route::get('/requests/{id}/edit', [RevisionRequestController::class, 'edit'])
+        ->name('requests.edit');
+
+    Route::put('/requests/{id}', [RevisionRequestController::class, 'update'])
+        ->name('requests.update');
+
+    Route::delete('/requests/{id}', [RevisionRequestController::class, 'destroy'])
+        ->name('requests.destroy');
 });
 
 require __DIR__ . '/settings.php';

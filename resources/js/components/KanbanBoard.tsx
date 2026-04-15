@@ -3,11 +3,22 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { router } from "@inertiajs/react"
 import TaskModal from "./TaskModal"
 import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
+    ContextMenu,
+    ContextMenuTrigger,
+    ContextMenuContent,
+    ContextMenuItem,
 } from "@/components/ui/context-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 /* =========================
    TYPES
@@ -34,6 +45,7 @@ type Task = {
     actual_start?: string
     actual_end?: string
     attachment?: string
+    created_by?: number
 }
 
 type Board = {
@@ -168,6 +180,8 @@ function getInitials(name?: string) {
         : name.slice(0, 2).toUpperCase()
 }
 
+
+
 /* =========================
    COMPONENT
 ========================= */
@@ -176,10 +190,13 @@ export default function KanbanBoard({
     tasks,
     users,
     user_role,
+    user_id,
+
 }: {
     tasks: Partial<Board>
     users: User[]
     user_role: string
+    user_id: number
 }) {
     const columns: (keyof Board)[] = [
         "request",
@@ -338,224 +355,240 @@ export default function KanbanBoard({
     /* =========================
        TASK CARD
     ========================= */
-
+    const canManageTask = (task: Task) => {
+        return (
+            role === "admin" ||
+            (role === "user" &&
+                Number(task.created_by) === Number(user_id))
+        )
+    }
     const renderTaskCard = (task: Task, col: keyof Board) => {
         const overdue = isOverdue(task)
         const config = COLUMN_CONFIG[col]
+        const [open, setOpen] = useState(false)
 
         return (
-               <ContextMenu key={task.id}>
-        <ContextMenuTrigger asChild>
-            <div
-                onClick={(e) => {
-                    e.stopPropagation()
-                    openTask(task)
-                }}
-                className={`
-                    relative bg-white rounded-xl p-3 mb-2 cursor-pointer 
-                    shadow-sm hover:shadow-md transition-all duration-200 break-words
-                    border
-                    ${overdue
-                        ? "border-red-400 bg-red-50 shadow-red-100"
-                        : "border-transparent hover:border-gray-200"
-                    }
-                `}
-            ></div>
-            <div
-                key={task.id}
-                onClick={(e) => {
-                    e.stopPropagation()
-                    openTask(task)
-                }}
-                className={`
-                    relative bg-white rounded-xl p-3 mb-2 cursor-pointer 
-                    shadow-sm hover:shadow-md transition-all duration-200 break-words
-                    border
-                    ${overdue
-                        ? "border-red-400 bg-red-50 shadow-red-100"
-                        : "border-transparent hover:border-gray-200"
-                    }
-                `}
-            >
-                {/* Overdue badge */}
-                {overdue && (
-                    <span className="absolute top-2 right-2 text-red-500 text-xs font-bold">!</span>
-                )}
-
-                {/* Title */}
-                <p className={`font-semibold text-sm mb-2 pr-4 leading-snug ${overdue ? "text-red-700" : "text-gray-800"}`}>
-                    {task.title}
-                </p>
-
-                {/* Platform name */}
-                <p className={`text-xs mb-3 truncate ${overdue ? "text-red-400" : "text-gray-400"}`}>
-                    {task.created_by_name || "-"}
-                </p>
-
-                {/* Footer row */}
-                <div className="flex items-center gap-2 flex-wrap">
-
-                    {/* Avatar */}
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${getAvatarColor(task.created_by_name)}`}>
-                        {getInitials(task.created_by_name)}
-                    </div>
-
-                    {/* Deadline */}
-                    {task.deadline && (
-                        <div className={`flex items-center gap-1 text-xs rounded-full px-2 py-0.5 ${overdue ? "bg-red-500 text-white font-semibold" : "bg-gray-100 text-gray-500"}`}>
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {formatDate(task.deadline)}
-                        </div>
-                    )}
-
-                    {/* Assignee name badge */}
-                    {task.assigned_to_name && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${overdue ? "bg-red-500 text-white" : `${config.dotColor} bg-opacity-20 text-gray-600`}`}
-                            style={overdue ? {} : { background: undefined }}
-                        >
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${overdue
-                                ? "bg-red-500 text-white"
-                                : col === "todo" ? "bg-purple-100 text-purple-700"
-                                    : col === "in_progress" ? "bg-blue-100 text-blue-700"
-                                        : col === "in_review" ? "bg-orange-100 text-orange-700"
-                                            : col === "complete" ? "bg-teal-100 text-teal-700"
-                                                : "bg-gray-100 text-gray-600"
-                                }`}>
-                                {task.assigned_to_name}
-                            </span>
-                        </span>
-                    )}
-
-                </div>
-            </div>
-        )
-    }
-
-            </ContextMenuTrigger>
-
-        <ContextMenuContent className="w-40">
-            <ContextMenuItem
-                onClick={() => {
-                    openTask(task)
-                }}
-            >
-                ✏️ Edit
-            </ContextMenuItem>
-
-            <ContextMenuItem
-                onClick={() => {
-                    if (confirm("Yakin hapus task ini?")) {
-                        router.delete(`/requests/${task.id}`, {
-                            preserveScroll: true,
-                            onSuccess: () => {
-                                showToast("Task berhasil dihapus", "success")
-                            },
-                            onError: () => {
-                                showToast("Gagal hapus task", "error")
+            <ContextMenu key={task.id}>
+                <ContextMenuTrigger asChild>
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            openTask(task)
+                        }}
+                        className={`
+                        relative bg-white rounded-xl p-3 mb-2 cursor-pointer 
+                        shadow-sm hover:shadow-md transition-all duration-200 break-words
+                        border
+                        ${overdue
+                                ? "border-red-400 bg-red-50 shadow-red-100"
+                                : "border-transparent hover:border-gray-200"
                             }
-                        })
-                    }
-                }}
-                className="text-red-500 focus:text-red-500"
-            >
-                🗑 Delete
-            </ContextMenuItem>
-        </ContextMenuContent>
-    </ContextMenu>
-)
+                    `}
+                    >
+                        {/* Overdue badge */}
+                        {overdue && (
+                            <span className="absolute top-2 right-2 text-red-500 text-xs font-bold">!</span>
+                        )}
 
-    /* =========================
-       RENDER
-    ========================= */
+                        {/* Title */}
+                        <p className={`font-semibold text-sm mb-2 pr-4 leading-snug ${overdue ? "text-red-700" : "text-gray-800"}`}>
+                            {task.title}
+                        </p>
 
-    return (
-        <>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <div className="grid grid-cols-5 gap-3">
+                        {/* Platform name */}
+                        <p className={`text-xs mb-3 truncate ${overdue ? "text-red-400" : "text-gray-400"}`}>
+                            {task.created_by_name || "-"}
+                        </p>
 
-                    {columns.map((col) => {
-                        const config = COLUMN_CONFIG[col]
-                        const count = board[col]?.length ?? 0
 
-                        return (
-                            <div key={col} className="flex flex-col">
 
-                                {/* Column Header */}
-                                <div className={`flex items-center gap-2 px-3 py-2 rounded-full mb-3 ${config.headerBg} ${config.headerBorder}`}>
-                                    <span className={`text-sm ${config.iconColor}`}>
-                                        {config.icon}
-                                    </span>
-                                    <span className={`text-xs font-semibold flex-1 ${config.headerText}`}>
-                                        {config.label}
-                                    </span>
-                                    {count > 0 && (
-                                        <span className={`text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${col === "request" ? "bg-gray-200 text-gray-600" : "bg-white/30 text-white"
-                                            }`}>
-                                            {count}
-                                        </span>
-                                    )}
+                        {/* Footer row */}
+                        <div className="flex items-center gap-2 flex-wrap">
+
+                            {/* Avatar */}
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${getAvatarColor(task.created_by_name)}`}>
+                                {getInitials(task.created_by_name)}
+                            </div>
+
+                            {/* Deadline */}
+                            {task.deadline && (
+                                <div className={`flex items-center gap-1 text-xs rounded-full px-2 py-0.5 ${overdue ? "bg-red-500 text-white font-semibold" : "bg-gray-100 text-gray-500"}`}>
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    {formatDate(task.deadline)}
                                 </div>
+                            )}
 
-                                {/* Column Body */}
-                                <Droppable droppableId={col}>
-                                    {(provided, snapshot) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.droppableProps}
-                                            className={`
+                            {/* Assignee name badge */}
+                            {task.assigned_to_name && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${overdue ? "bg-red-500 text-white" : `${config.dotColor} bg-opacity-20 text-gray-600`}`}
+                                    style={overdue ? {} : { background: undefined }}
+                                >
+                                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${overdue
+                                        ? "bg-red-500 text-white"
+                                        : col === "todo" ? "bg-purple-100 text-purple-700"
+                                            : col === "in_progress" ? "bg-blue-100 text-blue-700"
+                                                : col === "in_review" ? "bg-orange-100 text-orange-700"
+                                                    : col === "complete" ? "bg-teal-100 text-teal-700"
+                                                        : "bg-gray-100 text-gray-600"
+                                        }`}>
+                                        {task.assigned_to_name}
+                                    </span>
+                                </span>
+                            )}
+
+                        </div>
+                    </div>
+                </ContextMenuTrigger>
+
+                <ContextMenuContent className="w-40">
+                    {canManageTask(task) && (
+                        <ContextMenuItem
+                            onClick={() => {
+                                router.get(route('requests.edit', task.id))
+                            }}
+                        >
+                            Edit
+                        </ContextMenuItem>
+                    )}
+
+                    {canManageTask(task) && (
+                        <ContextMenuItem
+                            className="text-red-500 focus:text-red-500"
+                            onSelect={(e) => {
+                                e.preventDefault() // penting biar context menu gak nutup duluan glitchy
+                                setOpen(true)
+                            }}
+                        >
+                            Delete
+                        </ContextMenuItem>
+                    )}
+
+                    <AlertDialog open={open} onOpenChange={setOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus task ini?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Data yang dihapus tidak bisa dikembalikan.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+
+                                <AlertDialogAction
+                                    className="bg-red-500 hover:bg-red-600"
+                                    onClick={() => {
+                                        router.delete(route("requests.destroy", task.id), {
+                                            preserveScroll: true,
+                                            onSuccess: () => showToast("Task berhasil dihapus", "success"),
+                                            onError: () => showToast("Gagal hapus task", "error"),
+                                        })
+                                    }}
+                                >
+                                    Hapus
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+              
+                
+            </ContextMenuContent>
+            </ContextMenu >
+        )
+}
+
+/* =========================
+   RENDER
+========================= */
+
+return (
+    <>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid grid-cols-5 gap-3">
+
+                {columns.map((col) => {
+                    const config = COLUMN_CONFIG[col]
+                    const count = board[col]?.length ?? 0
+
+                    return (
+                        <div key={col} className="flex flex-col">
+
+                            {/* Column Header */}
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-full mb-3 ${config.headerBg} ${config.headerBorder}`}>
+                                <span className={`text-sm ${config.iconColor}`}>
+                                    {config.icon}
+                                </span>
+                                <span className={`text-xs font-semibold flex-1 ${config.headerText}`}>
+                                    {config.label}
+                                </span>
+                                {count > 0 && (
+                                    <span className={`text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${col === "request" ? "bg-gray-200 text-gray-600" : "bg-white/30 text-white"
+                                        }`}>
+                                        {count}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Column Body */}
+                            <Droppable droppableId={col}>
+                                {(provided, snapshot) => (
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                        className={`
                                                 flex-1 rounded-2xl p-2 min-h-[400px] transition-colors duration-200
                                                 ${config.columnBg}
                                                 ${snapshot.isDraggingOver ? "ring-2 ring-inset ring-gray-300" : ""}
                                             `}
-                                        >
-                                            {board[col]?.map((task, index) =>
-                                                canDrag ? (
-                                                    <Draggable
-                                                        key={task.id}
-                                                        draggableId={task.id.toString()}
-                                                        index={index}
-                                                    >
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                className={snapshot.isDragging ? "opacity-80 rotate-1 scale-105" : ""}
-                                                            >
-                                                                {renderTaskCard(task, col)}
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ) : (
-                                                    <div key={task.id}>
-                                                        {renderTaskCard(task, col)}
-                                                    </div>
-                                                )
-                                            )}
+                                    >
+                                        {board[col]?.map((task, index) =>
+                                            canDrag ? (
+                                                <Draggable
+                                                    key={task.id}
+                                                    draggableId={task.id.toString()}
+                                                    index={index}
+                                                >
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            className={snapshot.isDragging ? "opacity-80 rotate-1 scale-105" : ""}
+                                                        >
+                                                            {renderTaskCard(task, col)}
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ) : (
+                                                <div key={task.id}>
+                                                    {renderTaskCard(task, col)}
+                                                </div>
+                                            )
+                                        )}
 
-                                            {provided.placeholder}
-                                        </div>
-                                    )}
-                                </Droppable>
-                            </div>
-                        )
-                    })}
+                                        {provided.placeholder}
+                                    </div>
+                                )}
+                            </Droppable>
+                        </div>
+                    )
+                })}
 
-                </div>
-            </DragDropContext>
+            </div>
+        </DragDropContext>
 
-            {/* MODAL */}
-            <TaskModal
-                task={selectedTask}
-                users={users}
-                onClose={closeTask}
-            />
+        {/* MODAL */}
+        <TaskModal
+            task={selectedTask}
+            users={users}
+            onClose={closeTask}
+        />
 
-            {/* ANIMATION */}
-            <style>{`
+        {/* ANIMATION */}
+        <style>{`
                 @keyframes slideIn {
                     0% { transform: translateY(-20px); opacity: 0; }
                     100% { transform: translateY(0); opacity: 1; }
@@ -572,6 +605,6 @@ export default function KanbanBoard({
                     animation: dangerGlow 1s infinite;
                 }
             `}</style>
-        </>
-    )
+    </>
+)
 }

@@ -2,7 +2,7 @@
 
 import { X, Calendar, Link2, ShieldAlert, Building2, Hammer } from "lucide-react";
 import { useForm, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { DayPicker, DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -69,7 +69,10 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
         from: parseDate(data.estimation_start),
         to: parseDate(data.estimation_end),
     };
-
+    const [expandedDesc, setExpandedDesc] = useState(false);
+    useEffect(() => {
+        setExpandedDesc(false);
+    }, [task?.id]);
     return (
         <>
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -108,13 +111,23 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
                     <div className="p-6 space-y-6 flex-1 overflow-y-auto">
 
                         {/* DESCRIPTION */}
-                        <div>
-                            <p className="text-sm font-semibold text-gray-500 mb-2">
-                                Description
-                            </p>
-                            <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700">
+                        <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 overflow-hidden">
+                            <p
+                                className={`leading-relaxed break-words whitespace-pre-wrap ${expandedDesc ? "" : "line-clamp-3"
+                                    }`}
+                            >
                                 {task.description || "No description"}
-                            </div>
+                            </p>
+
+                            {task.description && task.description.length > 120 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setExpandedDesc(!expandedDesc)}
+                                    className="text-xs text-blue-600 mt-2 hover:underline"
+                                >
+                                    {expandedDesc ? "Tutup" : "Selengkapnya"}
+                                </button>
+                            )}
                         </div>
 
                         {/* ATTACHMENT */}
@@ -288,25 +301,27 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
 
                                 </div>
 
-                                <div>
-                                    <label className="text-xs text-gray-500">
-                                        Assign Technician
-                                    </label>
+                                {userRoles.includes("admin") && (
+                                    <div>
+                                        <label className="text-xs text-gray-500">
+                                            Assign Technician
+                                        </label>
 
-                                    <select
-                                        value={data.assigned_to}
-                                        onChange={e => setData("assigned_to", e.target.value)}
-                                        className="mt-1 w-full border rounded-lg p-2 text-sm"
-                                    >
-                                        <option value="">-- Unassigned --</option>
+                                        <select
+                                            value={data.assigned_to}
+                                            onChange={e => setData("assigned_to", e.target.value)}
+                                            className="mt-1 w-full border rounded-lg p-2 text-sm"
+                                        >
+                                            <option value="">-- Unassigned --</option>
 
-                                        {users.map((u: any) => (
-                                            <option key={u.id} value={u.id}>
-                                                {u.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                            {users.map((u: any) => (
+                                                <option key={u.id} value={u.id}>
+                                                    {u.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
                                 <div className="flex justify-end">
                                     <button
