@@ -166,6 +166,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/technicians', [UserTechController::class, 'storeTechnician'])
         ->name('technicians.store');
 
+    Route::patch('/technicians/{id}', [UserTechController::class, 'updateTechnician'])
+        ->name('technicians.update');
+
     Route::get('/requests', [RevisionRequestController::class, 'index'])
         ->name('requests.index');
 

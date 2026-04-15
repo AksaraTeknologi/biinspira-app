@@ -35,12 +35,16 @@ class AuthenticatedSessionController extends Controller
         $user = Auth::user();
 
         // 🔹 Redirect sesuai role
-        if ($user->hasAnyRole(['admin', 'technician'])) {
+        if ($user->hasAnyRole(['admin'])) {
             return redirect()->intended(route('admin.marketing.dashboard'));
         }
 
         if ($user->hasRole('user')) {
             return redirect()->intended(route('user.dashboard'));
+        }
+        
+        if ($user->hasRole('technician')) {
+            return redirect()->intended(route('requests.index'));
         }
 
         // 🔸 Default fallback jika tidak punya role
