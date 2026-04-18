@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ad_plans', function (Blueprint $table) {
-            if (!Schema::hasColumn('ad_plans', 'batch')) {
-                $table->string('batch')->nullable()->after('event_id');
-            }
+        Schema::create('revision_attachments', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('revision_request_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('file_path');
+
+            $table->timestamps();
         });
     }
 
@@ -23,8 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ad_plans', function (Blueprint $table) {
-            $table->dropColumn('batch');
-        });
+        Schema::dropIfExists('revision_attachments');
     }
 };

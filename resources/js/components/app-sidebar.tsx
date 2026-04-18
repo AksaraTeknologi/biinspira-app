@@ -40,6 +40,11 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
         roles: ['admin'],
     },
 
+    {   title: 'qms', 
+        href: route("request.index"), 
+        icon: BookCheck,
+        roles: ['admin'] },
+
     // role: user
     {
         title: 'Beranda',

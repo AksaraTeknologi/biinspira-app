@@ -11,6 +11,8 @@ use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
 use App\Http\Controllers\TvDashboardController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\UserTechController;
+use App\Http\Controllers\RevisionRequestController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -41,7 +43,7 @@ Route::get('/statistics', [TvDashboardController::class, 'index'])->name('tv.sta
 // ─────────────────────────────────────────────
 // ADMIN ROUTES
 // ─────────────────────────────────────────────
-Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin|technician'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard')->name('admin.home');
     Route::get('marketing/{id}/print', [FormController::class, 'generatePDF'])->name('admin.marketing.print');
 
@@ -149,9 +151,51 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
         Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
     });
+});
+// ✅ BARU: Halaman grafik peserta per event (user)
+Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('audience.chart');
 
-    // ✅ BARU: Halaman grafik peserta per event (user)
-    Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('audience.chart');
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/technicians', [UserTechController::class, 'index'])
+        ->name('technicians.index');
+
+    Route::get('/technicians/create', [UserTechController::class, 'createTechnician'])
+        ->name('technicians.create');
+
+    Route::post('/technicians', [UserTechController::class, 'storeTechnician'])
+        ->name('technicians.store');
+
+    Route::patch('/technicians/{id}', [UserTechController::class, 'updateTechnician'])
+        ->name('technicians.update');
+
+    Route::delete('/technicians/{id}', [UserTechController::class, 'destroyTechnician'])
+        ->name('technicians.destroy');
+
+    Route::get('/requests', [RevisionRequestController::class, 'index'])
+        ->name('requests.index');
+
+    Route::post('/requests', [RevisionRequestController::class, 'store']);
+
+    Route::patch(
+        '/requests/{id}/status',
+        [RevisionRequestController::class, 'updateStatus']
+    );
+
+    Route::get('/requests/create', [RevisionRequestController::class, 'create'])
+        ->name('requests.create');
+
+    Route::post('/requests', [RevisionRequestController::class, 'store'])
+        ->name('requests.store');
+
+    Route::get('/requests/{id}/edit', [RevisionRequestController::class, 'edit'])
+        ->name('requests.edit');
+
+    Route::put('/requests/{id}', [RevisionRequestController::class, 'update'])
+        ->name('requests.update');
+
+    Route::delete('/requests/{id}', [RevisionRequestController::class, 'destroy'])
+        ->name('requests.destroy');
 });
 
 require __DIR__ . '/settings.php';
