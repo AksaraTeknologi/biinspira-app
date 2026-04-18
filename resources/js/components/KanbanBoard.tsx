@@ -187,7 +187,7 @@ export default function KanbanBoard({
         const task = startTasks[source.index];
 
         if ((finishColumn === 'todo' || finishColumn === 'in_progress') && (!task.assigned_to || !task.estimation_start || !task.estimation_end)) {
-            toast.error('Isi teknisi dan estimasi waktu sebelum memindahkan');
+            toast.error('Isi programmer dan estimasi waktu sebelum memindahkan');
             return;
         }
 
@@ -462,10 +462,10 @@ export default function KanbanBoard({
                                         removeTaskFromBoard(deletedTaskId);
                                         setSelectedTask((prev) => (prev?.id === deletedTaskId ? null : prev));
                                         setDeleteTask(null);
-                                        toast.success('Task berhasil dihapus');
+                                        toast.success('Tiket berhasil dihapus');
                                     },
                                     onError: () => {
-                                        toast.error('Gagal hapus task');
+                                        toast.error('Gagal hapus tiket');
                                     },
                                 });
                             }}

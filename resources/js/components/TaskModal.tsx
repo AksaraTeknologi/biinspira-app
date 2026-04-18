@@ -185,14 +185,13 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
             preserveScroll: true,
             preserveState: false,
             onSuccess: () => {
-                toast.success('Task berhasil diperbarui');
                 onClose();
                 router.reload({
                     only: ['tasks'],
                 });
             },
             onError: () => {
-                toast.error('Gagal memperbarui task');
+                toast.error('Gagal memperbarui tiket');
             },
         });
     };
@@ -371,13 +370,13 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
 
                                     {isAdmin && (
                                         <div className="space-y-2">
-                                            <Label>Pilih Teknisi</Label>
+                                            <Label>Pilih Programmer</Label>
                                             <Select
                                                 value={selectedAssignedTo}
                                                 onValueChange={(value) => setData('assigned_to', value === 'unassigned' ? '' : value)}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih teknisi" />
+                                                    <SelectValue placeholder="Pilih programmer" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="unassigned">Belum ditugaskan</SelectItem>
