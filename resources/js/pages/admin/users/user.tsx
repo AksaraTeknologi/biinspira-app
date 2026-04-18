@@ -32,6 +32,7 @@ interface User {
     avatar?: string;
     name: string;
     email: string;
+    phone?: string;
 }
 
 function resolveAvatarUrl(avatar?: string) {
@@ -129,6 +130,11 @@ export default function UserPage() {
             accessorKey: 'email',
             header: 'Email',
             cell: ({ row }) => <div className="font-medium">{row.original.email}</div>,
+        },
+        {
+            accessorKey: 'phone',
+            header: 'No Telpon',
+            cell: ({ row }) => <div className="font-medium">{row.original.phone || '-'}</div>,
         },
     ];
 

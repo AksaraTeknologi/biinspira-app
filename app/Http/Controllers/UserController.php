@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -39,6 +37,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:20'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
@@ -47,6 +46,7 @@ class UserController extends Controller
         }
 
         $data = $validator->validated();
+        $data['phone'] = $this->normalizePhone($data['phone'] ?? null);
         $data['password'] = bcrypt('12345678');
 
         $user = User::create($data);
@@ -66,6 +66,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
@@ -74,6 +75,7 @@ class UserController extends Controller
         }
         $user = User::findOrFail($id);
         $data = $validator->validated();
+        $data['phone'] = $this->normalizePhone($data['phone'] ?? null);
         if (!empty($data['password'])) {
             $data['password'] = bcrypt($data['password']);
         } else {
@@ -95,5 +97,16 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user->delete();
         return redirect()->route('admin.users.index');
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        if ($phone === null) {
+            return null;
+        }
+
+        $phone = trim($phone);
+
+        return $phone === '' ? null : $phone;
     }
 }
