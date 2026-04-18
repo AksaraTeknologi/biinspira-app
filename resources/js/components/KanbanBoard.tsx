@@ -373,62 +373,64 @@ export default function KanbanBoard({
     return (
         <>
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="grid grid-cols-5 gap-3">
-                    {columns.map((col) => {
-                        const config = COLUMN_CONFIG[col];
-                        const count = board[col]?.length ?? 0;
+                <div className="w-full">
+                    <div className="grid min-w-240 grid-cols-5 gap-3">
+                        {columns.map((col) => {
+                            const config = COLUMN_CONFIG[col];
+                            const count = board[col]?.length ?? 0;
 
-                        return (
-                            <div key={col} className="flex flex-col">
-                                <div className={`mb-3 flex items-center gap-2 rounded-full px-3 py-2 ${config.headerBg} ${config.headerBorder}`}>
-                                    <span className={`text-sm ${config.iconColor}`}>{config.icon}</span>
-                                    <span className={`flex-1 text-xs font-semibold ${config.headerText}`}>{config.label}</span>
-                                    {count > 0 && (
-                                        <span
-                                            className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
-                                                col === 'request'
-                                                    ? 'bg-gray-200 text-gray-600 dark:bg-zinc-700 dark:text-zinc-200'
-                                                    : 'bg-white/30 text-white'
-                                            }`}
-                                        >
-                                            {count}
-                                        </span>
-                                    )}
+                            return (
+                                <div key={col} className="flex flex-col">
+                                    <div className={`mb-3 flex items-center gap-2 rounded-full px-3 py-2 ${config.headerBg} ${config.headerBorder}`}>
+                                        <span className={`text-sm ${config.iconColor}`}>{config.icon}</span>
+                                        <span className={`flex-1 text-xs font-semibold ${config.headerText}`}>{config.label}</span>
+                                        {count > 0 && (
+                                            <span
+                                                className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                                                    col === 'request'
+                                                        ? 'bg-gray-200 text-gray-600 dark:bg-zinc-700 dark:text-zinc-200'
+                                                        : 'bg-white/30 text-white'
+                                                }`}
+                                            >
+                                                {count}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <Droppable droppableId={col}>
+                                        {(provided, snapshot) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.droppableProps}
+                                                className={`min-h-100 flex-1 rounded-2xl p-2 transition-colors duration-200 ${config.columnBg} ${snapshot.isDraggingOver ? 'ring-2 ring-gray-300 ring-inset dark:ring-zinc-600' : ''} `}
+                                            >
+                                                {board[col]?.map((task, index) =>
+                                                    canDrag ? (
+                                                        <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                                                            {(provided, snapshot) => (
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    className={snapshot.isDragging ? 'scale-105 rotate-1 opacity-80' : ''}
+                                                                >
+                                                                    {renderTaskCard(task, col)}
+                                                                </div>
+                                                            )}
+                                                        </Draggable>
+                                                    ) : (
+                                                        <div key={task.id}>{renderTaskCard(task, col)}</div>
+                                                    ),
+                                                )}
+
+                                                {provided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
                                 </div>
-
-                                <Droppable droppableId={col}>
-                                    {(provided, snapshot) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.droppableProps}
-                                            className={`min-h-100 flex-1 rounded-2xl p-2 transition-colors duration-200 ${config.columnBg} ${snapshot.isDraggingOver ? 'ring-2 ring-gray-300 ring-inset dark:ring-zinc-600' : ''} `}
-                                        >
-                                            {board[col]?.map((task, index) =>
-                                                canDrag ? (
-                                                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                className={snapshot.isDragging ? 'scale-105 rotate-1 opacity-80' : ''}
-                                                            >
-                                                                {renderTaskCard(task, col)}
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ) : (
-                                                    <div key={task.id}>{renderTaskCard(task, col)}</div>
-                                                ),
-                                            )}
-
-                                            {provided.placeholder}
-                                        </div>
-                                    )}
-                                </Droppable>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </DragDropContext>
 

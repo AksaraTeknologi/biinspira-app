@@ -8,12 +8,15 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Notifications\TaskStatusUpdated;
-use App\Services\WhatsappService;
+use App\Traits\WablasTrait;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class RevisionRequestController extends Controller
 {
+    use WablasTrait;
+
     public function index()
     {
         $user = Auth::user();
@@ -263,25 +266,19 @@ class RevisionRequestController extends Controller
         // =========================
         $task->update($validated);
 
+        Log::info('Revision request status update processed', [
+            'revision_id' => $task->id,
+            'updated_by' => $user->id,
+            'old_status' => $oldStatus,
+            'new_status' => $task->status,
+            'old_assigned_to' => $oldAssigned,
+            'assigned_to' => $validated['assigned_to'] ?? null,
+        ]);
+
         // =========================
         // WHATSAPP NOTIF (ASSIGN CHANGE)
         // =========================
-        if ($request->assigned_to && $oldAssigned != $request->assigned_to) {
-
-            $technician = User::find($request->assigned_to);
-
-            if ($technician && $technician->phone) {
-
-                $message =
-                    "🚀 Task Baru Ditugaskan\n\n" .
-                    "Judul: {$task->title}\n" .
-                    "Status: {$task->status}\n\n" .
-                    "Kamu ditugaskan untuk mengerjakan ini.\n" .
-                    "Silakan cek QMS Biinsight 👨‍💻";
-
-                WhatsappService::send($technician->phone, $message);
-            }
-        }
+        $this->notifyAssignedTechnician($task, $validated['assigned_to'] ?? null, $oldAssigned);
 
         // =========================
         // STATUS CHANGE LOG + NOTIF
@@ -298,25 +295,289 @@ class RevisionRequestController extends Controller
 
             $unitUser = User::find($task->created_by);
 
-            if ($unitUser) {
+            if (!$unitUser) {
+                Log::warning('Skip task creator notifications', [
+                    'revision_id' => $task->id,
+                    'created_by' => $task->created_by,
+                    'reason' => 'creator_not_found',
+                ]);
+            } else {
+                Log::info('Dispatching task creator notifications', [
+                    'revision_id' => $task->id,
+                    'creator_user_id' => $unitUser->id,
+                    'has_phone' => !empty($unitUser->phone),
+                ]);
 
                 $unitUser->notify(new TaskStatusUpdated($task));
 
-                if ($unitUser->phone) {
-
-                    $message =
-                        "📢 Update Request QMS\n\n" .
-                        "Judul: {$task->title}\n" .
-                        "Status Baru: {$task->status}\n\n" .
-                        "Silakan cek QMS Biinsight 🙏";
-
-                    WhatsappService::send($unitUser->phone, $message);
-                }
+                $this->notifyTaskCreatorStatusUpdate($task, $unitUser);
             }
+        } else {
+            Log::info('Skip task creator notifications', [
+                'revision_id' => $task->id,
+                'old_status' => $oldStatus,
+                'new_status' => $task->status,
+                'reason' => 'status_unchanged',
+            ]);
         }
 
         return redirect()
             ->route('requests.index')
             ->with('success', 'Tiket Berhasil diperbarui');
+    }
+
+    private function notifyAssignedTechnician(RevisionRequest $task, int|string|null $assignedTo, int|string|null $oldAssigned): void
+    {
+        $assignedToRaw = $assignedTo;
+        $oldAssignedRaw = $oldAssigned;
+
+        $assignedTo = $this->normalizeNullableIdentifier($assignedTo);
+        $oldAssigned = $this->normalizeNullableIdentifier($oldAssigned);
+
+        if (!$assignedTo || $oldAssigned === $assignedTo) {
+            Log::info('Skip WhatsApp assignment notification', [
+                'revision_id' => $task->id,
+                'assigned_to_raw' => $assignedToRaw,
+                'old_assigned_to_raw' => $oldAssignedRaw,
+                'assigned_to' => $assignedTo,
+                'old_assigned_to' => $oldAssigned,
+                'reason' => 'no_new_assignee_or_assignee_unchanged',
+            ]);
+            return;
+        }
+
+        $technician = User::find($assignedTo);
+
+        if (!$technician) {
+            Log::warning('Skip WhatsApp assignment notification', [
+                'revision_id' => $task->id,
+                'assigned_to' => $assignedTo,
+                'reason' => 'technician_not_found',
+            ]);
+            return;
+        }
+
+        $message = $this->buildAssignedTaskMessage($task, $technician);
+
+        $this->sendWhatsappMessage($technician->phone, $message, [
+            'revision_id' => $task->id,
+            'recipient_user_id' => $technician->id,
+            'event' => 'assigned_to_technician',
+        ]);
+    }
+
+    private function notifyTaskCreatorStatusUpdate(RevisionRequest $task, User $unitUser): void
+    {
+        $message = $this->buildStatusChangedMessage($task, $unitUser);
+
+        $this->sendWhatsappMessage($unitUser->phone, $message, [
+            'revision_id' => $task->id,
+            'recipient_user_id' => $unitUser->id,
+            'event' => 'status_changed_for_creator',
+        ]);
+    }
+
+    private function sendWhatsappMessage(?string $phone, string $message, array $context = []): void
+    {
+        if (empty($phone)) {
+            Log::warning('Skip WhatsApp message via Wablas', array_merge($context, [
+                'reason' => 'empty_phone',
+            ]));
+            return;
+        }
+
+        $phoneNumber = $this->formatPhoneNumber($phone);
+        if (empty($phoneNumber)) {
+            Log::warning('Skip WhatsApp message via Wablas', array_merge($context, [
+                'reason' => 'invalid_phone_after_normalization',
+                'phone_original' => $phone,
+            ]));
+            return;
+        }
+
+        $waData = [
+            [
+                'phone' => $phoneNumber,
+                'message' => $message,
+                'isGroup' => 'false',
+            ],
+        ];
+
+        Log::info('Attempting WhatsApp message via Wablas', array_merge($context, [
+            'phone_original' => $phone,
+            'phone' => $phoneNumber,
+            'message_length' => strlen($message),
+            'message_preview' => substr($message, 0, 120),
+        ]));
+
+        $sent = self::sendText($waData);
+
+        if ($sent) {
+            Log::info('WhatsApp message sent successfully via Wablas', array_merge($context, [
+                'phone' => $phoneNumber,
+            ]));
+            return;
+        }
+
+        Log::warning('Failed to send WhatsApp message via Wablas', array_merge($context, [
+            'phone' => $phoneNumber,
+        ]));
+    }
+
+    private function buildAssignedTaskMessage(RevisionRequest $task, User $technician): string
+    {
+        $creatorName = User::find($task->created_by)?->name;
+
+        return "*[Biinsight - Task Baru Ditugaskan]* 🚀\n\n" .
+            "Halo {$technician->name},\n\n" .
+            "Kamu mendapatkan penugasan tiket baru dengan detail berikut:\n\n" .
+            "ID Tiket: #{$task->id}\n" .
+            "Judul: {$this->formatTextForWhatsapp($task->title)}\n" .
+            "Prioritas: {$this->formatUrgencyLabel($task->urgency)}\n" .
+            "Dibuat Oleh: {$this->formatTextForWhatsapp($creatorName)}\n" .
+            "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
+            "Estimasi Mulai: {$this->formatDateForWhatsapp($task->estimation_start)}\n" .
+            "Estimasi Selesai: {$this->formatDateForWhatsapp($task->estimation_end)}\n" .
+            "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
+            "Silakan cek halaman Ticketing Website Biinsight (https://biinsight.id/requests) untuk mulai mengerjakan.";
+    }
+
+    private function buildStatusChangedMessage(RevisionRequest $task, User $unitUser): string
+    {
+        $technicianName = $task->assigned_to
+            ? User::find($task->assigned_to)?->name
+            : null;
+
+        $statusGuidance = $this->buildStatusGuidanceMessage($task->status);
+
+        return "*[Biinsight - Update Status Request]* 📢\n\n" .
+            "Halo {$unitUser->name},\n\n" .
+            "Status tiket kamu sudah diperbarui dengan rincian:\n\n" .
+            "ID Tiket: #{$task->id}\n" .
+            "Judul: {$this->formatTextForWhatsapp($task->title)}\n" .
+            "Status Terbaru: {$this->formatStatusLabel($task->status)}\n" .
+            "Prioritas: {$this->formatUrgencyLabel($task->urgency)}\n" .
+            "Ditangani Oleh: {$this->formatTextForWhatsapp($technicianName)}\n" .
+            "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
+            "Estimasi Mulai: {$this->formatDateForWhatsapp($task->estimation_start)}\n" .
+            "Estimasi Selesai: {$this->formatDateForWhatsapp($task->estimation_end)}\n" .
+                "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
+                "Tindak Lanjut:\n{$statusGuidance}\n\n" .
+            "Silakan pantau progres selanjutnya melalui halaman Ticketing Website Biinsight (https://biinsight.id/requests).";
+    }
+
+    private function formatStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            'request' => 'Request Masuk',
+            'todo' => 'Akan Dikerjakan',
+            'in_progress' => 'Sedang Dikerjakan',
+            'in_review' => 'Dalam Review',
+            'complete' => 'Selesai',
+            default => $this->formatTextForWhatsapp($status),
+        };
+    }
+
+    private function buildStatusGuidanceMessage(?string $status): string
+    {
+        return match ($status) {
+            'todo' => "- Tiket sudah masuk antrean pengerjaan.\n" .
+                "- Tim IT akan mulai bekerja sesuai jadwal estimasi.\n" .
+                "- Jika ada informasi tambahan, silakan update di tiket bagian deskripsi.",
+            'in_progress' => "- Tiket sedang diproses oleh tim IT.\n" .
+                "- Mohon menunggu proses pengerjaan hingga update berikutnya.\n" .
+                "- Jika ada perubahan kebutuhan, mohon informasikan secepatnya melalui nomor telepon tim IT.",
+            'in_review' => "- Pengerjaan tiket sudah selesai dan siap untuk ditinjau.\n" .
+                "- Mohon sampaikan jika ada revisi dari hasil pekerjaan.\n" .
+                "- Jika sudah sesuai, silakan hubungi PIC/IT untuk konfirmasi penyelesaian.",
+            'complete' => "- Tiket telah dinyatakan selesai.\n" .
+                "- Terima kasih atas kerja sama Anda.",
+            default => "- Status tiket telah diperbarui.\n" .
+                "- Silakan cek detail terbaru pada halaman tiket.",
+        };
+    }
+
+    private function formatUrgencyLabel(?string $urgency): string
+    {
+        return match ($urgency) {
+            'high' => 'Tinggi',
+            'medium' => 'Sedang',
+            'low' => 'Rendah',
+            default => $this->formatTextForWhatsapp($urgency),
+        };
+    }
+
+    private function formatDateForWhatsapp(mixed $value): string
+    {
+        if (empty($value)) {
+            return '-';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('d M Y');
+        }
+
+        if (is_string($value)) {
+            $timestamp = strtotime($value);
+
+            if ($timestamp !== false) {
+                return date('d M Y', $timestamp);
+            }
+
+            return trim($value) !== '' ? $value : '-';
+        }
+
+        return '-';
+    }
+
+    private function formatTextForWhatsapp(mixed $value): string
+    {
+        if ($value === null) {
+            return '-';
+        }
+
+        if (is_string($value)) {
+            $text = trim($value);
+            return $text !== '' ? $text : '-';
+        }
+
+        return (string) $value;
+    }
+
+    private function formatPhoneNumber(string $phoneNumber): string
+    {
+        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+
+        if (str_starts_with($phoneNumber, '0')) {
+            return '62' . substr($phoneNumber, 1);
+        }
+
+        if (str_starts_with($phoneNumber, '62')) {
+            return $phoneNumber;
+        }
+
+        if (str_starts_with($phoneNumber, '8')) {
+            return '62' . $phoneNumber;
+        }
+
+        return $phoneNumber;
+    }
+
+    private function normalizeNullableIdentifier(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+            return $value !== '' ? $value : null;
+        }
+
+        if (is_int($value)) {
+            return (string) $value;
+        }
+
+        return null;
     }
 }

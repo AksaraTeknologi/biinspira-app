@@ -23,6 +23,10 @@ const schema = z
     .object({
         name: z.string().min(2, 'Nama user minimal 2 karakter'),
         email: z.string().email('Format email tidak valid'),
+        phone: z
+            .string()
+            .max(20, 'No telp maksimal 20 karakter')
+            .refine((value) => !value || /^[0-9+\-\s()]+$/.test(value), 'Format no telp tidak valid'),
         password: z.string().optional(),
         password_confirmation: z.string().optional(),
         avatar: z
@@ -48,9 +52,39 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-export function EditUserModal({ user, onSuccess }) {
+interface EditableUser {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    avatar?: string | null;
+    avatar_url?: string | null;
+}
+
+interface EditUserModalProps {
+    user: EditableUser;
+    onSuccess?: () => void;
+}
+
+function resolveAvatarUrl(user: EditableUser): string | null {
+    if (user.avatar_url) {
+        return user.avatar_url;
+    }
+
+    if (!user.avatar) {
+        return null;
+    }
+
+    if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+        return user.avatar;
+    }
+
+    return `/storage/${user.avatar.replace(/^\/+/, '')}`;
+}
+
+export function EditUserModal({ user, onSuccess }: EditUserModalProps) {
     const [open, setOpen] = useState(false);
-    const [preview, setPreview] = useState(user.avatar_url ?? null);
+    const [preview, setPreview] = useState<string | null>(resolveAvatarUrl(user));
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -60,6 +94,7 @@ export function EditUserModal({ user, onSuccess }) {
         defaultValues: {
             name: user.name,
             email: user.email,
+            phone: user.phone ?? '',
             password: '',
             password_confirmation: '',
             avatar: null,
@@ -72,6 +107,7 @@ export function EditUserModal({ user, onSuccess }) {
         const payload = new FormData();
         payload.append('name', data.name);
         payload.append('email', data.email);
+        payload.append('phone', data.phone || '');
         if (data.password) {
             payload.append('password', data.password);
             payload.append('password_confirmation', data.password_confirmation ?? '');
@@ -101,7 +137,7 @@ export function EditUserModal({ user, onSuccess }) {
                 <Pencil className="h-4 w-4 cursor-pointer" />
             </DialogTrigger>
 
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]" aria-describedby={undefined}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-125" aria-describedby={undefined}>
                 <DialogHeader>
                     <DialogTitle>Edit User</DialogTitle>
                 </DialogHeader>
@@ -132,6 +168,21 @@ export function EditUserModal({ user, onSuccess }) {
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
                                         <Input type="email" placeholder="Masukkan email user" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Password */}
+                        <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>No Telp</FormLabel>
+                                    <FormControl>
+                                        <Input type="tel" placeholder="Contoh: 081234567890" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
