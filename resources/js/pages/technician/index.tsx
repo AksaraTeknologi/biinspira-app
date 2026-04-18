@@ -1,5 +1,6 @@
 'use client';
 
+import DeleteButton from '@/components/delete-button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export default function Index() {
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <EditTechnicianModal user={row.original} onSuccess={() => router.reload()} />
+                    <DeleteButton id={row.original.id} name={row.original.name} routeName="technicians.destroy" />
                 </div>
             ),
             enableSorting: false,
@@ -103,17 +105,17 @@ export default function Index() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Technician" />
+            <Head title="Tim IT" />
 
             <div className="p-4">
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold">Daftar Technician</h2>
+                    <h2 className="text-2xl font-semibold">Daftar Tim IT</h2>
                     <AddTechnicianModal onSuccess={() => router.reload()} />
                 </div>
 
                 <div className="flex items-center gap-2 py-4">
                     <Input
-                        placeholder="Cari technician..."
+                        placeholder="Cari Tim IT..."
                         value={globalFilter ?? ''}
                         onChange={(e) => setGlobalFilter(e.target.value)}
                         className="max-w-sm bg-input"
@@ -170,7 +172,7 @@ export default function Index() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={columns.length} className="h-24 text-center">
-                                        Tidak ada technician.
+                                        Tidak ada Tim IT.
                                     </TableCell>
                                 </TableRow>
                             )}

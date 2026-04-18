@@ -9,14 +9,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Notifications\TaskStatusUpdated;
 use App\Services\WhatsappService;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class RevisionRequestController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $query = RevisionRequest::with([
             'creator:id,name',
@@ -74,56 +74,38 @@ class RevisionRequestController extends Controller
                 ];
             });
 
-        return Inertia::render('Requests/Index', [
+        return Inertia::render('requests/index', [
             'tasks' => $tasks,
             'users' => $users,
-            'user_role' => auth()->user()->getRoleNames()->first(),
-            'user_id' => auth()->id(),
+            'user_role' => Auth::user()->getRoleNames()->first(),
+            'user_id' => Auth::id(),
         ]);
     }
 
     public function create()
     {
-        if (!auth()->user()->hasRole('user')) {
+        if (!Auth::user()->hasRole('user')) {
             abort(403);
         }
 
-        $users = User::role('technician')
-            ->get()
-            ->map(function ($user) {
-
-                $workload = RevisionRequest::where('assigned_to', $user->id)
-                    ->whereIn('status', ['todo', 'in_progress'])
-                    ->count();
-
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'workload' => $workload,
-                    'role' => $user->getRoleNames(), // 🔥 penting
-                ];
-            });
-
-        return Inertia::render('Requests/Create', [
-            'users' => $users
-        ]);
+        return Inertia::render('requests/create');
     }
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('user')) {
+        if (!Auth::user()->hasRole('user')) {
             abort(403);
         }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'related_url' => 'nullable|url',
+            'related_url' => 'required|url',
             'urgency' => 'required|in:high,medium,low',
-            'deadline' => 'nullable|date',
+            'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|mimes:jpg,png,jpeg,pdf',
+            'attachments' => 'required|array|min:1',
+            'attachments.*' => 'required|file|mimes:jpg,png,jpeg,pdf',
         ]);
 
         $task = RevisionRequest::create([
@@ -134,7 +116,7 @@ class RevisionRequestController extends Controller
             'deadline' => $validated['deadline'] ?? null,
             'assigned_to' => $validated['assigned_to'] ?? null,
             'status' => 'request',
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         if ($request->hasFile('attachments')) {
@@ -149,25 +131,19 @@ class RevisionRequestController extends Controller
 
         return redirect()
             ->route('requests.index')
-            ->with('success', 'Request created successfully');
+            ->with('success', 'Tiket Berhasil dibuat');
     }
 
     public function edit($id)
     {
         $task = RevisionRequest::with('attachments')->findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
         if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
-        $users = User::role('technician')->get()->map(fn($u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-        ]);
-
-        return Inertia::render('Requests/Create', [
-            'users' => $users,
-            'editData' => [
+        return Inertia::render('requests/edit', [
+            'task' => [
                 'id' => $task->id,
                 'title' => $task->title,
                 'description' => $task->description,
@@ -175,6 +151,9 @@ class RevisionRequestController extends Controller
                 'urgency' => $task->urgency,
                 'deadline' => $task->deadline,
                 'assigned_to' => $task->assigned_to,
+                'attachments' => $task->attachments->map(fn($a) => [
+                    'file_path' => $a->file_path,
+                ]),
             ]
         ]);
     }
@@ -182,7 +161,7 @@ class RevisionRequestController extends Controller
     public function destroy($id)
     {
         $task = RevisionRequest::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
 
@@ -198,7 +177,7 @@ class RevisionRequestController extends Controller
     public function update(Request $request, $id)
     {
         $task = RevisionRequest::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         // 🔐 AUTH
         if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
@@ -208,13 +187,19 @@ class RevisionRequestController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'related_url' => 'nullable|url',
+            'related_url' => 'required|url',
             'urgency' => 'required|in:high,medium,low',
-            'deadline' => 'nullable|date',
+            'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|mimes:jpg,png,jpeg,pdf',
         ]);
+
+        if (! $request->hasFile('attachments') && $task->attachments()->count() === 0) {
+            return back()
+                ->withErrors(['attachments' => 'Lampiran wajib diisi.'])
+                ->withInput();
+        }
 
         // ✅ UPDATE DATA
         $task->update([
@@ -239,99 +224,99 @@ class RevisionRequestController extends Controller
 
         return redirect()
             ->route('requests.index')
-            ->with('success', 'Request updated successfully');
+            ->with('success', 'Tiket Berhasil diperbarui');
     }
 
-public function updateStatus(Request $request, $id)
-{
-    $user = auth()->user();
+    public function updateStatus(Request $request, $id)
+    {
+        $user = Auth::user();
 
-    if (!$user->hasAnyRole(['technician', 'admin'])) {
-        abort(403);
-    }
-
-    $task = RevisionRequest::findOrFail($id);
-
-    $oldStatus = $task->status;
-    $oldAssigned = $task->assigned_to;
-
-    // =========================
-    // VALIDATION RULES
-    // =========================
-    $rules = [
-        'status' => 'required|in:request,todo,in_progress,in_review,complete',
-        'assigned_to' => 'nullable|exists:users,id',
-        'estimation_start' => 'nullable|date',
-        'estimation_end' => 'nullable|date',
-    ];
-
-    if (in_array($request->status, ['todo', 'in_progress'])) {
-        $rules['assigned_to'] = 'required|exists:users,id';
-        $rules['estimation_start'] = 'required|date';
-        $rules['estimation_end'] = 'required|date|after_or_equal:estimation_start';
-    }
-
-    $validated = $request->validate($rules);
-
-    // =========================
-    // UPDATE TASK
-    // =========================
-    $task->update($validated);
-
-    // =========================
-    // WHATSAPP NOTIF (ASSIGN CHANGE)
-    // =========================
-    if ($request->assigned_to && $oldAssigned != $request->assigned_to) {
-
-        $technician = User::find($request->assigned_to);
-
-        if ($technician && $technician->phone) {
-
-            $message =
-                "🚀 Task Baru Ditugaskan\n\n" .
-                "Judul: {$task->title}\n" .
-                "Status: {$task->status}\n\n" .
-                "Kamu ditugaskan untuk mengerjakan ini.\n" .
-                "Silakan cek QMS Biinsight 👨‍💻";
-
-            WhatsappService::send($technician->phone, $message);
+        if (!$user->hasAnyRole(['technician', 'admin'])) {
+            abort(403);
         }
-    }
 
-    // =========================
-    // STATUS CHANGE LOG + NOTIF
-    // =========================
-    if ($oldStatus !== $task->status) {
+        $task = RevisionRequest::findOrFail($id);
 
-        RevisionLog::create([
-            'revision_id' => $task->id,
-            'from_status' => $oldStatus,
-            'to_status' => $task->status,
-            'changed_by' => $user->id,
-            'changed_at' => now(),
-        ]);
+        $oldStatus = $task->status;
+        $oldAssigned = $task->assigned_to;
 
-        $unitUser = User::find($task->created_by);
+        // =========================
+        // VALIDATION RULES
+        // =========================
+        $rules = [
+            'status' => 'required|in:request,todo,in_progress,in_review,complete',
+            'assigned_to' => 'nullable|exists:users,id',
+            'estimation_start' => 'nullable|date',
+            'estimation_end' => 'nullable|date',
+        ];
 
-        if ($unitUser) {
+        if (in_array($request->status, ['todo', 'in_progress'])) {
+            $rules['assigned_to'] = 'required|exists:users,id';
+            $rules['estimation_start'] = 'required|date';
+            $rules['estimation_end'] = 'required|date|after_or_equal:estimation_start';
+        }
 
-            $unitUser->notify(new TaskStatusUpdated($task));
+        $validated = $request->validate($rules);
 
-            if ($unitUser->phone) {
+        // =========================
+        // UPDATE TASK
+        // =========================
+        $task->update($validated);
+
+        // =========================
+        // WHATSAPP NOTIF (ASSIGN CHANGE)
+        // =========================
+        if ($request->assigned_to && $oldAssigned != $request->assigned_to) {
+
+            $technician = User::find($request->assigned_to);
+
+            if ($technician && $technician->phone) {
 
                 $message =
-                    "📢 Update Request QMS\n\n" .
+                    "🚀 Task Baru Ditugaskan\n\n" .
                     "Judul: {$task->title}\n" .
-                    "Status Baru: {$task->status}\n\n" .
-                    "Silakan cek QMS Biinsight 🙏";
+                    "Status: {$task->status}\n\n" .
+                    "Kamu ditugaskan untuk mengerjakan ini.\n" .
+                    "Silakan cek QMS Biinsight 👨‍💻";
 
-                WhatsappService::send($unitUser->phone, $message);
+                WhatsappService::send($technician->phone, $message);
             }
         }
-    }
 
-    return redirect()
-        ->route('requests.index')
-        ->with('success', 'Request updated');
-}
+        // =========================
+        // STATUS CHANGE LOG + NOTIF
+        // =========================
+        if ($oldStatus !== $task->status) {
+
+            RevisionLog::create([
+                'revision_id' => $task->id,
+                'from_status' => $oldStatus,
+                'to_status' => $task->status,
+                'changed_by' => $user->id,
+                'changed_at' => now(),
+            ]);
+
+            $unitUser = User::find($task->created_by);
+
+            if ($unitUser) {
+
+                $unitUser->notify(new TaskStatusUpdated($task));
+
+                if ($unitUser->phone) {
+
+                    $message =
+                        "📢 Update Request QMS\n\n" .
+                        "Judul: {$task->title}\n" .
+                        "Status Baru: {$task->status}\n\n" .
+                        "Silakan cek QMS Biinsight 🙏";
+
+                    WhatsappService::send($unitUser->phone, $message);
+                }
+            }
+        }
+
+        return redirect()
+            ->route('requests.index')
+            ->with('success', 'Tiket Berhasil diperbarui');
+    }
 }

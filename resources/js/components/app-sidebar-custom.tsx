@@ -15,7 +15,20 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarSearch, ChevronRight, CircleUserRound, Drill, KanbanSquareDashed, KanbanSquareIcon, LaptopMinimal, LayoutGrid, List, PartyPopper, Receipt, Target } from 'lucide-react';
+import {
+    CalendarSearch,
+    ChevronRight,
+    CircleUserRound,
+    Drill,
+    KanbanSquareIcon,
+    Laptop,
+    LaptopMinimal,
+    LayoutGrid,
+    List,
+    PartyPopper,
+    Receipt,
+    Target,
+} from 'lucide-react';
 import { useState } from 'react';
 import AppLogo from './app-logo';
 
@@ -42,9 +55,9 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
                 icon: CircleUserRound,
             },
             {
-                title: 'Technician',
+                title: 'IT Team',
                 href: route('technicians.index'),
-                icon: Drill,
+                icon: Laptop,
             },
         ],
     },
@@ -131,8 +144,9 @@ export function AppSidebar() {
         <Sidebar collapsible="icon" variant="inset">
             <div className="relative z-0 w-full">
                 <div
-                    className={`absolute z-10 mt-2 ml-2 h-[95vh] rounded-lg border border-sidebar bg-sidebar shadow-lg transition-all duration-300 lg:mt-0.5 ${isCollapsed ? 'w-15.5' : 'w-60'
-                        }`}
+                    className={`absolute z-10 mt-2 ml-2 h-[95vh] rounded-lg border border-sidebar bg-sidebar shadow-lg transition-all duration-300 lg:mt-0.5 ${
+                        isCollapsed ? 'w-15.5' : 'w-60'
+                    }`}
                 >
                     {/* ===== Header ===== */}
                     <SidebarHeader>

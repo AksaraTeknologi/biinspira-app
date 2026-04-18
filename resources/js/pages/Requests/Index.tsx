@@ -1,187 +1,152 @@
-"use client"
+'use client';
 
-import KanbanBoard from "../../components/KanbanBoard"
-import { Head, Link, usePage } from "@inertiajs/react"
-import AppLayout from "@/layouts/app-layout"
-import type { BreadcrumbItem } from "@/types"
-import { ClipboardList, Plus } from "lucide-react"
-import { useEffect, useState } from "react"
+import AppLayout from '@/layouts/app-layout';
+import type { BreadcrumbItem } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import KanbanBoard from '../../components/KanbanBoard';
 
 type User = {
-    id: number
-    name: string
-    role: string
-}
+    id: number;
+    name: string;
+    role: string;
+};
 
 type Task = {
-    id: number
-    title: string
-    description: string
-    status: string
-}
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+};
 
 type Props = {
-    tasks: Record<string, Task[]>
-    users: User[]
-}
+    tasks: Record<string, Task[]>;
+    users: User[];
+};
 
-type Toast = {
-    id: number
-    text: string
-    type: "success" | "error"
-}
+type RoleItem = {
+    name: string;
+};
+
+type PageProps = {
+    auth?: {
+        user?: {
+            id?: number;
+            roles?: Array<RoleItem | string>;
+        };
+    };
+    user_role?: string;
+    user_id?: number;
+    errors?: Record<string, string | string[]>;
+    flash?: {
+        success?: string | { message?: string };
+        error?: string | { message?: string };
+    };
+};
 
 export default function Index({ tasks, users }: Props) {
+    const { auth, errors = {}, flash, user_role, user_id } = usePage<PageProps>().props;
+    const userRoles = auth?.user?.roles || [];
 
-    const { auth, errors, flash } = usePage().props as any
-    const userRoles = auth?.user?.roles || []
-    const userRole = userRoles[0] ?? null
+    const resolvedRole = () => {
+        if (typeof user_role === 'string' && user_role.length > 0) {
+            return user_role;
+        }
 
-    console.log(auth.user)
+        const firstRole = userRoles[0];
+        if (!firstRole) return null;
 
-    const [toasts, setToasts] = useState<Toast[]>([])
-    const [search, setSearch] = useState("") // ✅ NEW
+        if (typeof firstRole === 'string') {
+            return firstRole;
+        }
 
-    // 🔥 helper add toast
-    const addToast = (text: string, type: "success" | "error" = "success") => {
-        const id = Date.now()
-        setToasts(prev => [...prev, { id, text, type }])
+        return firstRole.name ?? null;
+    };
 
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id))
-        }, 3000)
-    }
+    const userRole = resolvedRole();
+    const currentUserId = user_id ?? auth?.user?.id;
 
-    // =========================
-    // ERROR HANDLER
-    // =========================
+    const [search, setSearch] = useState('');
+
     useEffect(() => {
         if (errors && Object.keys(errors).length > 0) {
-            Object.values(errors).forEach((err: any) => {
-                addToast(err, "error")
-            })
+            Object.values(errors).forEach((err) => {
+                const message = Array.isArray(err) ? err[0] : err;
+                if (message) toast.error(String(message));
+            });
         }
-    }, [errors])
+    }, [errors]);
 
-    // =========================
-    // SUCCESS HANDLER
-    // =========================
     useEffect(() => {
         if (flash?.success) {
-            const msg = typeof flash.success === "string"
-                ? flash.success
-                : flash.success.message
+            const msg = typeof flash.success === 'string' ? flash.success : flash.success.message;
 
-            addToast(msg, "success")
+            if (msg) toast.success(String(msg));
         }
-    }, [flash])
 
-    // ✅ FILTER TASKS (BY TITLE)
+        if (flash?.error) {
+            const msg = typeof flash.error === 'string' ? flash.error : flash.error.message;
+
+            if (msg) toast.error(String(msg));
+        }
+    }, [flash]);
+
     const filteredTasks = Object.fromEntries(
         Object.entries(tasks).map(([status, taskList]) => [
             status,
-            taskList.filter((task) =>
-                task.title.toLowerCase().includes(search.toLowerCase())
-            ),
-        ])
-    )
+            taskList.filter((task) => task.title.toLowerCase().includes(search.toLowerCase())),
+        ]),
+    );
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: "Ticketing Website",
-            href: "/requests",
+            title: 'Ticketing Website',
+            href: '/requests',
         },
-    ]
+    ];
 
-    const isUser = auth?.user?.roles?.some((r: any) => r.name.toLowerCase() === "user")
+    const isUser = String(userRole ?? '').toLowerCase() === 'user';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="QMS Requests" />
+            <Head title="Ticket Board" />
 
-            {/* TOAST */}
-            <div className="fixed top-5 right-5 z-50 space-y-2">
-                {toasts.map((toast) => (
-                    <div
-                        key={toast.id}
-                        className="px-4 py-2 rounded-lg shadow-lg text-white bg-red-500
-                                   transform transition-all duration-300
-                                   translate-x-0 opacity-100
-                                   animate-[slideIn_0.3s_ease]"
-                    >
-                        {toast.text}
-                    </div>
-                ))}
-            </div>
-
-            <style>
-                {`
-                @keyframes slideIn {
-                    from {
-                        opacity: 0;
-                        transform: translateX(100%);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
-                }
-                `}
-            </style>
-
-            <div className="p-6 space-y-6">
-
-                {/* BOARD */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-
-                    {/* BOARD HEADER */}
-                    <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-
+            <div className="space-y-6 p-6">
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-zinc-800">
                         <div>
-                            <h2 className="font-semibold text-gray-800 text-sm">
-                                Request Workflow
-                            </h2>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Drag cards to update status
-                            </p>
+                            <h2 className="font-semibold text-gray-800 dark:text-zinc-100">Ticket Board</h2>
+                            <p className="mt-0.5 text-xs text-gray-400 dark:text-zinc-400">Tarik dan lepas kartu untuk memperbarui status</p>
                         </div>
 
-                        {/* 🔥 SEARCH (TAMBAHAN, TIDAK MERUSAK LAYOUT) */}
-                        <div className="absolute left-1/2 transform -translate-x-1/2">
+                        <div className="absolute left-1/2 -translate-x-1/2 transform">
                             <input
                                 type="text"
-                                placeholder="Search request..."
+                                placeholder="Cari tiket..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-64 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-64 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-400"
                             />
                         </div>
 
                         {isUser && (
                             <Link
                                 href="/requests/create"
-                                className="flex items-center gap-1.5 bg-blue-800 hover:bg-blue-900 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+                                className="flex items-center gap-1.5 rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900"
                             >
                                 <Plus size={16} />
-                                Create Request
+                                Buat Tiket Baru
                             </Link>
                         )}
-
                     </div>
 
-                    {/* BOARD CONTENT */}
                     <div className="p-5">
-                        <KanbanBoard
-                            key={search} // 🔥 ini kuncinya
-                            tasks={filteredTasks}
-                            users={users}
-                            user_role={userRole}
-                        />
+                        <KanbanBoard key={search} tasks={filteredTasks} users={users} user_role={userRole} user_id={currentUserId} />
                     </div>
-
                 </div>
-
             </div>
         </AppLayout>
-    )
+    );
 }

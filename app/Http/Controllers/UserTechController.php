@@ -105,4 +105,22 @@ class UserTechController extends Controller
             ->route('technicians.index')
             ->with('success', 'Technician updated successfully');
     }
+
+    public function destroyTechnician(string $id)
+    {
+        /** @var User|null $authUser */
+        $authUser = Auth::user();
+
+        // 🔒 hanya admin
+        if (! $authUser || ! $authUser->hasRole('admin')) {
+            abort(403);
+        }
+
+        $technician = User::role('technician')->findOrFail($id);
+        $technician->delete();
+
+        return redirect()
+            ->route('technicians.index')
+            ->with('success', 'Technician deleted successfully');
+    }
 }

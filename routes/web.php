@@ -169,6 +169,9 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/technicians/{id}', [UserTechController::class, 'updateTechnician'])
         ->name('technicians.update');
 
+    Route::delete('/technicians/{id}', [UserTechController::class, 'destroyTechnician'])
+        ->name('technicians.destroy');
+
     Route::get('/requests', [RevisionRequestController::class, 'index'])
         ->name('requests.index');
 

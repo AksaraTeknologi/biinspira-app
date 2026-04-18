@@ -5,18 +5,28 @@ import RequestForm from '@/pages/requests/components/request-form';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 
-export default function Create() {
+type RequestTask = {
+    id: number;
+    title: string;
+    description: string;
+    related_url?: string | null;
+    urgency: 'high' | 'medium' | 'low';
+    deadline?: string | null;
+    attachments?: Array<{ file_path: string }>;
+};
+
+export default function Edit({ task }: { task: RequestTask }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Ticketing Website', href: route('requests.index') },
-        { title: 'Buat Tiket Baru', href: route('requests.create') },
+        { title: 'Edit Request', href: route('requests.edit', task.id) },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Buat Tiket Baru" />
+            <Head title="Edit Request" />
 
             <div className="p-6">
-                <RequestForm mode="create" />
+                <RequestForm mode="edit" task={task} />
             </div>
         </AppLayout>
     );
