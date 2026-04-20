@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,6 +42,42 @@ class TvDashboardController extends Controller
             'platformStats' => Inertia::defer(fn() => $this->buildPlatformStats($platforms)),
             'generatedAt' => now()->toIso8601String(),
         ]);
+    }
+
+    public function detail(Request $request): JsonResponse
+    {
+        $platforms = config('services.platforms', []);
+
+        $availablePlatformKeys = [];
+        foreach ($this->platformLabels as $key => $_label) {
+            if ($this->hasPlatformCredentials($platforms[$key] ?? null)) {
+                $availablePlatformKeys[] = $key;
+            }
+        }
+
+        $validated = $request->validate([
+            'platform' => ['required', 'string', Rule::in($availablePlatformKeys)],
+            'metric' => ['required', 'string', Rule::in(['month', 'day'])],
+        ]);
+
+        $platformKey = $validated['platform'];
+        $metric = $validated['metric'];
+        $platform = $platforms[$platformKey] ?? null;
+
+        if (!is_array($platform) || empty($platform['base_url']) || empty($platform['token'])) {
+            return response()->json([
+                'message' => 'Platform tidak valid atau credential tidak tersedia.',
+            ], 422);
+        }
+
+        $data = $this->buildDetailPoints(
+            $platformKey,
+            (string) $platform['base_url'],
+            (string) $platform['token'],
+            $metric
+        );
+
+        return response()->json($data);
     }
 
     private function buildPlatformStats(array $platforms): array
@@ -129,6 +168,11 @@ class TvDashboardController extends Controller
     private function buildPlatformStatFromStatistics(string $key, string $label, array $statistics, ?string $logo): array
     {
         $totalRevenue = $this->resolveStatisticNumber($this->pickStatisticValue($statistics, [
+            'total_nominal_this_year',
+            'this_year_revenue',
+            'revenue_this_year',
+            'total_revenue_this_year',
+            'year_to_date_revenue',
             'total_revenue',
             'revenue_total',
             'total_nominal',
@@ -234,6 +278,7 @@ class TvDashboardController extends Controller
             if ($platformKey === 'biinspira') {
                 Log::info('TV dashboard Biinspira statistics payload sample', [
                     'keys' => array_keys($statistics),
+                    'this_year_revenue' => $statistics['total_nominal_this_year'] ?? null,
                     'total_revenue' => $statistics['total_revenue'] ?? null,
                     'this_month_revenue' => $statistics['this_month_revenue'] ?? null,
                     'today' => $statistics['total_nominal_today'] ?? null,
@@ -260,6 +305,248 @@ class TvDashboardController extends Controller
             'failed' => $hasRequestFailure,
             'rate_limited' => $rateLimited,
         ];
+    }
+
+    private function buildDetailPoints(string $platformKey, string $baseUrl, string $token, string $metric): array
+    {
+        $now = now();
+        $year = (int) $now->year;
+        $month = (int) $now->month;
+        $cacheKey = "tv_dashboard.detail.{$platformKey}.{$metric}.{$year}.{$month}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($platformKey, $baseUrl, $token, $metric, $now): array {
+            $range = $metric === 'month'
+                ? [
+                    'start' => $now->copy()->startOfYear(),
+                    'end' => $now->copy()->endOfYear(),
+                ]
+                : [
+                    'start' => $now->copy()->startOfMonth(),
+                    'end' => $now->copy()->endOfMonth(),
+                ];
+
+            $invoices = $this->fetchPaidInvoicesForRange(
+                $platformKey,
+                $baseUrl,
+                $token,
+                $range['start']->toDateString(),
+                $range['end']->toDateString()
+            );
+
+            return $metric === 'month'
+                ? $this->buildMonthDetailPayload($platformKey, $invoices, $now)
+                : $this->buildDayDetailPayload($platformKey, $invoices, $now);
+        });
+    }
+
+    private function fetchPaidInvoicesForRange(string $platformKey, string $baseUrl, string $token, string $startDate, string $endDate): array
+    {
+        $items = [];
+        $perPage = 100;
+        $startTimestamp = strtotime($startDate . ' 00:00:00');
+        $endTimestamp = strtotime($endDate . ' 23:59:59');
+        $requestStartDate = Carbon::parse($startDate)->subDay()->toDateString();
+        $requestEndDate = Carbon::parse($endDate)->addDay()->toDateString();
+
+        try {
+            $page = 1;
+            $hasMore = true;
+            $lastSignature = null;
+
+            while ($hasMore && $page <= 100) {
+                $endpoint = $this->resolveInvoicesEndpoint($platformKey);
+
+                $response = $this->buildPlatformRequest($platformKey, $token)
+                    ->get("{$baseUrl}/{$endpoint}", [
+                        'status' => 'paid',
+                        'page' => $page,
+                        'per_page' => $perPage,
+                        'start_date' => $requestStartDate,
+                        'end_date' => $requestEndDate,
+                    ]);
+
+                if (!$response->successful()) {
+                    Log::warning('TV dashboard detail failed to fetch invoices', [
+                        'platform' => $platformKey,
+                        'url' => "{$baseUrl}/{$endpoint}",
+                        'status' => $response->status(),
+                        'response_body' => substr($response->body(), 0, 300),
+                    ]);
+                    break;
+                }
+
+                $data = $response->json('data.items');
+                if (!is_array($data)) {
+                    $data = $response->json('data.data');
+                }
+                if (!is_array($data)) {
+                    $data = $response->json('data', []);
+                }
+                if (!is_array($data) || empty($data)) {
+                    break;
+                }
+
+                $filtered = array_values(array_filter($data, function ($item) use ($startTimestamp, $endTimestamp) {
+                    $paidAt = $item['paid_at'] ?? null;
+                    if (!$paidAt) {
+                        return false;
+                    }
+
+                    $timestamp = strtotime((string) $paidAt);
+                    if ($timestamp === false) {
+                        return false;
+                    }
+
+                    return $timestamp >= $startTimestamp && $timestamp <= $endTimestamp;
+                }));
+
+                $items = array_merge($items, $filtered);
+
+                $currentPage = (int) ($response->json('data.pagination.current_page')
+                    ?? $response->json('data.meta.current_page')
+                    ?? $response->json('data.current_page')
+                    ?? $response->json('meta.current_page')
+                    ?? $page);
+                $lastPage = (int) ($response->json('data.pagination.last_page')
+                    ?? $response->json('data.meta.last_page')
+                    ?? $response->json('data.last_page')
+                    ?? $response->json('meta.last_page')
+                    ?? 0);
+
+                if ($lastPage > 0) {
+                    $hasMore = $currentPage < $lastPage;
+                } else {
+                    $signature = md5(json_encode(array_column($data, 'id')));
+                    if ($lastSignature !== null && $signature === $lastSignature) {
+                        break;
+                    }
+                    $lastSignature = $signature;
+                    $hasMore = count($data) === $perPage;
+                }
+
+                $page++;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('TV dashboard detail invoices fetch exception', [
+                'platform' => $platformKey,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return $items;
+    }
+
+    private function buildMonthDetailPayload(string $platformKey, array $invoices, Carbon $now): array
+    {
+        $year = (int) $now->year;
+        $points = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $points[] = [
+                'key' => sprintf('%04d-%02d', $year, $month),
+                'label' => Carbon::create($year, $month, 1)->locale('id')->translatedFormat('F'),
+                'value' => 0.0,
+            ];
+        }
+
+        foreach ($invoices as $invoice) {
+            $paidAt = $invoice['paid_at'] ?? null;
+            if (!$paidAt) {
+                continue;
+            }
+
+            try {
+                $paidDate = Carbon::parse((string) $paidAt);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ((int) $paidDate->year !== $year) {
+                continue;
+            }
+
+            $idx = (int) $paidDate->month - 1;
+            if (!isset($points[$idx])) {
+                continue;
+            }
+
+            $points[$idx]['value'] += $this->resolveInvoiceNominal($invoice);
+        }
+
+        return [
+            'platform' => $platformKey,
+            'platform_label' => $this->platformLabels[$platformKey] ?? $platformKey,
+            'metric' => 'month',
+            'title' => 'Rincian Bulanan Tahun Ini',
+            'subtitle' => "Periode Januari - Desember {$year}",
+            'points' => $points,
+            'total' => array_reduce($points, fn($sum, $row) => $sum + ($row['value'] ?? 0), 0.0),
+            'generated_at' => now()->toIso8601String(),
+        ];
+    }
+
+    private function buildDayDetailPayload(string $platformKey, array $invoices, Carbon $now): array
+    {
+        $startOfMonth = $now->copy()->startOfMonth();
+        $daysInMonth = (int) $startOfMonth->daysInMonth;
+        $points = [];
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = $startOfMonth->copy()->day($day);
+            $points[] = [
+                'key' => $date->format('Y-m-d'),
+                'label' => $date->locale('id')->translatedFormat('d M'),
+                'value' => 0.0,
+            ];
+        }
+
+        foreach ($invoices as $invoice) {
+            $paidAt = $invoice['paid_at'] ?? null;
+            if (!$paidAt) {
+                continue;
+            }
+
+            try {
+                $paidDate = Carbon::parse((string) $paidAt);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if (!$paidDate->isSameMonth($startOfMonth) || (int) $paidDate->year !== (int) $startOfMonth->year) {
+                continue;
+            }
+
+            $idx = (int) $paidDate->day - 1;
+            if (!isset($points[$idx])) {
+                continue;
+            }
+
+            $points[$idx]['value'] += $this->resolveInvoiceNominal($invoice);
+        }
+
+        return [
+            'platform' => $platformKey,
+            'platform_label' => $this->platformLabels[$platformKey] ?? $platformKey,
+            'metric' => 'day',
+            'title' => 'Rincian Harian Bulan Ini',
+            'subtitle' => $startOfMonth->locale('id')->translatedFormat('F Y'),
+            'points' => $points,
+            'total' => array_reduce($points, fn($sum, $row) => $sum + ($row['value'] ?? 0), 0.0),
+            'generated_at' => now()->toIso8601String(),
+        ];
+    }
+
+    private function resolveInvoiceNominal(array $invoice): float
+    {
+        return $this->resolveStatisticNumber($this->pickStatisticValue($invoice, [
+            'nett_amount',
+            'total_nominal',
+            'amount',
+            'total',
+            'paid_amount',
+            'nominal',
+            'price',
+        ]));
     }
 
     private function emptyPlatformStat(string $key, string $label, ?string $logo): array

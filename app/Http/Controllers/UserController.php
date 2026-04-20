@@ -13,7 +13,8 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::where('name', '!=', 'admin')->get();
+        $users = User::role('user')->get();
+
         return Inertia::render('admin/users/user', [
             'dashboard_item' => 'User',
             'users' => $users

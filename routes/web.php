@@ -39,6 +39,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/statistics', [TvDashboardController::class, 'index'])->name('tv.statistics');
+Route::get('/statistics/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
 
 // ─────────────────────────────────────────────
 // ADMIN ROUTES
