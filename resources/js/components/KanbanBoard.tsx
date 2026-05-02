@@ -235,16 +235,12 @@ export default function KanbanBoard({
     };
 
     const canManageTask = (task: Task) => {
-        if (['admin', 'technician', 'user'].includes(role)) {
-            return true;
-        }
-
         if (role === 'admin') {
             return true;
         }
 
         if (role === 'technician') {
-            return user_id != null ? Number(task.assigned_to) === Number(user_id) : true;
+            return user_id != null ? Number(task.assigned_to) === Number(user_id) : false;
         }
 
         if (role === 'user') {
@@ -434,7 +430,7 @@ export default function KanbanBoard({
                 </div>
             </DragDropContext>
 
-            <TaskModal task={selectedTask} users={users} onClose={closeTask} />
+            <TaskModal task={selectedTask} users={users} currentUserId={user_id ?? null} onClose={closeTask} />
 
             <AlertDialog
                 open={Boolean(deleteTask)}

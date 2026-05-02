@@ -30,8 +30,11 @@ class RevisionRequestController extends Controller
         if ($user->hasRole('admin')) {
             // admin lihat semua
         } elseif ($user->hasRole('technician')) {
-            // technician cuma lihat yg di-assign ke dia
-            $query->where('assigned_to', $user->id);
+            // technician lihat task yg belum ditugaskan atau yg sudah ditugaskan ke dirinya
+            $query->where(function ($taskQuery) use ($user) {
+                $taskQuery->whereNull('assigned_to')
+                    ->orWhere('assigned_to', $user->id);
+            });
         } else {
             // user biasa cuma lihat yg dia buat
             $query->where('created_by', $user->id);
@@ -199,7 +202,23 @@ class RevisionRequestController extends Controller
         $user = Auth::user();
 
         // 🔐 AUTH
-        if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasRole('technician')) {
+            $isAssignedToSelf = (string) $task->assigned_to === (string) $user->id;
+            $isUnassigned = $task->assigned_to === null;
+            $incomingAssignedTo = $request->input('assigned_to');
+
+            if (! $isAssignedToSelf && ! $isUnassigned) {
+                abort(403);
+            }
+
+            if ($incomingAssignedTo !== null && (string) $incomingAssignedTo !== (string) $user->id) {
+                abort(403);
+            }
+
+            if ($isUnassigned && (string) $incomingAssignedTo !== (string) $user->id) {
+                abort(403);
+            }
+        }
         if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
         // ✅ VALIDASI

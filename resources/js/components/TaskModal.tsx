@@ -56,6 +56,7 @@ type TaskModalProps = {
     task: Task | null;
     onClose: () => void;
     users?: User[];
+    currentUserId?: number | null;
 };
 
 type UpdatePayload = {
@@ -134,14 +135,16 @@ function buildUpdatePayload(task: Task | null, users: User[]): UpdatePayload {
     };
 }
 
-export default function TaskModal({ task, onClose, users = [] }: TaskModalProps) {
+export default function TaskModal({ task, onClose, users = [], currentUserId = null }: TaskModalProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const [expandedDesc, setExpandedDesc] = useState(false);
 
     const { auth } = usePage<PageProps>().props;
     const userRoles = (auth?.user?.roles ?? []).map((role) => (typeof role === 'string' ? role.toLowerCase() : role.name.toLowerCase()));
     const isAdmin = userRoles.includes('admin');
-    const canUpdateTask = isAdmin || userRoles.includes('technician');
+    const isAssignedToCurrentUser = currentUserId != null && task?.assigned_to != null && Number(task.assigned_to) === Number(currentUserId);
+    const canClaimTask = Boolean(task && !isAdmin && userRoles.includes('technician') && task.status === 'request' && !task.assigned_to);
+    const canUpdateTask = isAdmin || isAssignedToCurrentUser;
 
     const initialPayload = useMemo(() => buildUpdatePayload(task, users), [task, users]);
 
@@ -192,6 +195,29 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
             },
             onError: () => {
                 toast.error('Gagal memperbarui tiket');
+            },
+        });
+    };
+
+    const claimTask = () => {
+        if (!task || currentUserId == null) return;
+
+        transform((current) => ({
+            ...current,
+            assigned_to: String(currentUserId),
+        }));
+
+        patch(`/requests/${task.id}/status`, {
+            preserveScroll: true,
+            preserveState: false,
+            onSuccess: () => {
+                onClose();
+                router.reload({
+                    only: ['tasks'],
+                });
+            },
+            onError: () => {
+                toast.error('Gagal mengambil task');
             },
         });
     };
@@ -344,6 +370,23 @@ export default function TaskModal({ task, onClose, users = [] }: TaskModalProps)
                                 </div>
                             </div>
                         </div>
+
+                        {canClaimTask && (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Task ini belum ditugaskan</p>
+                                        <p className="text-xs text-amber-700 dark:text-amber-200">
+                                            Teknisi hanya bisa mengambil task ini untuk dirinya sendiri.
+                                        </p>
+                                    </div>
+
+                                    <Button type="button" onClick={claimTask} disabled={processing} className="bg-amber-600 hover:bg-amber-700">
+                                        {processing ? 'Mengambil...' : 'Ambil ke Saya'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
                         {canUpdateTask && (
                             <form onSubmit={submit} className="space-y-4 border-t pt-4 dark:border-zinc-700">
