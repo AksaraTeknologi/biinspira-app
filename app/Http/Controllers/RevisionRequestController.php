@@ -124,11 +124,27 @@ class RevisionRequestController extends Controller
 
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('attachments', 'public');
+                try {
+                    $path = $file->store('attachments', 'public');
 
-                $task->attachments()->create([
-                    'file_path' => $path
-                ]);
+                    if (!$path) {
+                        Log::error('File store returned null', [
+                            'filename' => $file->getClientOriginalName(),
+                            'task_id' => $task->id,
+                        ]);
+                        continue;
+                    }
+
+                    $task->attachments()->create([
+                        'file_path' => $path
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('File upload error', [
+                        'error' => $e->getMessage(),
+                        'filename' => $file->getClientOriginalName(),
+                        'task_id' => $task->id,
+                    ]);
+                }
             }
         }
 
@@ -217,11 +233,27 @@ class RevisionRequestController extends Controller
         // ✅ HANDLE FILE BARU (optional, gak hapus lama)
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('attachments', 'public');
+                try {
+                    $path = $file->store('attachments', 'public');
 
-                $task->attachments()->create([
-                    'file_path' => $path
-                ]);
+                    if (!$path) {
+                        Log::error('File store returned null', [
+                            'filename' => $file->getClientOriginalName(),
+                            'task_id' => $task->id,
+                        ]);
+                        continue;
+                    }
+
+                    $task->attachments()->create([
+                        'file_path' => $path
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('File upload error', [
+                        'error' => $e->getMessage(),
+                        'filename' => $file->getClientOriginalName(),
+                        'task_id' => $task->id,
+                    ]);
+                }
             }
         }
 
@@ -461,8 +493,8 @@ class RevisionRequestController extends Controller
             "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
             "Estimasi Mulai: {$this->formatDateForWhatsapp($task->estimation_start)}\n" .
             "Estimasi Selesai: {$this->formatDateForWhatsapp($task->estimation_end)}\n" .
-                "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
-                "Tindak Lanjut:\n{$statusGuidance}\n\n" .
+            "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
+            "Tindak Lanjut:\n{$statusGuidance}\n\n" .
             "Silakan pantau progres selanjutnya melalui halaman Ticketing Website Biinsight (https://biinsight.id/requests).";
     }
 
