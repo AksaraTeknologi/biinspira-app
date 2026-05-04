@@ -22,6 +22,7 @@ export interface AdPlanData {
 
     batch?: number | string | null;          
     previous_batch?: number | string | null;
+    event_batch?: number | string | null;
 
     platforms: PlatformData[] | PlatformData | null;
     result: ResultData[] | null;
