@@ -23,6 +23,8 @@ export type DrilldownPoint = {
     key: string;
     label: string;
     value: number;
+    change_percentage?: number;
+    change_direction?: 'up' | 'down' | 'flat';
 };
 
 export type DrilldownData = {
