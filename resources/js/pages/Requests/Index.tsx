@@ -39,6 +39,7 @@ type PageProps = {
     };
     user_role?: string;
     user_id?: number;
+    user_name?: string;
     errors?: Record<string, string | string[]>;
     flash?: {
         success?: string | { message?: string };
@@ -47,7 +48,7 @@ type PageProps = {
 };
 
 export default function Index({ tasks, users }: Props) {
-    const { auth, errors = {}, flash, user_role, user_id } = usePage<PageProps>().props;
+    const { auth, errors = {}, flash, user_role, user_id, user_name } = usePage<PageProps>().props;
     const userRoles = auth?.user?.roles || [];
 
     const resolvedRole = () => {
@@ -107,7 +108,7 @@ export default function Index({ tasks, users }: Props) {
         },
     ];
 
-    const isUser = String(userRole ?? '').toLowerCase() === 'user';
+    const isUserOrAdmin = ['user', 'admin'].includes(String(userRole ?? '').toLowerCase());
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -123,7 +124,7 @@ export default function Index({ tasks, users }: Props) {
                                     <p className="mt-0.5 text-xs text-gray-400 dark:text-zinc-400">Tarik dan lepas kartu untuk memperbarui status</p>
                                 </div>
 
-                                {isUser && (
+                                {isUserOrAdmin && (
                                     <Link
                                         href="/requests/create"
                                         className="flex items-center gap-1.5 rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900"
@@ -148,7 +149,7 @@ export default function Index({ tasks, users }: Props) {
 
                     <div className="p-5">
                         <div className="w-full overflow-x-auto pb-1">
-                            <KanbanBoard key={search} tasks={filteredTasks} users={users} user_role={userRole} user_id={currentUserId} />
+                            <KanbanBoard key={search} tasks={filteredTasks} users={users} user_role={userRole} user_id={currentUserId} user_name={user_name} />
                         </div>
                     </div>
                 </div>

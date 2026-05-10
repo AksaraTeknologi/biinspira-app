@@ -9,9 +9,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { router } from '@inertiajs/react';
+import { Check, X, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -37,6 +40,7 @@ type Task = {
     actual_end?: string | null;
     attachment?: string;
     created_by?: number;
+    review_note?: string | null;
 };
 
 type Board = {
@@ -95,6 +99,12 @@ const COLUMN_CONFIG = {
     },
 };
 
+const URGENCY_CONFIG = {
+    high: { label: 'Urgensi Tinggi', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+    medium: { label: 'Urgensi Sedang', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
+    low: { label: 'Urgensi Rendah', className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+};
+
 const AVATAR_COLORS = ['bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-teal-400', 'bg-orange-400', 'bg-green-400'];
 
 function getAvatarColor(name?: string) {
@@ -109,16 +119,23 @@ function getInitials(name?: string) {
     return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
 }
 
+type RejectDialogState = {
+    task: Task;
+    note: string;
+} | null;
+
 export default function KanbanBoard({
     tasks,
     users,
     user_role,
     user_id,
+    user_name,
 }: {
     tasks: Partial<Board>;
     users: User[];
     user_role: unknown;
     user_id?: number;
+    user_name?: string;
 }) {
     const columns: (keyof Board)[] = ['request', 'todo', 'in_progress', 'in_review', 'complete'];
 
@@ -132,6 +149,8 @@ export default function KanbanBoard({
 
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+    const [rejectDialog, setRejectDialog] = useState<RejectDialogState>(null);
+    const [reviewProcessing, setReviewProcessing] = useState(false);
 
     const openTask = (task: Task) => setSelectedTask(task);
     const closeTask = () => setSelectedTask(null);
@@ -154,6 +173,7 @@ export default function KanbanBoard({
 
     const role = normalizeRole(user_role);
     const canDrag = ['admin', 'technician'].includes(role);
+    const isUser = role === 'user';
 
     const isOverdue = (task: Task) => {
         if (!task.deadline) return false;
@@ -258,6 +278,25 @@ export default function KanbanBoard({
         return false;
     };
 
+    const isTaskOwner = (task: Task) => {
+        // Jika role saat ini adalah admin dan tiket ini buatan admin (berlabel AKSARA TEKNOLOGI MANDIRI)
+        if (role === 'admin' && task.created_by_name === 'AKSARA TEKNOLOGI MANDIRI') {
+            return true;
+        }
+
+        // Pengecekan standar menggunakan ID pembuat
+        if (user_id != null && task.created_by != null) {
+            if (Number(task.created_by) === Number(user_id)) return true;
+        }
+
+        // Fallback pengecekan menggunakan Nama (jika ID gagal karena suatu hal)
+        if (user_name != null && task.created_by_name != null) {
+            if (task.created_by_name === user_name) return true;
+        }
+
+        return false;
+    };
+
     const removeTaskFromBoard = (taskId: number) => {
         setBoard((prev) => ({
             request: prev.request.filter((item) => item.id !== taskId),
@@ -268,8 +307,54 @@ export default function KanbanBoard({
         }));
     };
 
+    const handleAccept = (task: Task, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setReviewProcessing(true);
+        router.patch(
+            `/requests/${task.id}/review`,
+            { action: 'accept' },
+            {
+                preserveScroll: true,
+                preserveState: false,
+                onSuccess: () => {
+                    removeTaskFromBoard(task.id);
+                    setReviewProcessing(false);
+                },
+                onError: () => {
+                    toast.error('Gagal memproses review');
+                    setReviewProcessing(false);
+                },
+            },
+        );
+    };
+
+    const handleReject = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!rejectDialog) return;
+        setReviewProcessing(true);
+        router.patch(
+            `/requests/${rejectDialog.task.id}/review`,
+            { action: 'reject', review_note: rejectDialog.note },
+            {
+                preserveScroll: true,
+                preserveState: false,
+                onSuccess: () => {
+                    toast.success('Tiket dikembalikan ke Sedang Dikerjakan');
+                    setRejectDialog(null);
+                    setReviewProcessing(false);
+                },
+                onError: () => {
+                    toast.error('Gagal memproses review');
+                    setReviewProcessing(false);
+                },
+            },
+        );
+    };
+
     const renderTaskCard = (task: Task, col: keyof Board) => {
         const overdue = isOverdue(task);
+        const showReviewActions = col === 'in_review' && isTaskOwner(task);
+        const urgencyConfig = URGENCY_CONFIG[task.urgency] ?? URGENCY_CONFIG.low;
 
         return (
             <ContextMenu key={task.id}>
@@ -288,14 +373,28 @@ export default function KanbanBoard({
                         {overdue && <span className="absolute top-2 right-2 text-xs font-bold text-red-500 dark:text-red-400">!</span>}
 
                         <p
-                            className={`mb-2 pr-4 text-sm leading-snug font-semibold ${overdue ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-zinc-100'}`}
+                            className={`mb-1 pr-4 text-sm leading-snug font-semibold ${overdue ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-zinc-100'}`}
                         >
                             {task.title}
                         </p>
 
+                        {/* Urgency badge */}
+                        <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${urgencyConfig.className}`}>
+                            {urgencyConfig.label}
+                        </span>
+
                         <p className={`mb-3 truncate text-xs ${overdue ? 'text-red-400' : 'text-gray-400 dark:text-zinc-400'}`}>
                             {task.created_by_name || '-'}
                         </p>
+
+                        {/* Review note preview */}
+                        {task.review_note && col === 'in_progress' && (
+                            <div className="mb-2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 border border-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+                                    <AlertCircle className="h-3 w-3" /> Ada Revisi
+                                </span>
+                            </div>
+                        )}
 
                         <div className="flex flex-wrap items-center gap-2">
                             <div
@@ -340,6 +439,37 @@ export default function KanbanBoard({
                                 </span>
                             )}
                         </div>
+
+                        {/* Review action buttons (only for ticket owner in in_review) */}
+                        {showReviewActions && (
+                            <div
+                                className="mt-3 flex items-center gap-2 border-t border-orange-200 pt-3 dark:border-orange-900/40"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <Button
+                                    size="sm"
+                                    disabled={reviewProcessing}
+                                    className="flex-1 h-8 gap-1 bg-teal-500 text-xs text-white hover:bg-teal-600"
+                                    onClick={(e) => handleAccept(task, e)}
+                                >
+                                    <Check className="h-3.5 w-3.5" />
+                                    Terima
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    disabled={reviewProcessing}
+                                    variant="outline"
+                                    className="flex-1 h-8 gap-1 border-red-300 text-xs text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRejectDialog({ task, note: '' });
+                                    }}
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                    Revisi
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </ContextMenuTrigger>
 
@@ -436,6 +566,7 @@ export default function KanbanBoard({
 
             <TaskModal task={selectedTask} users={users} onClose={closeTask} />
 
+            {/* Delete Confirmation */}
             <AlertDialog
                 open={Boolean(deleteTask)}
                 onOpenChange={(open) => {
@@ -473,6 +604,44 @@ export default function KanbanBoard({
                             }}
                         >
                             Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Reject / Revision Note Dialog */}
+            <AlertDialog
+                open={Boolean(rejectDialog)}
+                onOpenChange={(open) => {
+                    if (!open) setRejectDialog(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Kembalikan ke Pengerjaan?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tiket akan dikembalikan ke <strong>Sedang Dikerjakan</strong>. Tulis catatan revisi agar teknisi mengetahui apa yang perlu
+                            diperbaiki.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="my-2">
+                        <Textarea
+                            placeholder="Contoh: Tombol pada halaman X masih tidak berfungsi, mohon diperbaiki..."
+                            className="min-h-28 resize-none"
+                            value={rejectDialog?.note ?? ''}
+                            onChange={(e) => setRejectDialog((prev) => (prev ? { ...prev, note: e.target.value } : null))}
+                        />
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={reviewProcessing}>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-orange-500 hover:bg-orange-600"
+                            disabled={reviewProcessing}
+                            onClick={handleReject}
+                        >
+                            {reviewProcessing ? 'Memproses...' : 'Kembalikan ke Pengerjaan'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

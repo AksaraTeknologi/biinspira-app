@@ -183,6 +183,11 @@ Route::middleware(['auth'])->group(function () {
         [RevisionRequestController::class, 'updateStatus']
     );
 
+    Route::patch(
+        '/requests/{id}/review',
+        [RevisionRequestController::class, 'reviewAction']
+    )->name('requests.review');
+
     Route::get('/requests/create', [RevisionRequestController::class, 'create'])
         ->name('requests.create');
 

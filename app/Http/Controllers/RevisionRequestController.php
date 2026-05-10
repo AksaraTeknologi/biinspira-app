@@ -22,7 +22,9 @@ class RevisionRequestController extends Controller
         $user = Auth::user();
 
         $query = RevisionRequest::with([
-            'creator:id,name',
+            'creator' => function ($q) {
+                $q->select('id', 'name')->with('roles');
+            },
             'assignee:id,name',
             'attachments'
         ]);
@@ -33,8 +35,7 @@ class RevisionRequestController extends Controller
             // technician cuma lihat yg di-assign ke dia
             $query->where('assigned_to', $user->id);
         } else {
-            // user biasa cuma lihat yg dia buat
-            $query->where('created_by', $user->id);
+            // user biasa sekarang bisa melihat tiket orang lain juga
         }
 
         $tasks = $query
@@ -49,13 +50,14 @@ class RevisionRequestController extends Controller
                     'urgency' => $task->urgency,
                     'deadline' => $task->deadline,
                     'related_url' => $task->related_url,
+                    'review_note' => $task->review_note,
 
                     'attachments' => $task->attachments->map(fn($a) => [
                         'file_path' => $a->file_path
                     ]),
 
-                    'created_by' => $task->created_by, // 🔥 TAMBAHIN INI
-                    'created_by_name' => $task->creator?->name,
+                    'created_by' => $task->created_by,
+                    'created_by_name' => $task->creator ? ($task->creator->hasRole('admin') ? 'AKSARA TEKNOLOGI MANDIRI' : $task->creator->name) : null,
 
                     'assigned_to' => $task->assigned_to,
                     'assigned_to_name' => $task->assignee?->name,
@@ -82,12 +84,13 @@ class RevisionRequestController extends Controller
             'users' => $users,
             'user_role' => Auth::user()->getRoleNames()->first(),
             'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
         ]);
     }
 
     public function create()
     {
-        if (!Auth::user()->hasRole('user')) {
+        if (!Auth::user()->hasAnyRole(['user', 'admin'])) {
             abort(403);
         }
 
@@ -96,14 +99,14 @@ class RevisionRequestController extends Controller
 
     public function store(Request $request)
     {
-        if (!Auth::user()->hasRole('user')) {
+        if (!Auth::user()->hasAnyRole(['user', 'admin'])) {
             abort(403);
         }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'related_url' => 'required|url',
+            'related_url' => 'required|string',
             'urgency' => 'required|in:high,medium,low',
             'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
@@ -130,6 +133,12 @@ class RevisionRequestController extends Controller
                     'file_path' => $path
                 ]);
             }
+        }
+
+        // ✅ KIRIM WA KE ADMIN saat tiket baru dibuat (kecuali jika admin yang buat)
+        $creator = Auth::user();
+        if (!$creator->hasRole('admin')) {
+            $this->notifyAdminNewTicket($task, $creator);
         }
 
         return redirect()
@@ -190,7 +199,7 @@ class RevisionRequestController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'related_url' => 'required|url',
+            'related_url' => 'required|string',
             'urgency' => 'required|in:high,medium,low',
             'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
@@ -301,7 +310,7 @@ class RevisionRequestController extends Controller
                     'created_by' => $task->created_by,
                     'reason' => 'creator_not_found',
                 ]);
-            } else {
+            } elseif (!$unitUser->hasRole('admin')) {
                 Log::info('Dispatching task creator notifications', [
                     'revision_id' => $task->id,
                     'creator_user_id' => $unitUser->id,
@@ -311,6 +320,11 @@ class RevisionRequestController extends Controller
                 $unitUser->notify(new TaskStatusUpdated($task));
 
                 $this->notifyTaskCreatorStatusUpdate($task, $unitUser);
+            } else {
+                Log::info('Skip task creator notifications', [
+                    'revision_id' => $task->id,
+                    'reason' => 'creator_is_admin',
+                ]);
             }
         } else {
             Log::info('Skip task creator notifications', [
@@ -324,6 +338,70 @@ class RevisionRequestController extends Controller
         return redirect()
             ->route('requests.index')
             ->with('success', 'Tiket Berhasil diperbarui');
+    }
+
+    /**
+     * Review action by user: acc (→complete) or reject (→in_progress with note)
+     */
+    public function reviewAction(Request $request, $id)
+    {
+        $user = Auth::user();
+        $task = RevisionRequest::findOrFail($id);
+
+        // Hanya pembuat tiket yang bisa melakukan review action
+        if ((int) $task->created_by !== (int) $user->id) {
+            abort(403, 'Hanya pembuat tiket yang dapat melakukan aksi review.');
+        }
+
+        if ($task->status !== 'in_review') {
+            return back()->withErrors(['action' => 'Tiket harus berada di tahap review terlebih dahulu.']);
+        }
+
+        $validated = $request->validate([
+            'action' => 'required|in:accept,reject',
+            'review_note' => 'nullable|string|max:2000',
+        ]);
+
+        $oldStatus = $task->status;
+
+        if ($validated['action'] === 'accept') {
+            $task->update([
+                'status' => 'complete',
+                'review_note' => null,
+            ]);
+        } else {
+            // reject → kembali ke in_progress
+            $task->update([
+                'status' => 'in_progress',
+                'review_note' => $validated['review_note'] ?? null,
+            ]);
+        }
+
+        RevisionLog::create([
+            'revision_id' => $task->id,
+            'from_status' => $oldStatus,
+            'to_status' => $task->status,
+            'changed_by' => $user->id,
+            'changed_at' => now(),
+        ]);
+
+        // Notif WA ke teknisi tentang hasil review
+        if ($task->assigned_to) {
+            $technician = User::find($task->assigned_to);
+            if ($technician) {
+                $message = $this->buildReviewActionMessage($task, $user, $validated['action'], $validated['review_note'] ?? null);
+                $this->sendWhatsappMessage($technician->phone, $message, [
+                    'revision_id' => $task->id,
+                    'event' => 'review_action_' . $validated['action'],
+                ]);
+            }
+        }
+
+        $statusLabel = $validated['action'] === 'accept' ? 'diterima dan ditandai Selesai' : 'dikembalikan ke Pengerjaan';
+
+        return redirect()
+            ->route('requests.index')
+            ->with('success', "Hasil review tiket berhasil {$statusLabel}.");
     }
 
     private function notifyAssignedTechnician(RevisionRequest $task, int|string|null $assignedTo, int|string|null $oldAssigned): void
@@ -424,9 +502,53 @@ class RevisionRequestController extends Controller
         ]));
     }
 
+    private function notifyAdminNewTicket(RevisionRequest $task, $creator): void
+    {
+        $adminPhone = '085142505797';
+        $message = $this->buildNewTicketAdminMessage($task, $creator);
+
+        $this->sendWhatsappMessage($adminPhone, $message, [
+            'revision_id' => $task->id,
+            'event' => 'new_ticket_created',
+        ]);
+    }
+
+    private function buildNewTicketAdminMessage(RevisionRequest $task, $creator): string
+    {
+        return "*[Biinsight - Tiket Baru Masuk]* 🎫\n\n" .
+            "Ada tiket baru yang perlu ditindaklanjuti:\n\n" .
+            "ID Tiket: #{$task->id}\n" .
+            "Judul: {$this->formatTextForWhatsapp($task->title)}\n" .
+            "Dibuat Oleh: {$this->formatTextForWhatsapp($creator->name)}\n" .
+            "Urgensi: {$this->formatUrgencyLabel($task->urgency)}\n" .
+            "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
+            "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
+            "*Silakan assign teknisi/programmer dan tentukan waktu pengerjaan.*\n\n" .
+            "Pantau tiket: https://biinsight.id/requests";
+    }
+
+    private function buildReviewActionMessage(RevisionRequest $task, $reviewer, string $action, ?string $reviewNote): string
+    {
+        $actionLabel = $action === 'accept' ? 'DITERIMA ✅' : 'DITOLAK / PERLU REVISI ❌';
+        $noteSection = $reviewNote
+            ? "\nCatatan Revisi:\n{$this->formatTextForWhatsapp($reviewNote)}\n"
+            : '';
+
+        $reviewerName = $reviewer->hasRole('admin') ? 'AKSARA TEKNOLOGI MANDIRI' : $reviewer->name;
+
+        return "*[Biinsight - Hasil Review Tiket]* 📋\n\n" .
+            "ID Tiket: #{$task->id}\n" .
+            "Judul: {$this->formatTextForWhatsapp($task->title)}\n" .
+            "Status Review: {$actionLabel}\n" .
+            "Direview Oleh: {$this->formatTextForWhatsapp($reviewerName)}\n" .
+            $noteSection .
+            "\nSilakan cek halaman Ticketing Website Biinsight (https://biinsight.id/requests).";
+    }
+
     private function buildAssignedTaskMessage(RevisionRequest $task, User $technician): string
     {
-        $creatorName = User::find($task->created_by)?->name;
+        $creator = User::find($task->created_by);
+        $creatorName = $creator ? ($creator->hasRole('admin') ? 'AKSARA TEKNOLOGI MANDIRI' : $creator->name) : null;
 
         return "*[Biinsight - Task Baru Ditugaskan]* 🚀\n\n" .
             "Halo {$technician->name},\n\n" .
