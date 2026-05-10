@@ -50,6 +50,7 @@ type Task = {
     estimation_start?: string | null;
     estimation_end?: string | null;
     attachments?: TaskAttachment[];
+    review_note?: string | null;
 };
 
 type TaskModalProps = {
@@ -266,6 +267,14 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                             )}
                         </div>
 
+                        {/* Catatan Revisi (muncul jika ada) */}
+                        {task.review_note && (
+                            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/30">
+                                <p className="mb-1 text-xs font-semibold text-orange-600 dark:text-orange-400">📝 Catatan Revisi</p>
+                                <p className="whitespace-pre-wrap text-sm text-orange-800 dark:text-orange-300">{task.review_note}</p>
+                            </div>
+                        )}
+
                         {attachments.length > 0 && (
                             <div>
                                 <p className="mb-2 text-sm font-semibold text-gray-500 dark:text-zinc-400">Lampiran</p>
@@ -314,7 +323,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                             <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
                                 <Hammer className="h-4 w-4 text-gray-400" />
                                 <div>
-                                    <p className="mb-1 text-xs text-gray-500 dark:text-zinc-400">Teknisi Ditugaskan</p>
+                                    <p className="mb-1 text-xs text-gray-500 dark:text-zinc-400">Programmer</p>
                                     <p className="font-medium text-zinc-900 dark:text-zinc-100">{task.assigned_to_name || 'Belum ditugaskan'}</p>
                                 </div>
                             </div>
@@ -331,7 +340,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                 <ShieldAlert className="h-4 w-4 text-gray-400" />
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-zinc-400">Urgensi</p>
-                                    <p className="font-medium text-zinc-900 dark:text-zinc-100">{task.urgency || '-'}</p>
+                                    <p className="font-medium text-zinc-900 dark:text-zinc-100 capitalize">{task.urgency || '-'}</p>
                                 </div>
                             </div>
 

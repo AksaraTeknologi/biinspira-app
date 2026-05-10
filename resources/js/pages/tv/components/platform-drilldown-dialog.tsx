@@ -1,6 +1,7 @@
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from 'recharts';
 import type { DrilldownData } from '../types';
@@ -44,6 +45,8 @@ export default function PlatformDrilldownDialog({ open, onOpenChange, loading, e
         return data.points.map((point) => ({
             period: point.label,
             value: point.value,
+            change_percentage: point.change_percentage ?? 0,
+            change_direction: point.change_direction ?? 'flat',
         }));
     }, [data]);
 
@@ -150,12 +153,42 @@ export default function PlatformDrilldownDialog({ open, onOpenChange, loading, e
                                         content={
                                             <ChartTooltipContent
                                                 indicator="line"
-                                                formatter={(value, _name, item) => (
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-muted-foreground">{item.payload.period}</span>
-                                                        <span className="font-medium text-foreground">{formatCurrency(Number(value) || 0)}</span>
-                                                    </div>
-                                                )}
+                                                formatter={(value, _name, item) => {
+                                                    const payload = item.payload as any;
+                                                    const hasChange = payload.change_percentage !== undefined && payload.change_percentage > 0;
+                                                    
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="text-muted-foreground">{payload.period}</span>
+                                                                <span className="font-medium text-foreground">{formatCurrency(Number(value) || 0)}</span>
+                                                            </div>
+                                                            {hasChange && (
+                                                                <div className="flex items-center gap-1.5 pt-1 border-t text-xs">
+                                                                    {payload.change_direction === 'up' && (
+                                                                        <>
+                                                                            <ArrowUpRight className="h-3 w-3 text-emerald-600" />
+                                                                            <span className="text-emerald-600 font-semibold">
+                                                                                +{payload.change_percentage.toFixed(2)}%
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                    {payload.change_direction === 'down' && (
+                                                                        <>
+                                                                            <ArrowDownRight className="h-3 w-3 text-rose-600" />
+                                                                            <span className="text-rose-600 font-semibold">
+                                                                                -{payload.change_percentage.toFixed(2)}%
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                    {payload.change_direction === 'flat' && (
+                                                                        <span className="text-slate-500">Stabil</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }}
                                             />
                                         }
                                     />
@@ -167,6 +200,20 @@ export default function PlatformDrilldownDialog({ open, onOpenChange, loading, e
                                             className="fill-foreground"
                                             fontSize={11}
                                             formatter={(value: number) => formatCompactCurrency(value)}
+                                        />
+                                        <LabelList
+                                            dataKey="change_percentage"
+                                            position="top"
+                                            offset={26}
+                                            fontSize={9}
+                                            formatter={(value: number, _name: any, props: any) => {
+                                                const payload = props?.payload;
+                                                if (!value || !payload || payload.change_direction === 'flat') {
+                                                    return '';
+                                                }
+                                                const arrow = payload.change_direction === 'up' ? '↑' : '↓';
+                                                return `${arrow} ${value.toFixed(1)}%`;
+                                            }}
                                         />
                                     </Bar>
                                 </BarChart>

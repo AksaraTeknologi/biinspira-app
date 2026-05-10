@@ -473,6 +473,13 @@ class TvDashboardController extends Controller
             $points[$idx]['value'] += $this->resolveInvoiceNominal($invoice);
         }
 
+        // Calculate percentage changes between consecutive months
+        for ($i = 1; $i < count($points); $i++) {
+            $change = $this->buildChange($points[$i]['value'], $points[$i - 1]['value']);
+            $points[$i]['change_percentage'] = $change['percentage'];
+            $points[$i]['change_direction'] = $change['direction'];
+        }
+
         return [
             'platform' => $platformKey,
             'platform_label' => $this->platformLabels[$platformKey] ?? $platformKey,
@@ -522,6 +529,13 @@ class TvDashboardController extends Controller
             }
 
             $points[$idx]['value'] += $this->resolveInvoiceNominal($invoice);
+        }
+
+        // Calculate percentage changes between consecutive days
+        for ($i = 1; $i < count($points); $i++) {
+            $change = $this->buildChange($points[$i]['value'], $points[$i - 1]['value']);
+            $points[$i]['change_percentage'] = $change['percentage'];
+            $points[$i]['change_direction'] = $change['direction'];
         }
 
         return [

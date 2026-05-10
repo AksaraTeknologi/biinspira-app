@@ -184,11 +184,11 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
                         <Label htmlFor="related-url">Link Website Terkait</Label>
                         <Input
                             id="related-url"
-                            type="url"
+                            type="text"
                             required
                             value={data.related_url}
                             onChange={(event) => setData('related_url', event.target.value)}
-                            placeholder="https://example.com"
+                            placeholder="Masukan link website yang perlu diperbaiki"
                         />
                         {errors.related_url && <p className="text-sm text-red-500">{errors.related_url}</p>}
                     </div>

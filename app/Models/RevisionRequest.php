@@ -19,6 +19,7 @@ class RevisionRequest extends Model
         'urgency',
         'deadline',
         'related_url',
+        'review_note',
         'created_by',
         'assigned_to',
         'estimation_start',
