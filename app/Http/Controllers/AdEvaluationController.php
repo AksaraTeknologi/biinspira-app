@@ -69,7 +69,6 @@ class AdEvaluationController extends Controller
                     ->first();
 
                 $prevEvaluation = AdEvaluation::where('ad_plan_id', $previousPlan->id)
-                    ->where('user_id', $currentPlan->user_id)
                     ->first();
             }
         }
