@@ -24,6 +24,7 @@ const allNavItems: (NavItem & { roles: string[], children?: NavItem[] })[] = [
             { title: 'Daftar Iklan', href: route("admin.marketing.index"), icon: List },
             { title: 'Target Iklan', href: "#", icon: Target },
             { title: 'Event', href: route("admin.events.index"), icon: CalendarSearch },
+            { title: 'Program Event', href: route("admin.program-events.index"), icon: CalendarSearch },
             { title: 'Platform', href: route("admin.platforms.index"), icon: LaptopMinimal },
         ],
     },

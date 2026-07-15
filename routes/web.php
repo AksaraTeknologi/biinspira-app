@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdEvaluationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterEventController;
+use App\Http\Controllers\ProgramEventController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterPlatformController;
 use App\Http\Controllers\AdPlanPlatformController;
@@ -106,6 +107,16 @@ Route::middleware(['auth', 'verified', 'role:admin|technician'])->prefix('admin'
 
         Route::get('/dashboard', [DashboardController::class, 'dashboardMarketing'])->name('admin.marketing.dashboard');
         Route::get('/marketing/show/{id}', [FormController::class, 'show'])->name('admin.marketing.show');
+
+        // Program Event (Biinspira Induk)
+        Route::controller(ProgramEventController::class)->group(function () {
+            Route::get('/program-events', 'index')->name('admin.program-events.index');
+            Route::get('/program-events/create', 'create')->name('admin.program-events.create');
+            Route::post('/program-events', 'store')->name('admin.program-events.store');
+            Route::get('/program-events/{id}/edit', 'edit')->name('admin.program-events.edit');
+            Route::put('/program-events/{id}', 'update')->name('admin.program-events.update');
+            Route::delete('/program-events/{id}', 'destroy')->name('admin.program-events.destroy');
+        });
     });
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
@@ -151,6 +162,15 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::get('/marketing/event/edit/{id}', 'edit')->name('events.edit');
         Route::post('/marketing/event/update/{id}', 'update')->name('events.update');
         Route::delete('/marketing/event/destroy/{id}', 'destroy')->name('events.destroy');
+    });
+
+    Route::controller(ProgramEventController::class)->group(function () {
+        Route::get('/program-events', 'index')->name('program-events.index');
+        Route::get('/program-events/create', 'create')->name('program-events.create');
+        Route::post('/program-events', 'store')->name('program-events.store');
+        Route::get('/program-events/{id}/edit', 'edit')->name('program-events.edit');
+        Route::put('/program-events/{id}', 'update')->name('program-events.update');
+        Route::delete('/program-events/{id}', 'destroy')->name('program-events.destroy');
     });
 });
 // ✅ BARU: Halaman grafik peserta per event (user)

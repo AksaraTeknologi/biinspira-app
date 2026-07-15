@@ -89,6 +89,18 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
         ],
     },
     {
+        title: 'Program Event',
+        href: route('admin.program-events.index'),
+        icon: CalendarSearch,
+        roles: ['admin'],
+    },
+    {
+        title: 'Program Event',
+        href: route('user.program-events.index'),
+        icon: CalendarSearch,
+        roles: ['user'],
+    },
+    {
         title: 'Ticketing Website',
         href: route('requests.index'),
         icon: KanbanSquareIcon,
