@@ -68,6 +68,10 @@ const platformConfig: Record<string, { label: string; className: string }> = {
         label: 'Smartcounting',
         className: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300',
     },
+    smartcountingacademy: {
+        label: 'Smartcounting Academy',
+        className: 'border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-300',
+    },
     kompeten: {
         label: 'Kompeten',
         className: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',

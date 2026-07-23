@@ -42,6 +42,7 @@ interface TransactionsProps {
     isUserRestricted?: boolean;
     filters?: {
         platform?: string;
+        product_type?: string;
         start_date?: string;
         end_date?: string;
     };
@@ -247,6 +248,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
     ];
 
     const [selectedPlatform, setSelectedPlatform] = React.useState(filters?.platform ?? 'all');
+    const [selectedProductType, setSelectedProductType] = React.useState(filters?.product_type ?? 'all');
     const [date, setDate] = React.useState<DateRange | undefined>(() => ({
         from: filters?.start_date ? new Date(filters.start_date) : subMonths(new Date(), 1),
         to: filters?.end_date ? new Date(filters.end_date) : new Date(),
@@ -254,17 +256,19 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
 
     useEffect(() => {
         setSelectedPlatform(filters?.platform ?? 'all');
+        setSelectedProductType(filters?.product_type ?? 'all');
         setDate({
             from: filters?.start_date ? new Date(filters.start_date) : subMonths(new Date(), 1),
             to: filters?.end_date ? new Date(filters.end_date) : new Date(),
         });
-    }, [filters?.platform, filters?.start_date, filters?.end_date]);
+    }, [filters?.platform, filters?.product_type, filters?.start_date, filters?.end_date]);
 
     const applyFilter = () => {
         router.get(
             route(resolvedRouteName),
             {
                 platform: selectedPlatform,
+                product_type: selectedProductType,
                 start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
                 end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : '',
             },
@@ -279,18 +283,21 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
         const defaultFrom = subMonths(new Date(), 1);
         const defaultTo = new Date();
         const defaultPlatform = isUserRestricted ? (availablePlatforms[0]?.key ?? 'all') : 'all';
+        const defaultProductType = 'all';
         const defaultRange: DateRange = {
             from: defaultFrom,
             to: defaultTo,
         };
 
         setSelectedPlatform(defaultPlatform);
+        setSelectedProductType(defaultProductType);
         setDate(defaultRange);
 
         router.get(
             route(resolvedRouteName),
             {
                 platform: defaultPlatform,
+                product_type: defaultProductType,
                 start_date: format(defaultFrom, 'yyyy-MM-dd'),
                 end_date: format(defaultTo, 'yyyy-MM-dd'),
             },
@@ -374,6 +381,19 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                                         {p.label}
                                     </SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedProductType} onValueChange={setSelectedProductType}>
+                            <SelectTrigger className="w-[180px] bg-input">
+                                <SelectValue placeholder="Tipe Produk" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Produk</SelectItem>
+                                <SelectItem value="course">Course</SelectItem>
+                                <SelectItem value="bootcamp">Bootcamp</SelectItem>
+                                <SelectItem value="webinar">Webinar</SelectItem>
+                                <SelectItem value="bundle">Bundle</SelectItem>
+                                <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
                             </SelectContent>
                         </Select>
                         <Button onClick={applyFilter} disabled={!date?.from || !date?.to}>

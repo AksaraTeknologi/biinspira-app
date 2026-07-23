@@ -16,6 +16,7 @@ class TransactionController extends Controller
     private array $platformLabels = [
         'biinspira' => 'Biinspira',
         'smartcounting' => 'Smartcounting',
+        'smartcountingacademy' => 'Smartcounting Academy',
         'kompeten' => 'Kompeten',
         'sekolahpajak' => 'Sekolah Pajak',
         'talenta' => 'Talenta',
@@ -26,6 +27,7 @@ class TransactionController extends Controller
     private array $customAuthHeaderPlatforms = [
         'biinspira',
         'smartcounting',
+        'smartcountingacademy',
     ];
 
     public function index(Request $request)
@@ -41,6 +43,7 @@ class TransactionController extends Controller
 
         $validated = $request->validate([
             'platform' => ['nullable', 'string', Rule::in($allowedPlatforms)],
+            'product_type' => ['nullable', 'string', Rule::in(['all', 'course', 'bootcamp', 'webinar', 'bundle', 'certification_program', 'certification'])],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ]);
@@ -48,6 +51,7 @@ class TransactionController extends Controller
         $selectedPlatform = $isUserRole
             ? ($hasUserPlatformAccess ? $userPlatformKey : 'none')
             : ($validated['platform'] ?? 'all');
+        $selectedProductType = $validated['product_type'] ?? 'all';
         $startDate = $validated['start_date'] ?? $defaultStartDate;
         $endDate = $validated['end_date'] ?? $defaultEndDate;
 
@@ -77,20 +81,21 @@ class TransactionController extends Controller
             'isUserRestricted' => $isUserRole,
             'filters' => [
                 'platform' => $selectedPlatform,
+                'product_type' => $selectedProductType,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ],
-            'invoices' => Inertia::defer(function () use ($platforms, $selectedPlatform, $startDate, $endDate, $isUserRole, $hasUserPlatformAccess): array {
+            'invoices' => Inertia::defer(function () use ($platforms, $selectedPlatform, $selectedProductType, $startDate, $endDate, $isUserRole, $hasUserPlatformAccess): array {
                 if ($isUserRole && ! $hasUserPlatformAccess) {
                     return [];
                 }
 
-                return $this->fetchInvoices($platforms, $selectedPlatform, $startDate, $endDate);
+                return $this->fetchInvoices($platforms, $selectedPlatform, $selectedProductType, $startDate, $endDate);
             }),
         ]);
     }
 
-    private function fetchInvoices(array $platforms, string $selectedPlatform, string $startDate, string $endDate): array
+    private function fetchInvoices(array $platforms, string $selectedPlatform, string $selectedProductType, string $startDate, string $endDate): array
     {
         $allInvoices = [];
         $perPage = 100;
@@ -119,16 +124,20 @@ class TransactionController extends Controller
                 while ($hasMore && $page <= 100) {
                     $invoicesEndpoint = $this->resolveInvoicesEndpoint($key);
 
+                    $queryParams = [
+                        'status' => 'paid',
+                        'page' => $page,
+                        'per_page' => $perPage,
+                        'start_date' => $requestStartDate,
+                        'end_date' => $requestEndDate,
+                    ];
+
+                    if ($selectedProductType !== 'all') {
+                        $queryParams['product_type'] = $selectedProductType;
+                    }
+
                     $response = $this->buildPlatformRequest($key, $token)
-                        ->get("{$baseUrl}/{$invoicesEndpoint}", [
-                            'status' => 'paid',
-                            'page' => $page,
-                            'per_page' => $perPage,
-                            // Use a buffered window for upstream APIs because some platforms
-                            // apply timezone or exclusive boundary filtering.
-                            'start_date' => $requestStartDate,
-                            'end_date' => $requestEndDate,
-                        ]);
+                        ->get("{$baseUrl}/{$invoicesEndpoint}", $queryParams);
 
                     if (!$response->successful()) {
                         $this->logApiAuthKeyError(
@@ -159,7 +168,7 @@ class TransactionController extends Controller
                         break;
                     }
 
-                    $data = array_values(array_filter($data, function ($item) use ($startTimestamp, $endTimestamp) {
+                    $data = array_values(array_filter($data, function ($item) use ($startTimestamp, $endTimestamp, $selectedProductType) {
                         $paidAt = $item['paid_at'] ?? null;
                         if (!$paidAt) {
                             return false;
@@ -170,7 +179,31 @@ class TransactionController extends Controller
                             return false;
                         }
 
-                        return $paidAtTimestamp >= $startTimestamp && $paidAtTimestamp <= $endTimestamp;
+                        if ($paidAtTimestamp < $startTimestamp || $paidAtTimestamp > $endTimestamp) {
+                            return false;
+                        }
+
+                        if ($selectedProductType !== 'all') {
+                            $itemProductType = $item['product_type'] ?? null;
+                            $matchesType = ($itemProductType === $selectedProductType)
+                                || ($selectedProductType === 'certification_program' && in_array($itemProductType, ['certification_program', 'certification'], true));
+
+                            if (!$matchesType && !empty($item['products']) && is_array($item['products'])) {
+                                foreach ($item['products'] as $prod) {
+                                    $pType = $prod['type'] ?? null;
+                                    if ($pType === $selectedProductType || ($selectedProductType === 'certification_program' && in_array($pType, ['certification_program', 'certification'], true))) {
+                                        $matchesType = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!$matchesType) {
+                                return false;
+                            }
+                        }
+
+                        return true;
                     }));
 
                     foreach ($data as &$item) {
@@ -256,7 +289,7 @@ class TransactionController extends Controller
 
     private function resolveInvoicesEndpoint(string $platformKey): string
     {
-        return $platformKey === 'smartcounting' || $platformKey === 'biinspira' ? 'purchases' : 'invoices';
+        return in_array($platformKey, ['smartcounting', 'smartcountingacademy', 'biinspira'], true) ? 'purchases' : 'invoices';
     }
 
     private function resolveUserPlatformKey(?User $user, array $platforms): ?string
