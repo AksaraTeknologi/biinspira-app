@@ -22,6 +22,7 @@ class TvDashboardController extends Controller
     private array $platformLabels = [
         'biinspira' => 'Biinspira',
         'smartcounting' => 'Smartcounting',
+        'smartcountingacademy' => 'Smartcounting Academy',
         'kompeten' => 'Kompeten',
         'sekolahpajak' => 'Sekolah Pajak',
         'talenta' => 'Talenta',
@@ -32,6 +33,7 @@ class TvDashboardController extends Controller
     private array $customAuthHeaderPlatforms = [
         'biinspira',
         'smartcounting',
+        'smartcountingacademy',
     ];
 
     public function index(): Response
@@ -611,7 +613,7 @@ class TvDashboardController extends Controller
 
     private function resolveInvoicesEndpoint(string $platformKey): string
     {
-        return $platformKey === 'smartcounting' || $platformKey === 'biinspira' ? 'purchases' : 'invoices';
+        return in_array($platformKey, ['smartcounting', 'smartcountingacademy', 'biinspira'], true) ? 'purchases' : 'invoices';
     }
 
     private function hasPlatformCredentials(mixed $platform): bool
@@ -629,7 +631,8 @@ class TvDashboardController extends Controller
 
         $platformAliases = [
             'biinspira' => ['biinspira'],
-            'smartcounting' => ['smartcounting', 'smartcountingacademy'],
+            'smartcounting' => ['smartcounting'],
+            'smartcountingacademy' => ['smartcountingacademy', 'smartcounting'],
             'kompeten' => ['kompeten', 'kompetenidn'],
             'sekolahpajak' => ['sekolahpajak'],
             'talenta' => ['talenta'],
