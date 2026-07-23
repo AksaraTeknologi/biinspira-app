@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react';
+import { CalendarIcon, Eye, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
@@ -189,21 +189,6 @@ export default function Marketing() {
                                                 '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                                 '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                             )}
-                                            components={{
-                                                IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-                                                IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-                                            }}
-                                            formatters={{
-                                                formatCaption: (date, options) => {
-                                                    return (
-                                                        <div className="flex items-center justify-center">
-                                                            <span className="font-medium">
-                                                                {format(date, 'MMMM yyyy', { locale: options?.locale })}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                },
-                                            }}
                                         />
                                     </div>
                                 </PopoverContent>

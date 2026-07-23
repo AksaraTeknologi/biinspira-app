@@ -25,44 +25,64 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
     return (
         <div
             className={cn(
-                'flex min-h-0 flex-col rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur',
+                'flex min-h-0 flex-col justify-between overflow-hidden rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3',
                 className,
             )}
         >
-            <div className="mb-2.5 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-slate-800">{item.label}</h2>
-                <div className="flex min-h-9 items-center justify-end">
+            <div className="mb-1.5 flex items-center justify-between gap-2 shrink-0">
+                <h2 className="truncate text-lg font-bold text-slate-800 xl:text-xl" title={item.label}>
+                    {item.label}
+                </h2>
+                <div className="flex min-h-7 shrink-0 items-center justify-end">
                     <PlatformLogo item={item} />
                 </div>
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-2.5 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-                    <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Total Tahun Ini</p>
-                    <p className="text-xl leading-tight font-bold text-slate-800 lg:text-2xl">{formatCurrency(item.total)}</p>
+            <div className="grid flex-1 grid-cols-1 gap-2 min-h-0 overflow-hidden sm:grid-cols-3">
+                <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 xl:p-2.5">
+                    <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Total Tahun Ini</p>
+                    <p
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        title={formatCurrency(item.total)}
+                    >
+                        {formatCurrency(item.total)}
+                    </p>
+                    <div className="invisible mt-0.5 shrink-0" aria-hidden="true">
+                        <ChangeBadge percentage={0} direction="flat" />
+                    </div>
                 </div>
 
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'month')}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50"
+                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
                 >
-                    <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Bulan Ini</p>
-                    <p className="text-xl leading-tight font-bold text-slate-800 lg:text-2xl">{formatCurrency(item.this_month)}</p>
-                    <div className="mt-1.5">
-                        <ChangeBadge percentage={item.month_change_percentage} direction={item.month_change_direction} label="vs bulan lalu" />
+                    <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Bulan Ini</p>
+                    <p
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        title={formatCurrency(item.this_month)}
+                    >
+                        {formatCurrency(item.this_month)}
+                    </p>
+                    <div className="mt-0.5 shrink-0">
+                        <ChangeBadge percentage={item.month_change_percentage} direction={item.month_change_direction} />
                     </div>
                 </button>
 
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'day')}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50"
+                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
                 >
-                    <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Hari Ini</p>
-                    <p className="text-xl leading-tight font-bold text-slate-800 lg:text-2xl">{formatCurrency(item.today)}</p>
-                    <div className="mt-1.5">
-                        <ChangeBadge percentage={item.day_change_percentage} direction={item.day_change_direction} label="vs kemarin" />
+                    <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Hari Ini</p>
+                    <p
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        title={formatCurrency(item.today)}
+                    >
+                        {formatCurrency(item.today)}
+                    </p>
+                    <div className="mt-0.5 shrink-0">
+                        <ChangeBadge percentage={item.day_change_percentage} direction={item.day_change_direction} />
                     </div>
                 </button>
             </div>
@@ -103,7 +123,7 @@ export function PlatformStatCardCarousel({ item, className, onOpenDetail }: Card
                         {formatCurrency(item.this_month)}
                     </p>
                     <div className="mt-auto pt-2">
-                        <ChangeBadge percentage={item.month_change_percentage} direction={item.month_change_direction} label="vs bulan lalu" />
+                        <ChangeBadge percentage={item.month_change_percentage} direction={item.month_change_direction} />
                     </div>
                     <p className="mt-2 text-[10px] text-slate-500">Rincian per bulan</p>
                 </button>
@@ -118,7 +138,7 @@ export function PlatformStatCardCarousel({ item, className, onOpenDetail }: Card
                         {formatCurrency(item.today)}
                     </p>
                     <div className="mt-auto pt-2">
-                        <ChangeBadge percentage={item.day_change_percentage} direction={item.day_change_direction} label="vs kemarin" />
+                        <ChangeBadge percentage={item.day_change_percentage} direction={item.day_change_direction} />
                     </div>
                     <p className="mt-2 text-[10px] text-slate-500">Rincian per hari</p>
                 </button>
