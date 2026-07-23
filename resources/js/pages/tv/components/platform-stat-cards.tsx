@@ -42,7 +42,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 xl:p-2.5">
                     <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Total Tahun Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-2xl"
                         title={formatCurrency(item.total)}
                     >
                         {formatCurrency(item.total)}
