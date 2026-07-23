@@ -42,7 +42,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 xl:p-2.5">
                     <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Total Tahun Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-3xl"
                         title={formatCurrency(item.total)}
                     >
                         {formatCurrency(item.total)}
@@ -59,7 +59,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 >
                     <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Bulan Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-3xl"
                         title={formatCurrency(item.this_month)}
                     >
                         {formatCurrency(item.this_month)}
@@ -76,7 +76,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 >
                     <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Hari Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-3xl"
                         title={formatCurrency(item.today)}
                     >
                         {formatCurrency(item.today)}
