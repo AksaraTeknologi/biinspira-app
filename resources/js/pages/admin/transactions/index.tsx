@@ -317,11 +317,11 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Transaksi" />
             <div className="p-4">
-                <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <h2 className="text-2xl font-semibold">Daftar Transaksi</h2>
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Label htmlFor="date-range" className="text-sm font-medium">
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="date-range" className="text-sm font-medium whitespace-nowrap">
                                 Rentang Tanggal
                             </Label>
                             <Popover>
@@ -330,23 +330,25 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                                         id="date-range"
                                         variant="outline"
                                         className={cn(
-                                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                                            'w-full justify-start text-left font-normal sm:w-[230px]',
                                             'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
                                             !date && 'text-muted-foreground',
                                         )}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date?.from ? (
-                                            date.to ? (
-                                                <>
-                                                    {format(date.from, 'dd MMM yyyy')} - {format(date.to, 'dd MMM yyyy')}
-                                                </>
+                                        <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                                        <span className="truncate">
+                                            {date?.from ? (
+                                                date.to ? (
+                                                    <>
+                                                        {format(date.from, 'dd MMM yyyy')} - {format(date.to, 'dd MMM yyyy')}
+                                                    </>
+                                                ) : (
+                                                    format(date.from, 'dd MMM yyyy')
+                                                )
                                             ) : (
-                                                format(date.from, 'dd MMM yyyy')
-                                            )
-                                        ) : (
-                                            <span>Pilih rentang tanggal</span>
-                                        )}
+                                                'Pilih rentang tanggal'
+                                            )}
+                                        </span>
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
@@ -371,7 +373,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                             </Popover>
                         </div>
                         <Select value={selectedPlatform} onValueChange={setSelectedPlatform} disabled={isUserRestricted}>
-                            <SelectTrigger className="w-[180px] bg-input">
+                            <SelectTrigger className="w-[150px] bg-input">
                                 <SelectValue placeholder="Pilih Platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -384,7 +386,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                             </SelectContent>
                         </Select>
                         <Select value={selectedProductType} onValueChange={setSelectedProductType}>
-                            <SelectTrigger className="w-[180px] bg-input">
+                            <SelectTrigger className="w-[150px] bg-input">
                                 <SelectValue placeholder="Tipe Produk" />
                             </SelectTrigger>
                             <SelectContent>
