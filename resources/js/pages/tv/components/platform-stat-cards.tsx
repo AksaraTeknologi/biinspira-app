@@ -59,7 +59,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 >
                     <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Bulan Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-2xl"
                         title={formatCurrency(item.this_month)}
                     >
                         {formatCurrency(item.this_month)}
@@ -76,7 +76,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 >
                     <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Hari Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-2xl"
                         title={formatCurrency(item.today)}
                     >
                         {formatCurrency(item.today)}
