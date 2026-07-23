@@ -17,7 +17,7 @@ export default function ChangeBadge({ percentage, direction }: ChangeBadgeProps)
     const valueText = direction === 'up' ? `+${percentage.toFixed(2)}%` : direction === 'down' ? `-${percentage.toFixed(2)}%` : '0%';
 
     return (
-        <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold sm:text-base ${styles}`}>
+        <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border px-2 py-0.5 text-[10px] font-bold sm:text-xs ${styles}`}>
             <Icon className="h-3 w-3 shrink-0 stroke-[2.5]" />
             <span>{valueText}</span>
         </span>
