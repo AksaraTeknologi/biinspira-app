@@ -286,7 +286,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
@@ -303,7 +303,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
@@ -320,7 +320,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
