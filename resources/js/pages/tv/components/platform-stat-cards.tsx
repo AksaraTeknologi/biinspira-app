@@ -40,9 +40,9 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
 
             <div className="grid flex-1 grid-cols-1 gap-2 min-h-0 overflow-hidden sm:grid-cols-3">
                 <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 xl:p-2.5">
-                    <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Total Tahun Ini</p>
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-sm">otal Tahun Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-3xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-2xl"
                         title={formatCurrency(item.total)}
                     >
                         {formatCurrency(item.total)}
@@ -57,9 +57,9 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                     onClick={() => onOpenDetail(item.key, 'month')}
                     className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
                 >
-                    <p className="mb-0.5 truncate text-[8px] font-bold tracking-wider text-slate-500 uppercase xl:text-[10px]">Bulan Ini</p>
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-sm">Bulan Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-3xl"
+                        className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-2xl"
                         title={formatCurrency(item.this_month)}
                     >
                         {formatCurrency(item.this_month)}
@@ -74,7 +74,7 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                     onClick={() => onOpenDetail(item.key, 'day')}
                     className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
                 >
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-base">Hari Ini</p>
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-sm">Hari Ini</p>
                     <p
                         className="my-auto truncate text-base font-bold tracking-tight text-slate-800 sm:text-lg xl:text-xl 2xl:text-2xl"
                         title={formatCurrency(item.today)}
