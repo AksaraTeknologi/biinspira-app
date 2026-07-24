@@ -11,12 +11,12 @@ type CardProps = {
 
 function PlatformLogo({ item }: { item: PlatformStat }) {
     if (item.logo) {
-        return <img src={item.logo} alt={item.label} className="max-h-9 w-auto max-w-28 object-contain" />;
+        return <img src={item.logo} alt={item.label} className="max-h-7 w-auto max-w-24 object-contain" />;
     }
 
     return (
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white">
-            <span className="text-xs font-bold text-slate-600">{item.label.slice(0, 2).toUpperCase()}</span>
+        <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white">
+            <span className="text-[10px] font-bold text-slate-600">{item.label.slice(0, 2).toUpperCase()}</span>
         </div>
     );
 }
@@ -25,12 +25,12 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
     return (
         <div
             className={cn(
-                'flex min-h-0 flex-col justify-between overflow-hidden rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3',
+                'flex min-h-0 flex-col justify-between overflow-hidden rounded-2xl border border-white/55 bg-white/88 p-2 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-2.5',
                 className,
             )}
         >
-            <div className="mb-1.5 flex items-center justify-between gap-2 shrink-0">
-                <h2 className="truncate text-lg font-bold text-slate-800 xl:text-xl" title={item.label}>
+            <div className="mb-1 flex items-center justify-between gap-2 shrink-0">
+                <h2 className="truncate text-base font-bold text-slate-800 xl:text-lg" title={item.label}>
                     {item.label}
                 </h2>
                 <div className="flex min-h-7 shrink-0 items-center justify-end">
@@ -38,16 +38,16 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 </div>
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-2 min-h-0 overflow-hidden sm:grid-cols-3">
-                <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 xl:p-2.5">
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Total Tahun Ini</p>
+            <div className="grid flex-1 grid-cols-1 gap-1.5 min-h-0 overflow-hidden sm:grid-cols-3">
+                <div className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 xl:p-2">
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Total Tahun Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-3xl"
+                        className="my-auto truncate text-sm font-bold tracking-tight text-slate-900 leading-none sm:text-base xl:text-lg 2xl:text-3xl py-0.5"
                         title={formatCurrency(item.total)}
                     >
                         {formatCurrency(item.total)}
                     </p>
-                    <div className="invisible mt-0.5 shrink-0" aria-hidden="true">
+                    <div className="invisible mt-0.5 shrink-0 flex items-center" aria-hidden="true">
                         <ChangeBadge percentage={0} direction="flat" />
                     </div>
                 </div>
@@ -55,16 +55,16 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'month')}
-                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
+                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2"
                 >
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Bulan Ini</p>
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Bulan Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-3xl"
+                        className="my-auto truncate text-sm font-bold tracking-tight text-slate-900 leading-none sm:text-base xl:text-lg 2xl:text-3xl py-0.5"
                         title={formatCurrency(item.this_month)}
                     >
                         {formatCurrency(item.this_month)}
                     </p>
-                    <div className="mt-0.5 shrink-0">
+                    <div className="mt-0.5 shrink-0 flex items-center">
                         <ChangeBadge percentage={item.month_change_percentage} direction={item.month_change_direction} />
                     </div>
                 </button>
@@ -72,16 +72,16 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'day')}
-                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2.5"
+                    className="flex min-w-0 min-h-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2"
                 >
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px] 2xl:text-xs">Hari Ini</p>
+                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Hari Ini</p>
                     <p
-                        className="my-auto truncate text-base font-bold tracking-tight text-slate-900 leading-tight xl:text-lg 2xl:text-3xl"
+                        className="my-auto truncate text-sm font-bold tracking-tight text-slate-900 leading-none sm:text-base xl:text-lg 2xl:text-3xl py-0.5"
                         title={formatCurrency(item.today)}
                     >
                         {formatCurrency(item.today)}
                     </p>
-                    <div className="mt-0.5 shrink-0">
+                    <div className="mt-0.5 shrink-0 flex items-center">
                         <ChangeBadge percentage={item.day_change_percentage} direction={item.day_change_direction} />
                     </div>
                 </button>

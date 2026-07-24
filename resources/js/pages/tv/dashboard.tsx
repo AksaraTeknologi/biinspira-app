@@ -155,7 +155,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
         <>
             <Head title="Statistik TV" />
             <div className="flex h-screen w-screen flex-col overflow-hidden bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center">
-                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
+                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-0 pt-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
                     <Tabs value={viewMode} onValueChange={handleViewModeChange} className="flex flex-1 flex-col overflow-hidden">
                         <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                             <div>
@@ -189,30 +189,30 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                         <Deferred data="platformStats" fallback={<StatsSkeletonGrid />}>
                             <>
-                                <TabsContent value="grid" className="mt-0 flex flex-1 flex-col justify-between overflow-hidden">
-                                    <div className="grid flex-1 grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-2 lg:overflow-y-auto">
+                                <TabsContent value="grid" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
+                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-2 lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-0.5">
                                         {stats.map((item) => (
                                             <PlatformStatCardGrid
                                                 key={item.key}
                                                 item={item}
-                                                className="md:h-full"
+                                                className="min-h-30 md:h-full"
                                                 onOpenDetail={handleOpenDrilldown}
                                             />
                                         ))}
                                     </div>
 
                                     {/* Bottom Group Summary Bar */}
-                                    <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
-                                                <TrendingUp className="h-6 w-6" />
+                                    <div className="mt-3 grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <TrendingUp className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
@@ -220,16 +220,16 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
-                                                <CalendarIcon className="h-6 w-6" />
+                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <CalendarIcon className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
@@ -237,16 +237,16 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
-                                                <Sparkles className="h-6 w-6" />
+                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <Sparkles className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
@@ -256,7 +256,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="carousel" className="mt-0 flex flex-1 flex-col justify-between">
+                                <TabsContent value="carousel" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
                                     <div className="pb-3">
                                         <div className="rounded-3xl border border-white/40 bg-white/16 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.25)] backdrop-blur-xl">
                                             <Carousel setApi={setCarouselApi} opts={{ loop: true, align: 'start' }} className="h-full">
@@ -286,7 +286,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
@@ -303,7 +303,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
@@ -320,7 +320,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-lg font-black leading-tight text-slate-900 xl:text-xl 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
