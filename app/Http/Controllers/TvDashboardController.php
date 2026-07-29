@@ -58,12 +58,17 @@ class TvDashboardController extends Controller
         }
 
         $validated = $request->validate([
-            'platform' => ['required', 'string', Rule::in($availablePlatformKeys)],
+            'platform' => ['required', 'string', Rule::in(array_merge($availablePlatformKeys, ['group']))],
             'metric' => ['required', 'string', Rule::in(['month', 'day'])],
         ]);
 
         $platformKey = $validated['platform'];
         $metric = $validated['metric'];
+
+        if ($platformKey === 'group') {
+            return response()->json($this->buildGroupDetailPoints($availablePlatformKeys, $platforms, $metric));
+        }
+
         $platform = $platforms[$platformKey] ?? null;
 
         if (!is_array($platform) || empty($platform['base_url']) || empty($platform['token'])) {
@@ -80,6 +85,98 @@ class TvDashboardController extends Controller
         );
 
         return response()->json($data);
+    }
+
+    private function buildGroupDetailPoints(array $availablePlatformKeys, array $platforms, string $metric): array
+    {
+        $now = now();
+        $year = (int) $now->year;
+        $month = (int) $now->month;
+        $cacheKey = "tv_dashboard.detail.group.{$metric}.{$year}.{$month}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($availablePlatformKeys, $platforms, $metric, $now, $year): array {
+            $platformDetails = [];
+            foreach ($availablePlatformKeys as $key) {
+                $platform = $platforms[$key] ?? null;
+                if (!is_array($platform) || empty($platform['base_url']) || empty($platform['token'])) {
+                    continue;
+                }
+
+                $platformDetails[$key] = $this->buildDetailPoints(
+                    $key,
+                    (string) $platform['base_url'],
+                    (string) $platform['token'],
+                    $metric
+                );
+            }
+
+            $points = [];
+            $startOfMonth = $now->copy()->startOfMonth();
+
+            if ($metric === 'month') {
+                for ($m = 1; $m <= 12; $m++) {
+                    $points[] = [
+                        'key' => sprintf('%04d-%02d', $year, $m),
+                        'label' => Carbon::create($year, $m, 1)->locale('id')->translatedFormat('F'),
+                        'value' => 0.0,
+                        'platforms' => [],
+                    ];
+                }
+            } else {
+                $daysInMonth = (int) $startOfMonth->daysInMonth;
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $date = $startOfMonth->copy()->day($d);
+                    $points[] = [
+                        'key' => $date->format('Y-m-d'),
+                        'label' => $date->locale('id')->translatedFormat('d M'),
+                        'value' => 0.0,
+                        'platforms' => [],
+                    ];
+                }
+            }
+
+            $platformList = [];
+            foreach ($availablePlatformKeys as $key) {
+                $platformList[] = [
+                    'key' => $key,
+                    'label' => $this->platformLabels[$key] ?? $key,
+                ];
+
+                if (!isset($platformDetails[$key]['points'])) {
+                    continue;
+                }
+
+                foreach ($platformDetails[$key]['points'] as $idx => $p) {
+                    if (isset($points[$idx])) {
+                        $val = (float) ($p['value'] ?? 0);
+                        $points[$idx]['value'] += $val;
+                        $points[$idx]['platforms'][$key] = $val;
+                    }
+                }
+            }
+
+            for ($i = 1; $i < count($points); $i++) {
+                $change = $this->buildChange($points[$i]['value'], $points[$i - 1]['value']);
+                $points[$i]['change_percentage'] = $change['percentage'];
+                $points[$i]['change_direction'] = $change['direction'];
+            }
+
+            $totalGroup = array_reduce($points, fn($sum, $row) => $sum + ($row['value'] ?? 0), 0.0);
+
+            return [
+                'platform' => 'group',
+                'platform_label' => 'Group Biinspira',
+                'metric' => $metric,
+                'title' => $metric === 'month' ? 'Rincian Omset Group (Bulanan)' : 'Rincian Omset Group (Harian)',
+                'subtitle' => $metric === 'month'
+                    ? "Periode Januari - Desember {$year}"
+                    : $startOfMonth->locale('id')->translatedFormat('F Y'),
+                'points' => $points,
+                'platforms' => $platformList,
+                'total' => $totalGroup,
+                'generated_at' => now()->toIso8601String(),
+            ];
+        });
     }
 
     private function buildPlatformStats(array $platforms): array

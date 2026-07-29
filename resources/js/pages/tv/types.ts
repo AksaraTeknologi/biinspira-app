@@ -19,12 +19,19 @@ export interface TvDashboardProps {
 export type DashboardViewMode = 'grid' | 'carousel';
 export type DrilldownMetric = 'month' | 'day';
 
+export type GroupPlatformInfo = {
+    key: string;
+    label: string;
+    logo?: string | null;
+};
+
 export type DrilldownPoint = {
     key: string;
     label: string;
     value: number;
     change_percentage?: number;
     change_direction?: 'up' | 'down' | 'flat';
+    platforms?: Record<string, number>;
 };
 
 export type DrilldownData = {
@@ -34,6 +41,7 @@ export type DrilldownData = {
     title: string;
     subtitle: string;
     points: DrilldownPoint[];
+    platforms?: GroupPlatformInfo[];
     total: number;
     generated_at: string;
 };

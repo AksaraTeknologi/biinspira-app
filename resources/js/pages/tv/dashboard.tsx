@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, router } from '@inertiajs/react';
 import { CalendarIcon, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
 import { PlatformStatCardCarousel, PlatformStatCardGrid } from './components/platform-stat-cards';
 import StatsSkeletonGrid from './components/stats-skeleton-grid';
@@ -17,6 +18,12 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
     const [drilldownLoading, setDrilldownLoading] = useState(false);
     const [drilldownError, setDrilldownError] = useState<string | null>(null);
     const [drilldownData, setDrilldownData] = useState<DrilldownData | null>(null);
+
+    const [groupDrilldownOpen, setGroupDrilldownOpen] = useState(false);
+    const [groupDrilldownMetric, setGroupDrilldownMetric] = useState<DrilldownMetric>('month');
+    const [groupDrilldownLoading, setGroupDrilldownLoading] = useState(false);
+    const [groupDrilldownError, setGroupDrilldownError] = useState<string | null>(null);
+    const [groupDrilldownData, setGroupDrilldownData] = useState<DrilldownData | null>(null);
 
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -145,6 +152,39 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
         }
     };
 
+    const handleOpenGroupDrilldown = async (metric: DrilldownMetric) => {
+        setGroupDrilldownOpen(true);
+        setGroupDrilldownMetric(metric);
+        setGroupDrilldownLoading(true);
+        setGroupDrilldownError(null);
+
+        try {
+            const params = new URLSearchParams({
+                platform: 'group',
+                metric,
+            });
+
+            const response = await fetch(`/statistics/detail?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memuat rincian statistik group.');
+            }
+
+            const data = (await response.json()) as DrilldownData;
+            setGroupDrilldownData(data);
+        } catch (error) {
+            setGroupDrilldownData(null);
+            setGroupDrilldownError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data group.');
+        } finally {
+            setGroupDrilldownLoading(false);
+        }
+    };
+
     const handleViewModeChange = (value: string) => {
         if (value === 'grid' || value === 'carousel') {
             setViewMode(value);
@@ -155,7 +195,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
         <>
             <Head title="Statistik TV" />
             <div className="flex h-screen w-screen flex-col overflow-hidden bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center">
-                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
+                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-0 pt-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
                     <Tabs value={viewMode} onValueChange={handleViewModeChange} className="flex flex-1 flex-col overflow-hidden">
                         <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                             <div>
@@ -189,74 +229,86 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                         <Deferred data="platformStats" fallback={<StatsSkeletonGrid />}>
                             <>
-                                <TabsContent value="grid" className="mt-0 flex flex-1 flex-col justify-between overflow-hidden">
-                                    <div className="grid flex-1 grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-2 lg:overflow-y-auto">
+                                <TabsContent value="grid" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
+                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-2 lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-0.5">
                                         {stats.map((item) => (
                                             <PlatformStatCardGrid
                                                 key={item.key}
                                                 item={item}
-                                                className="md:h-full"
+                                                className="min-h-30 md:h-full"
                                                 onOpenDetail={handleOpenDrilldown}
                                             />
                                         ))}
                                     </div>
 
                                     {/* Bottom Group Summary Bar */}
-                                    <div className="mt-2.5 grid shrink-0 grid-cols-1 gap-2.5 sm:grid-cols-3">
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <TrendingUp className="h-5 w-5" />
+                                    <div className="mt-3 grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-3"
+                                        >
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <TrendingUp className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <CalendarIcon className="h-5 w-5" />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-3"
+                                        >
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <CalendarIcon className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <Sparkles className="h-5 w-5" />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('day')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-3"
+                                        >
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                                <Sparkles className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="carousel" className="mt-0 flex flex-1 flex-col justify-between">
+                                <TabsContent value="carousel" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
                                     <div className="pb-3">
                                         <div className="rounded-3xl border border-white/40 bg-white/16 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.25)] backdrop-blur-xl">
                                             <Carousel setApi={setCarouselApi} opts={{ loop: true, align: 'start' }} className="h-full">
@@ -276,57 +328,69 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     </div>
 
                                     {/* Bottom Group Summary Bar */}
-                                    <div className="mt-2.5 grid shrink-0 grid-cols-1 gap-2.5 sm:grid-cols-3">
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <TrendingUp className="h-5 w-5" />
+                                    <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-4.5"
+                                        >
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                                <TrendingUp className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <CalendarIcon className="h-5 w-5" />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-4.5"
+                                        >
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                                <CalendarIcon className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-10 xl:w-10">
-                                                <Sparkles className="h-5 w-5" />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('day')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-4.5"
+                                        >
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                                <Sparkles className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                                <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="truncate text-base font-bold text-slate-800 xl:text-lg"
+                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     </div>
                                 </TabsContent>
                             </>
@@ -335,7 +399,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                 </div>
 
                 {/* Running Text Marquee Footer */}
-                <div className="relative z-20 flex h-9 w-full shrink-0 items-center overflow-hidden border-t border-white/20 bg-slate-950/90 text-white shadow-2xl backdrop-blur">
+                <div className="relative z-20 flex h-10 w-full shrink-0 items-center overflow-hidden border-t border-white/20 bg-slate-950/90 text-white shadow-2xl backdrop-blur">
                     <style>{`
                         @keyframes tvMarquee {
                             0% { transform: translateX(0%); }
@@ -347,7 +411,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                             animation: tvMarquee 35s linear infinite;
                         }
                     `}</style>
-                    <div className="animate-tv-marquee items-center gap-10 text-xs font-semibold tracking-wider whitespace-nowrap text-slate-100 sm:text-sm">
+                    <div className="animate-tv-marquee items-center gap-10 text-sm font-bold tracking-wide whitespace-nowrap text-slate-100 sm:text-base">
                         <span>📅 {formattedFullDate}</span>
                         <span className="text-sky-400">•</span>
                         <span>
@@ -379,6 +443,16 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                 error={drilldownError}
                 data={drilldownData}
                 platformLogo={selectedPlatformLogo}
+            />
+
+            <GroupDrilldownDialog
+                open={groupDrilldownOpen}
+                onOpenChange={setGroupDrilldownOpen}
+                loading={groupDrilldownLoading}
+                error={groupDrilldownError}
+                data={groupDrilldownData}
+                activeMetric={groupDrilldownMetric}
+                onMetricChange={handleOpenGroupDrilldown}
             />
         </>
     );
