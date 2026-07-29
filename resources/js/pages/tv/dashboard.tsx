@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, router } from '@inertiajs/react';
 import { CalendarIcon, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
 import { PlatformStatCardCarousel, PlatformStatCardGrid } from './components/platform-stat-cards';
 import StatsSkeletonGrid from './components/stats-skeleton-grid';
@@ -17,6 +18,12 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
     const [drilldownLoading, setDrilldownLoading] = useState(false);
     const [drilldownError, setDrilldownError] = useState<string | null>(null);
     const [drilldownData, setDrilldownData] = useState<DrilldownData | null>(null);
+
+    const [groupDrilldownOpen, setGroupDrilldownOpen] = useState(false);
+    const [groupDrilldownMetric, setGroupDrilldownMetric] = useState<DrilldownMetric>('month');
+    const [groupDrilldownLoading, setGroupDrilldownLoading] = useState(false);
+    const [groupDrilldownError, setGroupDrilldownError] = useState<string | null>(null);
+    const [groupDrilldownData, setGroupDrilldownData] = useState<DrilldownData | null>(null);
 
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -145,6 +152,39 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
         }
     };
 
+    const handleOpenGroupDrilldown = async (metric: DrilldownMetric) => {
+        setGroupDrilldownOpen(true);
+        setGroupDrilldownMetric(metric);
+        setGroupDrilldownLoading(true);
+        setGroupDrilldownError(null);
+
+        try {
+            const params = new URLSearchParams({
+                platform: 'group',
+                metric,
+            });
+
+            const response = await fetch(`/statistics/detail?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memuat rincian statistik group.');
+            }
+
+            const data = (await response.json()) as DrilldownData;
+            setGroupDrilldownData(data);
+        } catch (error) {
+            setGroupDrilldownData(null);
+            setGroupDrilldownError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data group.');
+        } finally {
+            setGroupDrilldownLoading(false);
+        }
+    };
+
     const handleViewModeChange = (value: string) => {
         if (value === 'grid' || value === 'carousel') {
             setViewMode(value);
@@ -203,7 +243,11 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                                     {/* Bottom Group Summary Bar */}
                                     <div className="mt-3 grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-3">
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-3"
+                                        >
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <TrendingUp className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
@@ -218,9 +262,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.total)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-3"
+                                        >
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <CalendarIcon className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
@@ -235,9 +283,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.thisMonth)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('day')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-3"
+                                        >
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <Sparkles className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
@@ -252,7 +304,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.today)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     </div>
                                 </TabsContent>
 
@@ -277,7 +329,11 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                                     {/* Bottom Group Summary Bar */}
                                     <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-4.5"
+                                        >
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <TrendingUp className="h-6 w-6" />
                                             </div>
@@ -292,9 +348,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.total)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('month')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-4.5"
+                                        >
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <CalendarIcon className="h-6 w-6" />
                                             </div>
@@ -309,9 +369,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.thisMonth)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-4.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenGroupDrilldown('day')}
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-4.5"
+                                        >
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <Sparkles className="h-6 w-6" />
                                             </div>
@@ -326,7 +390,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     {formatCurrency(groupStats.today)}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     </div>
                                 </TabsContent>
                             </>
@@ -379,6 +443,16 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                 error={drilldownError}
                 data={drilldownData}
                 platformLogo={selectedPlatformLogo}
+            />
+
+            <GroupDrilldownDialog
+                open={groupDrilldownOpen}
+                onOpenChange={setGroupDrilldownOpen}
+                loading={groupDrilldownLoading}
+                error={groupDrilldownError}
+                data={groupDrilldownData}
+                activeMetric={groupDrilldownMetric}
+                onMetricChange={handleOpenGroupDrilldown}
             />
         </>
     );

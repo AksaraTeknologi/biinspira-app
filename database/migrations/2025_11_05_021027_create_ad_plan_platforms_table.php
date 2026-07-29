@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
             $table->integer('audience_target');
-            $table->decimal('daily_budget', 10, 2);
+            $table->decimal('daily_budget', 15, 2);
             $table->enum('audience_type', ['targeted', 'broad', 'combined']);
             $table->string('age_targeted')->nullable();
             $table->string('age_broad')->nullable();

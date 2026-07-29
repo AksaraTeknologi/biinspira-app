@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('ad_plan_id')->constrained('ad_plans')->cascadeOnDelete();
             $table->integer('checkout_count');
-            $table->decimal('revenue', 10, 2);
+            $table->decimal('revenue', 15, 2);
             $table->timestamps();
         });
     }
