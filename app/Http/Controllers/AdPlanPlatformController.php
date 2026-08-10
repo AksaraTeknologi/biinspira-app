@@ -96,7 +96,7 @@ class AdPlanPlatformController extends Controller
     $platforms = MasterPlatform::all();
     $users = User::select('id', 'name')
         ->whereDoesntHave('roles', function ($q) {
-            $q->where('name', 'admin');
+            $q->whereIn('name', ['admin', 'technician']);
         })
         ->whereHas('events')
         ->get();
@@ -256,7 +256,7 @@ class AdPlanPlatformController extends Controller
         $goals = MasterAdGoal::all();
         $platforms = $masterPlatforms;
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
-            $q->where('name', 'admin');
+            $q->whereIn('name', ['admin', 'technician']);
         })->get();
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,

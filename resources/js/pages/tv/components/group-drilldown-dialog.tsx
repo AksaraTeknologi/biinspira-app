@@ -113,7 +113,7 @@ export default function GroupDrilldownDialog({
                 <DialogHeader className="pb-2 border-b border-slate-100">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-sky-600 text-white shadow-md">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-sky-600 text-white shadow-md">
                                 <TrendingUp className="h-5 w-5" />
                             </div>
                             <div>

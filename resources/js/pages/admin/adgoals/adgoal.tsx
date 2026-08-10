@@ -40,8 +40,8 @@ import * as React from 'react';
 
 // 🧭 Breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/admin/dashboard' },
-    { title: 'Master Ad Goals', href: '/admin/adgoals' },
+    { title: 'Marketing', href: route('admin.marketing.index') },
+    { title: 'Target Iklan', href: route('admin.adgoals.index') },
 ];
 
 // 🧩 Interface sesuai data dari Laravel
