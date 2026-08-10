@@ -104,7 +104,7 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
         title: 'Ticketing Website',
         href: route('requests.index'),
         icon: KanbanSquareIcon,
-        roles: ['admin', 'user', 'technician'],
+        roles: ['admin', 'user', 'technician', 'technician-intern'],
     },
 ];
 
@@ -210,7 +210,7 @@ export function AppSidebar() {
                                         if (isDashboardChildPath()) open = true;
 
                                         try {
-                                            if (role === 'user') {
+                                             if (role === 'user') {
                                                 const indexBase = route('user.marketing.index')
                                                     .replace(window.location.origin, '')
                                                     .replace(/\/$/, '');
@@ -253,6 +253,49 @@ export function AppSidebar() {
                                                     open = true;
                                                 }
                                             }
+                                            if (role === 'admin') {
+                                                const indexBase = route('admin.marketing.index')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const showBase = route('admin.marketing.show', { id: 'dummy' })
+                                                    .replace('/dummy', '')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const createBase = route('admin.marketing.create')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const resultBase = String(route('admin.marketing.result', { id_event: 'dummy', id_ad_plan: 'dummy' }))
+                                                    .replace(/\/dummy/g, '')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const evalBase = route('admin.marketing.evaluation', { id: 'dummy' })
+                                                    .replace('/dummy', '')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const editBase = route('admin.marketing.edit', { id: 'dummy' })
+                                                    .replace('/dummy', '')
+                                                    .replace(window.location.origin, '')
+                                                    .replace(/\/$/, '');
+                                                const editRegex = /^\/admin\/marketing\/[^/]+\/edit$/;
+
+                                                if (
+                                                    currentUrl === indexBase ||
+                                                    currentUrl === showBase ||
+                                                    currentUrl === createBase ||
+                                                    currentUrl === resultBase ||
+                                                    currentUrl === evalBase ||
+                                                    currentUrl === editBase ||
+                                                    currentUrl.startsWith(indexBase) ||
+                                                    currentUrl.startsWith(showBase) ||
+                                                    currentUrl.startsWith(createBase) ||
+                                                    currentUrl.startsWith(resultBase) ||
+                                                    currentUrl.startsWith(evalBase) ||
+                                                    currentUrl.startsWith(editBase) ||
+                                                    editRegex.test(currentUrl)
+                                                ) {
+                                                    open = true;
+                                                }
+                                            }
                                         } catch {
                                             // ignore if route helper unavailable
                                         }
@@ -263,12 +306,12 @@ export function AppSidebar() {
                                 return (
                                     <Collapsible
                                         key={i}
-                                        defaultOpen={isGroupOpen}
-                                        onOpenChange={(defaultOpen) => setOpenIndex(defaultOpen ? i : null)}
+                                        open={isGroupOpen || openIndex === i}
+                                        onOpenChange={(open) => setOpenIndex(open ? i : null)}
                                         className={`group/collapsible`}
                                     >
                                         <SidebarMenuItem
-                                            className={`rounded-lg p-1.5 ${isGroupOpen ? 'bg-sidebar-primary text-background hover:bg-sidebar-primary' : 'hover:bg-sidebar-primary'} ${isOpen ? 'bg-primary' : ''} `}
+                                            className={`rounded-lg p-1.5 ${isGroupOpen ? 'bg-sidebar-primary text-background hover:bg-sidebar-primary' : 'hover:bg-sidebar-primary'} ${openIndex === i ? 'bg-primary' : ''} `}
                                         >
                                             {navItem.children ? (
                                                 <CollapsibleTrigger asChild>

@@ -12,12 +12,16 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const schema = z
     .object({
         name: z.string().min(2, 'Nama minimal 2 karakter'),
         email: z.string().email('Format email tidak valid'),
         phone: z.string().max(20, 'Nomor telepon maksimal 20 karakter').optional(),
+        role: z.enum(['technician', 'technician-intern'], {
+            message: 'Role wajib dipilih',
+        }),
         password: z.string().min(6, 'Password minimal 6 karakter'),
         password_confirmation: z.string().min(1, 'Konfirmasi password wajib diisi'),
     })
@@ -44,6 +48,7 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
             name: '',
             email: '',
             phone: '',
+            role: 'technician',
             password: '',
             password_confirmation: '',
         },
@@ -119,6 +124,28 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
                                     <FormControl>
                                         <Input placeholder="Masukkan nomor telepon" {...field} />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="role"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Role" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="technician">Technician</SelectItem>
+                                            <SelectItem value="technician-intern">Technician Intern</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

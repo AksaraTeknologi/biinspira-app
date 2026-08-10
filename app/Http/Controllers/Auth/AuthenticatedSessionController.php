@@ -43,7 +43,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('user.dashboard'));
         }
         
-        if ($user->hasRole('technician')) {
+        if ($user->hasAnyRole(['technician', 'technician-intern'])) {
             return redirect()->intended(route('requests.index'));
         }
 

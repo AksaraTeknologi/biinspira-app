@@ -30,6 +30,7 @@ type Task = {
     description?: string;
     status: 'request' | 'todo' | 'in_progress' | 'in_review' | 'complete';
     urgency: 'low' | 'medium' | 'high';
+    target_role?: string;
     created_by_name?: string;
     assigned_to?: number | null;
     assigned_to_name?: string;
@@ -172,7 +173,7 @@ export default function KanbanBoard({
     };
 
     const role = normalizeRole(user_role);
-    const canDrag = ['admin', 'technician'].includes(role);
+    const canDrag = ['admin', 'technician', 'technician-intern'].includes(role);
     const isUser = role === 'user';
 
     const isOverdue = (task: Task) => {
@@ -374,10 +375,18 @@ export default function KanbanBoard({
                             {task.title}
                         </p>
 
-                        {/* Urgency badge */}
-                        <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${urgencyConfig.className}`}>
-                            {urgencyConfig.label}
-                        </span>
+                        <div className="mb-2 flex flex-wrap gap-1">
+                            {/* Urgency badge */}
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${urgencyConfig.className}`}>
+                                {urgencyConfig.label}
+                            </span>
+                            
+                            {role === 'technician' && task.target_role === 'technician-intern' && (
+                                <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                    Untuk Intern
+                                </span>
+                            )}
+                        </div>
 
                         <p className={`mb-3 truncate text-xs ${overdue ? 'text-red-400' : 'text-gray-400 dark:text-zinc-400'}`}>
                             {task.created_by_name || '-'}

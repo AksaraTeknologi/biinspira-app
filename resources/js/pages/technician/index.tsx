@@ -32,6 +32,7 @@ interface Technician {
     name: string;
     email: string;
     phone?: string | null;
+    role: string;
 }
 
 export default function Index() {
@@ -86,6 +87,11 @@ export default function Index() {
             accessorKey: 'phone',
             header: 'Phone',
             cell: ({ row }) => <div className="font-medium">{row.original.phone || '-'}</div>,
+        },
+        {
+            accessorKey: 'role',
+            header: 'Role',
+            cell: ({ row }) => <div className="font-medium">{row.original.role}</div>,
         },
     ];
 

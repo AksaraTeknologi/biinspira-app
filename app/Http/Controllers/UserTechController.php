@@ -19,7 +19,17 @@ class UserTechController extends Controller
             abort(403);
         }
 
-        $users = User::role('technician')->get();
+        $users = User::role(['technician', 'technician-intern'])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'role' => $user->hasRole('technician') ? 'Technician' : 'Intern',
+                ];
+            });
 
         return Inertia::render('technician/index', [
             'users' => $users
@@ -53,6 +63,7 @@ class UserTechController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|in:technician,technician-intern',
         ]);
 
         $user = User::create([
@@ -63,7 +74,7 @@ class UserTechController extends Controller
         ]);
 
         // assign role
-        $user->assignRole('technician');
+        $user->assignRole($validated['role']);
 
         return redirect()
             ->route('technicians.index')
@@ -80,13 +91,14 @@ class UserTechController extends Controller
             abort(403);
         }
 
-        $technician = User::role('technician')->findOrFail($id);
+        $technician = User::role(['technician', 'technician-intern'])->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $technician->id,
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6|confirmed',
+            'role' => 'required|in:technician,technician-intern',
         ]);
 
         $payload = [
@@ -100,6 +112,8 @@ class UserTechController extends Controller
         }
 
         $technician->update($payload);
+
+        $technician->syncRoles([$validated['role']]);
 
         return redirect()
             ->route('technicians.index')
@@ -116,7 +130,7 @@ class UserTechController extends Controller
             abort(403);
         }
 
-        $technician = User::role('technician')->findOrFail($id);
+        $technician = User::role(['technician', 'technician-intern'])->findOrFail($id);
         $technician->delete();
 
         return redirect()

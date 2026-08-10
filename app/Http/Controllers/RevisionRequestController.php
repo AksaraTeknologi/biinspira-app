@@ -37,6 +37,9 @@ class RevisionRequestController extends Controller
                 $taskQuery->whereNull('assigned_to')
                     ->orWhere('assigned_to', $user->id);
             });
+        } elseif ($user->hasRole('technician-intern')) {
+            // technician-intern hanya bisa melihat tiket yang ditujukan untuk technician-intern
+            $query->where('target_role', 'technician-intern');
         } else {
             // user biasa sekarang bisa melihat tiket orang lain juga
         }
@@ -51,6 +54,7 @@ class RevisionRequestController extends Controller
                     'description' => $task->description,
                     'status' => $task->status,
                     'urgency' => $task->urgency,
+                    'target_role' => $task->target_role,
                     'deadline' => $task->deadline,
                     'related_url' => $task->related_url,
                     'review_note' => $task->review_note,
@@ -72,7 +76,7 @@ class RevisionRequestController extends Controller
             ->groupBy('status');
 
         // ✅ FIX: include roles
-        $users = User::role('technician')
+        $users = User::role(['technician', 'technician-intern'])
             ->get()
             ->map(function ($user) {
                 return [
@@ -111,6 +115,7 @@ class RevisionRequestController extends Controller
             'description' => 'required|string',
             'related_url' => 'required|string',
             'urgency' => 'required|in:high,medium,low',
+            'target_role' => 'required|in:technician,technician-intern',
             'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
             'attachments' => 'required|array|min:1',
@@ -122,6 +127,7 @@ class RevisionRequestController extends Controller
             'description' => $validated['description'],
             'related_url' => $validated['related_url'] ?? null,
             'urgency' => $validated['urgency'],
+            'target_role' => $validated['target_role'],
             'deadline' => $validated['deadline'] ?? null,
             'assigned_to' => $validated['assigned_to'] ?? null,
             'status' => 'request',
@@ -170,7 +176,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::with('attachments')->findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasRole('technician-intern') && $task->assigned_to !== $user->id) abort(403);
         if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
         return Inertia::render('requests/edit', [
@@ -180,6 +186,7 @@ class RevisionRequestController extends Controller
                 'description' => $task->description,
                 'related_url' => $task->related_url,
                 'urgency' => $task->urgency,
+                'target_role' => $task->target_role,
                 'deadline' => $task->deadline,
                 'assigned_to' => $task->assigned_to,
                 'attachments' => $task->attachments->map(fn($a) => [
@@ -194,7 +201,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasRole('technician') && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasRole('technician-intern') && $task->assigned_to !== $user->id) abort(403);
 
         foreach ($task->attachments as $file) {
             Storage::disk('public')->delete($file->file_path);
@@ -211,7 +218,7 @@ class RevisionRequestController extends Controller
         $user = Auth::user();
 
         // 🔐 AUTH
-        if ($user->hasRole('technician')) {
+        if ($user->hasRole('technician-intern')) {
             $isAssignedToSelf = (string) $task->assigned_to === (string) $user->id;
             $isUnassigned = $task->assigned_to === null;
             $incomingAssignedTo = $request->input('assigned_to');
@@ -236,6 +243,7 @@ class RevisionRequestController extends Controller
             'description' => 'required|string',
             'related_url' => 'required|string',
             'urgency' => 'required|in:high,medium,low',
+            'target_role' => 'required|in:technician,technician-intern',
             'deadline' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
             'attachments' => 'nullable|array',
@@ -254,6 +262,7 @@ class RevisionRequestController extends Controller
             'description' => $validated['description'],
             'related_url' => $validated['related_url'] ?? null,
             'urgency' => $validated['urgency'],
+            'target_role' => $validated['target_role'],
             'deadline' => $validated['deadline'] ?? null,
             'assigned_to' => $validated['assigned_to'] ?? null,
         ]);
@@ -294,7 +303,7 @@ class RevisionRequestController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->hasAnyRole(['technician', 'admin'])) {
+        if (!$user->hasAnyRole(['technician', 'technician-intern', 'admin'])) {
             abort(403);
         }
 

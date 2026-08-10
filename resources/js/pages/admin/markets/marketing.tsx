@@ -3,15 +3,27 @@
 import DeleteButton from '@/components/delete-button';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import {
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    SortingState,
+    useReactTable,
+} from '@tanstack/react-table';
 import { Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CalendarIcon, Eye, Pencil } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
 
@@ -61,6 +73,288 @@ interface AdPlan {
 
 const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') }];
 
+function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: boolean }) {
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState('');
+    const [pageSize, setPageSize] = useState(10);
+
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return '-';
+        const d = new Date(dateString);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const columns = useMemo<ColumnDef<AdPlan>[]>(
+        () => [
+            {
+                id: 'aksi',
+                header: 'Aksi',
+                cell: ({ row }) => {
+                    const plan = row.original;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={route('admin.marketing.show', plan.id)}>
+                                    <Eye className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={route('admin.marketing.edit', plan.id)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            {isAdmin && (
+                                <DeleteButton
+                                    id={plan.id}
+                                    routeTable="marketing"
+                                    name={plan.event?.name}
+                                    role="admin"
+                                />
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'user.name',
+                header: 'User',
+                cell: ({ row }) => row.original.user?.name || '-',
+            },
+            {
+                accessorKey: 'event.name',
+                header: 'Event',
+                cell: ({ row }) => row.original.event?.name || '-',
+            },
+            {
+                id: 'flayer',
+                header: 'Flayer Iklan',
+                cell: ({ row }) => {
+                    const plan = row.original;
+                    return plan.image_flayer ? (
+                        <a
+                            href={plan.image_flayer}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-primary hover:underline"
+                        >
+                            <Eye className="h-4 w-4" />
+                            <span>{plan.title_flayer || 'Flayer'}</span>
+                        </a>
+                    ) : (
+                        '-'
+                    );
+                },
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'ad_schedule_time',
+                header: 'Jam Tayang Iklan',
+                cell: ({ row }) => {
+                    const t = row.original.ad_schedule_time;
+                    return t ? t.slice(0, 5) + ' WIB' : '-';
+                },
+            },
+            {
+                accessorKey: 'duration_days',
+                header: 'Durasi (Hari)',
+                cell: ({ row }) => row.original.duration_days || '-',
+            },
+            {
+                accessorKey: 'total_cost',
+                header: 'Total Biaya',
+                cell: ({ row }) => {
+                    const v = row.original.total_cost;
+                    return v ? `Rp ${Number(v).toLocaleString('id-ID')}` : '-';
+                },
+            },
+            {
+                accessorKey: 'checkout_count',
+                header: 'Jumlah Peserta',
+                cell: ({ row }) => {
+                    const v = row.original.checkout_count;
+                    return v ? Number(v).toLocaleString('id-ID') : '-';
+                },
+            },
+            {
+                id: 'platform',
+                header: 'Platform',
+                cell: ({ row }) =>
+                    row.original.plan_platforms?.map((p) => p.platform?.name).join(', ') || '-',
+                enableSorting: false,
+            },
+            {
+                id: 'goal',
+                header: 'Goal',
+                cell: ({ row }) =>
+                    row.original.plan_platforms?.map((p) => p.goal?.name).join(', ') || '-',
+                enableSorting: false,
+            },
+            {
+                id: 'audience_type',
+                header: 'Tipe Target Peserta',
+                cell: ({ row }) => {
+                    const types = [
+                        ...new Set(
+                            row.original.plan_platforms?.map((p) =>
+                                p.audience_type === 'targeted'
+                                    ? 'Targetting Audiens'
+                                    : p.audience_type === 'broad'
+                                    ? 'Broad'
+                                    : p.audience_type === 'combined'
+                                    ? 'Combined'
+                                    : '-',
+                            ),
+                        ),
+                    ].join(', ');
+                    return types || '-';
+                },
+                enableSorting: false,
+            },
+            {
+                id: 'end_date',
+                header: 'Tanggal Berakhir',
+                cell: ({ row }) =>
+                    row.original.plan_platforms?.map((p) => formatDate(p.end_date)).join(', ') || '-',
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'status',
+                header: 'Status',
+                cell: ({ row }) => {
+                    const s = row.original.status;
+                    return (
+                        <span
+                            className={`rounded px-2 py-1 text-xs font-medium ${
+                                s === 'active'
+                                    ? 'bg-green-100 text-green-700'
+                                    : s === 'draft'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-700'
+                            }`}
+                        >
+                            {s || '-'}
+                        </span>
+                    );
+                },
+            },
+        ],
+        [isAdmin],
+    );
+
+    const table = useReactTable({
+        data: adPlans,
+        columns,
+        state: { sorting, globalFilter },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        initialState: { pagination: { pageSize } },
+    });
+
+    return (
+        <>
+            {/* Search & page size */}
+            <div className="flex items-center gap-2 py-4">
+                <Input
+                    placeholder="Cari iklan..."
+                    value={globalFilter ?? ''}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    className="max-w-sm bg-input"
+                />
+                <div className="ml-auto flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground">Per halaman</Label>
+                    <Select
+                        value={String(pageSize)}
+                        onValueChange={(val) => {
+                            setPageSize(Number(val));
+                            table.setPageSize(Number(val));
+                        }}
+                    >
+                        <SelectTrigger className="w-20 bg-input">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[10, 25, 50, 100].map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                    {n}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-hidden rounded-lg border shadow-sm">
+                <Table>
+                    <TableHeader className="bg-border">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody className="bg-input">
+                        {table.getRowModel().rows.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="py-6 text-center text-gray-500">
+                                    Tidak ada data iklan.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-end space-x-2 py-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                    {table.getFilteredRowModel().rows.length} iklan ditemukan.
+                </div>
+                <div className="space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function Marketing() {
     const { adPlans = [], isAdmin } = usePage<{ adPlans?: AdPlan[]; isAdmin?: boolean }>().props;
     const { filters } = usePage().props as any;
@@ -77,12 +371,6 @@ export default function Marketing() {
 
     const handleAddAd = () => {
         router.visit(route(isAdmin ? 'admin.marketing.create' : 'user.marketing.create'));
-    };
-
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     };
 
     const applyFilter = () => {
@@ -139,7 +427,7 @@ export default function Marketing() {
                                         id="date-range"
                                         variant={'outline'}
                                         className={cn(
-                                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                                            'w-full justify-start text-left font-normal sm:w-75',
                                             'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
                                             !date && 'text-muted-foreground',
                                         )}
@@ -174,21 +462,6 @@ export default function Marketing() {
                                                 '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                                 '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                             )}
-                                            components={{
-                                                IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-                                                IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-                                            }}
-                                            formatters={{
-                                                formatCaption: (date, options) => {
-                                                    return (
-                                                        <div className="flex items-center justify-center">
-                                                            <span className="font-medium">
-                                                                {format(date, 'MMMM yyyy', { locale: options?.locale })}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                },
-                                            }}
                                         />
                                     </div>
                                 </PopoverContent>
@@ -219,177 +492,8 @@ export default function Marketing() {
                         </div>
                     )}
                 </div>
-<div className="overflow-hidden rounded-lg border shadow-sm">
-    <Table>
-        <TableHeader className="bg-border">
-            <TableRow>
-                <TableHead>Aksi</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Event</TableHead>
-                <TableHead>Flayer Iklan</TableHead>
-                <TableHead>Jam Tayang Iklan</TableHead>
-                <TableHead>Durasi (Hari)</TableHead>
-                <TableHead>Total Biaya</TableHead>
-                <TableHead>Jumlah Peserta</TableHead>
-                <TableHead>Platform</TableHead>
-                <TableHead>Goal</TableHead>
-                <TableHead>Tipe Target Peserta</TableHead>
-                <TableHead>Tanggal Berakhir</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Status</TableHead>
-            </TableRow>
-        </TableHeader>
 
-        <TableBody className="bg-input">
-            {adPlans.length > 0 ? (
-                adPlans.map((plan) => {
-
-                    const platforms = plan.plan_platforms
-                        .map((p) => p.platform?.name)
-                        .join(', ');
-
-                    const goals = plan.plan_platforms
-                        .map((p) => p.goal?.name)
-                        .join(', ');
-
-                    const audienceTypes = [
-                        ...new Set(
-                            plan.plan_platforms.map((p) =>
-                                p.audience_type === "targeted"
-                                    ? "Targetting Audiens"
-                                    : p.audience_type === "broad"
-                                    ? "Broad"
-                                    : p.audience_type === "combined"
-                                    ? "Combined"
-                                    : "-"
-                            )
-                        ),
-                    ].join(", ");
-
-                    const endDates = plan.plan_platforms
-                        .map((p) => formatDate(p.end_date))
-                        .join(", ");
-
-                    return (
-                        <TableRow key={plan.id}>
-
-                            {/* AKSI */}
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href={route("admin.marketing.show", plan.id)}>
-                                            <Eye className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
-
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href={route("admin.marketing.edit", plan.id)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
-
-                                    {isAdmin && (
-                                        <DeleteButton
-                                            id={plan.id}
-                                            routeTable="marketing"
-                                            name={plan.event?.name}
-                                            role="admin"
-                                        />
-                                    )}
-                                </div>
-                            </TableCell>
-
-                            <TableCell>{plan.user?.name || "-"}</TableCell>
-
-
-                            {/* EVENT */}
-                            <TableCell>{plan.event?.name || "-"}</TableCell>
-
-                            {/* FLAYER */}
-                            <TableCell>
-                                {plan.image_flayer ? (
-                                    <a
-                                        href={plan.image_flayer}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-primary hover:underline"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                        <span>{plan.title_flayer || "Flayer"}</span>
-                                    </a>
-                                ) : (
-                                    "-"
-                                )}
-                            </TableCell>
-
-                            {/* JAM */}
-                            <TableCell>
-                                {plan.ad_schedule_time
-                                    ? plan.ad_schedule_time.slice(0, 5)
-                                    : "-"}{" "}
-                                WIB
-                            </TableCell>
-
-                            {/* DURASI */}
-                            <TableCell>{plan.duration_days || "-"}</TableCell>
-
-                            {/* BIAYA */}
-                            <TableCell className="whitespace-nowrap">
-                                {plan.total_cost
-                                    ? `Rp ${plan.total_cost.toLocaleString("id-ID")}`
-                                    : "-"}
-                            </TableCell>
-
-                            {/* PESERTA */}
-                            <TableCell>
-                                {plan.checkout_count
-                                    ? plan.checkout_count.toLocaleString("id-ID")
-                                    : "-"}
-                            </TableCell>
-
-                            {/* PLATFORM */}
-                            <TableCell>{platforms || "-"}</TableCell>
-
-                            {/* GOAL */}
-                            <TableCell>{goals || "-"}</TableCell>
-
-                            {/* AUDIENCE */}
-                            <TableCell>{audienceTypes || "-"}</TableCell>
-
-                            {/* END DATE */}
-                            <TableCell>{endDates || "-"}</TableCell>
-
-                            {/* USER */}
-                            <TableCell>{plan.user?.name || "-"}</TableCell>
-
-                            {/* STATUS */}
-                            <TableCell>
-                                <span
-                                    className={`rounded px-2 py-1 text-xs font-medium ${
-                                        plan.status === "active"
-                                            ? "bg-green-100 text-green-700"
-                                            : plan.status === "draft"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-gray-100 text-gray-700"
-                                    }`}
-                                >
-                                    {plan.status || "-"}
-                                </span>
-                            </TableCell>
-
-                        </TableRow>
-                    );
-                })
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={15} className="py-6 text-center text-gray-500">
-                        Tidak ada data iklan.
-                    </TableCell>
-                </TableRow>
-            )}
-        </TableBody>
-    </Table>
-</div>
+                <MarketingTable adPlans={adPlans} isAdmin={isAdmin ?? false} />
             </div>
         </AppLayout>
     );

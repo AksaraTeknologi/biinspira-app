@@ -43,6 +43,7 @@ type Task = {
     related_url?: string | null;
     status: 'request' | 'todo' | 'in_progress' | 'in_review' | 'complete';
     urgency?: string;
+    target_role?: string;
     created_by_name?: string;
     assigned_to?: number | string | null;
     assigned_to_name?: string | null;
@@ -238,10 +239,15 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                     <div className="flex items-center justify-between border-b p-5 dark:border-zinc-700">
                         <div>
                             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{task.title}</h2>
-                            <div className="mt-2">
+                            <div className="mt-2 flex flex-wrap gap-2">
                                 <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
                                     {STATUS_OPTIONS.find((item) => item.value === task.status)?.label ?? task.status}
                                 </span>
+                                {userRoles.includes('technician') && task.target_role === 'technician-intern' && (
+                                    <span className="rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        Untuk Intern
+                                    </span>
+                                )}
                             </div>
                         </div>
 

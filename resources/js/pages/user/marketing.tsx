@@ -154,7 +154,7 @@ export default function Marketing() {
                                         id="date-range"
                                         variant={'outline'}
                                         className={cn(
-                                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                                            'w-full justify-start text-left font-normal sm:w-75',
                                             'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
                                             !date && 'text-muted-foreground',
                                         )}

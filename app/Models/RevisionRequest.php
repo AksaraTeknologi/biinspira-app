@@ -17,6 +17,7 @@ class RevisionRequest extends Model
         'description',
         'status',
         'urgency',
+        'target_role',
         'deadline',
         'related_url',
         'review_note',
