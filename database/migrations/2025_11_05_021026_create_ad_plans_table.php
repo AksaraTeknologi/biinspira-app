@@ -15,6 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('event_id')->constrained('master_events')->cascadeOnDelete();
+            $table->string('batch')->nullable();
+            $table->time('ad_schedule_time')->nullable();
+            $table->string('title_flayer')->nullable();
+            $table->string('image_flayer')->nullable();
             $table->enum('status', ['draft', 'completed'])->default('draft');
             $table->timestamps();
         });

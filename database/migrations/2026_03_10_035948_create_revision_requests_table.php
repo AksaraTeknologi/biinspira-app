@@ -18,9 +18,11 @@ return new class extends Migration
             $table->text('description');
 
             $table->string('related_url')->nullable();
+            $table->text('review_note')->nullable();
 
             // user role 'unit' yang bikin request
             $table->foreignUuid('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('assigned_to')->nullable()->constrained('users')->nullOnDelete();
 
             $table->string('attachment')->nullable(); // field untuk foto / file
 
@@ -29,6 +31,8 @@ return new class extends Migration
                 'medium',
                 'low'
             ])->default('medium');
+
+            $table->enum('target_role', ['technician', 'technician-intern'])->default('technician');
 
             $table->enum('status', [
                 'request',
