@@ -94,7 +94,7 @@ class TvDashboardController extends Controller
         $month = (int) $now->month;
         $cacheKey = "tv_dashboard.detail.group.{$metric}.{$year}.{$month}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($availablePlatformKeys, $platforms, $metric, $now, $year): array {
+        return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($availablePlatformKeys, $platforms, $metric, $now, $year): array {
             $platformDetails = [];
             foreach ($availablePlatformKeys as $key) {
                 $platform = $platforms[$key] ?? null;
@@ -413,7 +413,7 @@ class TvDashboardController extends Controller
         $month = (int) $now->month;
         $cacheKey = "tv_dashboard.detail.{$platformKey}.{$metric}.{$year}.{$month}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($platformKey, $baseUrl, $token, $metric, $now): array {
+        return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($platformKey, $baseUrl, $token, $metric, $now): array {
             $range = $metric === 'month'
                 ? [
                     'start' => $now->copy()->startOfYear(),
@@ -555,7 +555,7 @@ class TvDashboardController extends Controller
             }
 
             try {
-                $paidDate = Carbon::parse((string) $paidAt);
+                $paidDate = Carbon::parse((string) $paidAt)->setTimezone(config('app.timezone'));
             } catch (\Throwable) {
                 continue;
             }
@@ -613,7 +613,7 @@ class TvDashboardController extends Controller
             }
 
             try {
-                $paidDate = Carbon::parse((string) $paidAt);
+                $paidDate = Carbon::parse((string) $paidAt)->setTimezone(config('app.timezone'));
             } catch (\Throwable) {
                 continue;
             }
