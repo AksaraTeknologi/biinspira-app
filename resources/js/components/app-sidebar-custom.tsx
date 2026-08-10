@@ -104,7 +104,7 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
         title: 'Ticketing Website',
         href: route('requests.index'),
         icon: KanbanSquareIcon,
-        roles: ['admin', 'user', 'technician'],
+        roles: ['admin', 'user', 'technician', 'technician-intern'],
     },
 ];
 

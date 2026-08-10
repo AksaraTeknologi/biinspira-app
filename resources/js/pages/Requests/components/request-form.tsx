@@ -21,6 +21,7 @@ type RequestTask = {
     description: string;
     related_url?: string | null;
     urgency: 'high' | 'medium' | 'low';
+    target_role?: 'technician' | 'technician-intern';
     deadline?: string | null;
     attachments?: Array<{ file_path: string }>;
 };
@@ -35,6 +36,7 @@ type RequestPayload = {
     description: string;
     related_url: string;
     urgency: 'high' | 'medium' | 'low';
+    target_role: 'technician' | 'technician-intern';
     deadline: string;
     attachments: File[];
     _method?: 'PUT';
@@ -69,6 +71,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
         description: task?.description ?? '',
         related_url: task?.related_url ?? '',
         urgency: task?.urgency ?? 'low',
+        target_role: task?.target_role ?? 'technician',
         deadline: task?.deadline ? (task.deadline.includes(' ') ? task.deadline.split(' ')[0] : task.deadline) : '',
         attachments: [],
     });
@@ -84,6 +87,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
             description: task.description ?? '',
             related_url: task.related_url ?? '',
             urgency: task.urgency ?? 'low',
+            target_role: task.target_role ?? 'technician',
             deadline: task.deadline ? (task.deadline.includes(' ') ? task.deadline.split(' ')[0] : task.deadline) : '',
             attachments: [],
         });
@@ -91,7 +95,9 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
 
     useEffect(() => {
         return () => {
-            newFilePreviews.forEach((url) => URL.revokeObjectURL(url));
+            newFilePreviews.forEach((url) => {
+                if (url) URL.revokeObjectURL(url);
+            });
         };
     }, [newFilePreviews]);
 
@@ -104,7 +110,9 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
         const files = Array.from(event.target.files);
         setData('attachments', files);
 
-        newFilePreviews.forEach((url) => URL.revokeObjectURL(url));
+        newFilePreviews.forEach((url) => {
+            if (url) URL.revokeObjectURL(url);
+        });
 
         const previews = files.map((file) => (file.type.startsWith('image/') ? URL.createObjectURL(file) : null));
 
@@ -122,7 +130,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!data.title.trim() || !data.description.trim() || !data.related_url.trim() || !data.urgency || !data.deadline || !hasAttachmentValue) {
+        if (!data.title.trim() || !data.description.trim() || !data.related_url.trim() || !data.urgency || !data.target_role || !data.deadline || !hasAttachmentValue) {
             toast.error('Semua input wajib diisi.');
             return;
         }
@@ -137,7 +145,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
             preserveScroll: true,
             onSuccess: () => {
                 if (mode === 'create') {
-                    reset('title', 'description', 'related_url', 'urgency', 'deadline', 'attachments');
+                    reset('title', 'description', 'related_url', 'urgency', 'target_role', 'deadline', 'attachments');
                     setDate(undefined);
                     setNewFilePreviews([]);
                 }
@@ -193,7 +201,21 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
                         {errors.related_url && <p className="text-sm text-red-500">{errors.related_url}</p>}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-3">
+                            <Label>Target Role</Label>
+                            <Select value={data.target_role} onValueChange={(value: 'technician' | 'technician-intern') => setData('target_role', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih target role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="technician">Technician</SelectItem>
+                                    <SelectItem value="technician-intern">Intern</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.target_role && <p className="text-sm text-red-500">{errors.target_role}</p>}
+                        </div>
+
                         <div className="space-y-3">
                             <Label>Urgensi</Label>
                             <Select value={data.urgency} onValueChange={(value: 'high' | 'medium' | 'low') => setData('urgency', value)}>
