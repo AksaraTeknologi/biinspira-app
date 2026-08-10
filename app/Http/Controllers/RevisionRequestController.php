@@ -176,7 +176,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::with('attachments')->findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasRole('technician-intern') && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasAnyRole(['technician', 'technician-intern']) && $task->assigned_to !== $user->id) abort(403);
         if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
         return Inertia::render('requests/edit', [
@@ -201,7 +201,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasRole('technician-intern') && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasAnyRole(['technician', 'technician-intern']) && $task->assigned_to !== $user->id) abort(403);
 
         foreach ($task->attachments as $file) {
             Storage::disk('public')->delete($file->file_path);
@@ -218,7 +218,7 @@ class RevisionRequestController extends Controller
         $user = Auth::user();
 
         // 🔐 AUTH
-        if ($user->hasRole('technician-intern')) {
+        if ($user->hasAnyRole(['technician', 'technician-intern'])) {
             $isAssignedToSelf = (string) $task->assigned_to === (string) $user->id;
             $isUnassigned = $task->assigned_to === null;
             $incomingAssignedTo = $request->input('assigned_to');

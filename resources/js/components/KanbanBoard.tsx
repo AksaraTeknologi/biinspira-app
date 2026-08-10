@@ -381,7 +381,7 @@ export default function KanbanBoard({
                                 {urgencyConfig.label}
                             </span>
                             
-                            {role === 'technician' && task.target_role === 'technician-intern' && (
+                            {(role === 'technician' || role === 'admin') && task.target_role === 'technician-intern' && (
                                 <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
                                     Untuk Intern
                                 </span>

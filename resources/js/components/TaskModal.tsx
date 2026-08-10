@@ -145,7 +145,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const userRoles = (auth?.user?.roles ?? []).map((role) => (typeof role === 'string' ? role.toLowerCase() : role.name.toLowerCase()));
     const isAdmin = userRoles.includes('admin');
     const isAssignedToCurrentUser = currentUserId != null && task?.assigned_to != null && Number(task.assigned_to) === Number(currentUserId);
-    const canClaimTask = Boolean(task && !isAdmin && userRoles.includes('technician') && task.status === 'request' && !task.assigned_to);
+    const canClaimTask = Boolean(task && !isAdmin && (userRoles.includes('technician') || userRoles.includes('technician-intern')) && task.status === 'request' && !task.assigned_to);
     const canUpdateTask = isAdmin || isAssignedToCurrentUser;
 
     const initialPayload = useMemo(() => buildUpdatePayload(task, users), [task, users]);
