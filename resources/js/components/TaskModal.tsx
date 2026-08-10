@@ -204,6 +204,11 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const claimTask = () => {
         if (!task || currentUserId == null) return;
 
+        if (!data.estimation_start || !data.estimation_end) {
+            toast.error('Harap isi rentang estimasi terlebih dahulu.');
+            return;
+        }
+
         transform((current) => ({
             ...current,
             assigned_to: String(currentUserId),
@@ -388,17 +393,54 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                         {canClaimTask && (
                             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Task ini belum ditugaskan</p>
                                         <p className="text-xs text-amber-700 dark:text-amber-200">
-                                            Teknisi hanya bisa mengambil task ini untuk dirinya sendiri.
+                                            Isi rentang estimasi di bawah lalu ambil task ini untuk Anda kerjakan.
                                         </p>
                                     </div>
 
                                     <Button type="button" onClick={claimTask} disabled={processing} className="bg-amber-600 hover:bg-amber-700">
                                         {processing ? 'Mengambil...' : 'Ambil ke Saya'}
                                     </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-amber-900 dark:text-amber-100">Rentang Estimasi Pengerjaan</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className={cn('w-full justify-start text-left font-normal bg-white dark:bg-zinc-900 border-amber-200', !range.from && 'text-muted-foreground')}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {range.from
+                                                    ? range.to
+                                                        ? `${format(range.from, 'dd MMM yyyy')} - ${format(range.to, 'dd MMM yyyy')}`
+                                                        : format(range.from, 'dd MMM yyyy')
+                                                    : 'Pilih rentang estimasi'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto rounded-2xl border border-zinc-200 bg-background p-4 shadow-lg"
+                                            align="start"
+                                        >
+                                            <Calendar
+                                                mode="range"
+                                                selected={range}
+                                                numberOfMonths={2}
+                                                className={calendarClassName}
+                                                onSelect={(selectedRange) => {
+                                                    setData(
+                                                        'estimation_start',
+                                                        selectedRange?.from ? format(selectedRange.from, 'yyyy-MM-dd') : null,
+                                                    );
+                                                    setData('estimation_end', selectedRange?.to ? format(selectedRange.to, 'yyyy-MM-dd') : null);
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </div>
                         )}
@@ -428,13 +470,13 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                                     {isAdmin && (
                                         <div className="space-y-2">
-                                            <Label>Pilih Programmer</Label>
+                                            <Label>Pilih Teknisi</Label>
                                             <Select
                                                 value={selectedAssignedTo}
                                                 onValueChange={(value) => setData('assigned_to', value === 'unassigned' ? '' : value)}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih programmer" />
+                                                    <SelectValue placeholder="Pilih teknisi" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="unassigned">Belum ditugaskan</SelectItem>
