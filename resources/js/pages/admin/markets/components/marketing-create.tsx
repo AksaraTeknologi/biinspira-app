@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { DateRange } from 'react-day-picker';
 import { LocationAutocompleteInput } from '@/components/ui/locationautocompleteinput';
 
 // ============================================================
@@ -38,7 +39,7 @@ type Event = {
 export default function PerencanaanIklan() {
     const { props } = usePage();
     const { events, goals, users, auth, platforms, history } = props as unknown as {
-        events: { id: number; name: string; date?: string }[];
+        events: { id: number; name: string; date?: string; user: { id: number; name: string } }[];
         platforms: { id: number; name: string }[];
         goals: { id: number; name: string }[];
         users: { id: number; name: string }[];
@@ -54,7 +55,7 @@ export default function PerencanaanIklan() {
     const locationTargetedHistory = (history?.location_targeted || []).map(String);
     const locationBroadHistory    = (history?.location_broad    || []).map(String);
 
-    const isAdmin = Array.isArray(auth?.role) ? auth.role.includes('admin') : auth?.role === 'admin';
+    const isAdmin = Array.isArray(auth?.user?.role) ? auth.user.role.includes('admin') : auth?.user?.role === 'admin';
     const [formState, setFormState] = useState<Record<number, any>>(() =>
         platforms.reduce(
             (acc, platform) => {
@@ -72,7 +73,7 @@ export default function PerencanaanIklan() {
     const [batchValue, setBatchValue] = useState(''); // State untuk batch
     const [selectedEvent,   setSelectedEvent]   = useState('');
     const [tab,             setTab]             = useState<number>(() => platforms[0]?.id ?? 0);
-    const [range,           setRange]           = useState<{ from?: Date; to?: Date }>({});
+    const [range,           setRange]           = useState<DateRange | undefined>(undefined);
     const { post, processing } = useForm({});
 
     const formatRupiah = (value: string | number) => {
@@ -106,8 +107,8 @@ export default function PerencanaanIklan() {
         }));
     };
 
-    const handleDateChange = (rangeValue: { from?: Date; to?: Date } | undefined) => {
-        setRange(rangeValue || {});
+    const handleDateChange = (rangeValue: DateRange | undefined) => {
+        setRange(rangeValue || undefined);
         if (rangeValue?.from) handleInputChange('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
         if (rangeValue?.to)   handleInputChange('end_date',   format(rangeValue.to,   'yyyy-MM-dd'));
     };
@@ -433,12 +434,17 @@ export default function PerencanaanIklan() {
         );
     };
 
+    const breadcrumbs = [
+        { title: 'Marketing', href: route('admin.marketing.index') },
+        { title: 'Perencanaan Iklan', href: route('admin.marketing.create') },
+    ];
+
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <div className="w-full space-y-6 p-4 md:p-6">
                 <h2 className="text-2xl font-semibold">Perencanaan Iklan</h2>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <Card className="w-full border-zinc-200 shadow-md">
                         <CardHeader>
                             <CardTitle>Perencanaan Iklan</CardTitle>

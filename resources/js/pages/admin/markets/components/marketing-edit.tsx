@@ -14,6 +14,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
 
 export default function MarketingEdit() {
@@ -157,9 +158,9 @@ export default function MarketingEdit() {
         }
     }, [data.user_id, events, data.event_id]);
 
-    const activePlatform = data.platforms.find((p) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
-    const tab = mergedPlatforms.find((p) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
-    const [range, setRange] = useState<{ from?: Date; to?: Date }>({
+    const activePlatform = data.platforms.find((p: { platform_id: number | string }) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
+    const tab = mergedPlatforms.find((p: { platform_id: number | string; platform: { name: string } }) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
+    const [range, setRange] = useState<DateRange | undefined>({
         from: activePlatform?.start_date ? parseISO(activePlatform.start_date) : undefined,
         to: activePlatform?.end_date ? parseISO(activePlatform.end_date) : undefined,
     });
@@ -182,7 +183,7 @@ export default function MarketingEdit() {
     }, [activePlatform?.end_date]);
 
     const handleTabChange = (val: string) => {
-        const selected = mergedPlatforms.find((p) => p.platform.name.toLowerCase() === val);
+        const selected = mergedPlatforms.find((p: { platform: { name: string }; platform_id: number | string }) => p.platform.name.toLowerCase() === val);
         if (selected) setActivePlatformId(selected.platform_id);
     };
 
@@ -193,8 +194,8 @@ export default function MarketingEdit() {
         );
     };
 
-    const handleDateChange = (rangeValue: { from?: Date; to?: Date } | undefined) => {
-        setRange(rangeValue || {});
+    const handleDateChange = (rangeValue: DateRange | undefined) => {
+        setRange(rangeValue ?? undefined);
         setData(
             'platforms',
             data.platforms.map((p: any) =>
@@ -306,14 +307,9 @@ export default function MarketingEdit() {
             ? route('admin.marketing.update.mode', [adPlan.id, submitMode])
             : route('user.marketing.update.mode', [adPlan.id, submitMode]);
 
+        setData('platforms', filteredPlatforms as any);
+
         post(updateRoute, {
-            data: {
-                event_id: data.event_id,
-                ad_plan_id: data.ad_plan_id,
-                ad_schedule_time: data.ad_schedule_time,
-                user_id: data.user_id,
-                platforms: filteredPlatforms,
-            },
             preserveScroll: true,
         });
     };

@@ -129,7 +129,7 @@ export const columns: ColumnDef<Invoice>[] = [
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="max-w-[200px] cursor-default truncate">
+                        <div className="max-w-50 cursor-default truncate">
                             {first.title}
                             {products.length > 1 && <span className="text-muted-foreground"> +{products.length - 1} lainnya</span>}
                         </div>

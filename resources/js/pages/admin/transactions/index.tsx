@@ -330,7 +330,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                                         id="date-range"
                                         variant="outline"
                                         className={cn(
-                                            'w-full justify-start text-left font-normal sm:w-[230px]',
+                                            'w-full justify-start text-left font-normal sm:w-57.5',
                                             'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
                                             !date && 'text-muted-foreground',
                                         )}
@@ -373,7 +373,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                             </Popover>
                         </div>
                         <Select value={selectedPlatform} onValueChange={setSelectedPlatform} disabled={isUserRestricted}>
-                            <SelectTrigger className="w-[150px] bg-input">
+                            <SelectTrigger className="w-37.5 bg-input">
                                 <SelectValue placeholder="Pilih Platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -386,7 +386,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                             </SelectContent>
                         </Select>
                         <Select value={selectedProductType} onValueChange={setSelectedProductType}>
-                            <SelectTrigger className="w-[150px] bg-input">
+                            <SelectTrigger className="w-37.5 bg-input">
                                 <SelectValue placeholder="Tipe Produk" />
                             </SelectTrigger>
                             <SelectContent>

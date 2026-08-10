@@ -248,7 +248,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('month')}
                                             className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-3"
                                         >
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <TrendingUp className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -269,7 +269,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('month')}
                                             className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-3"
                                         >
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <CalendarIcon className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -290,7 +290,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('day')}
                                             className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-3"
                                         >
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <Sparkles className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -334,7 +334,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('month')}
                                             className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-4.5"
                                         >
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <TrendingUp className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -355,7 +355,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('month')}
                                             className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-4.5"
                                         >
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <CalendarIcon className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -376,7 +376,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                             onClick={() => handleOpenGroupDrilldown('day')}
                                             className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-4.5"
                                         >
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <Sparkles className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
