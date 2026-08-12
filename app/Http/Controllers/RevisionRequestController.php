@@ -25,7 +25,7 @@ class RevisionRequestController extends Controller
             'creator' => function ($q) {
                 $q->select('id', 'name')->with('roles');
             },
-            'assignee:id,name',
+            'assignees:id,name',
             'attachments'
         ]);
 
@@ -34,8 +34,10 @@ class RevisionRequestController extends Controller
         } elseif ($user->hasRole('technician')) {
             // technician lihat task yg belum ditugaskan atau yg sudah ditugaskan ke dirinya
             $query->where(function ($taskQuery) use ($user) {
-                $taskQuery->whereNull('assigned_to')
-                    ->orWhere('assigned_to', $user->id);
+                $taskQuery->whereDoesntHave('assignees')
+                    ->orWhereHas('assignees', function($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
             });
         } elseif ($user->hasRole('technician-intern')) {
             // technician-intern hanya bisa melihat tiket yang ditujukan untuk technician-intern
@@ -66,8 +68,8 @@ class RevisionRequestController extends Controller
                     'created_by' => $task->created_by,
                     'created_by_name' => $task->creator ? ($task->creator->hasRole('admin') ? 'AKSARA TEKNOLOGI MANDIRI' : $task->creator->name) : null,
 
-                    'assigned_to' => $task->assigned_to,
-                    'assigned_to_name' => $task->assignee?->name,
+                    'assignees' => $task->assignees->pluck('id'),
+                    'assignees_name' => $task->assignees->pluck('name')->join(', '),
 
                     'estimation_start' => $task->estimation_start,
                     'estimation_end' => $task->estimation_end,
@@ -117,7 +119,8 @@ class RevisionRequestController extends Controller
             'urgency' => 'required|in:high,medium,low',
             'target_role' => 'required|in:technician,technician-intern',
             'deadline' => 'required|date',
-            'assigned_to' => 'nullable|exists:users,id',
+            'assignees' => 'nullable|array',
+            'assignees.*' => 'exists:users,id',
             'attachments' => 'required|array|min:1',
             'attachments.*' => 'required|file|mimes:jpg,png,jpeg,pdf',
         ]);
@@ -129,10 +132,13 @@ class RevisionRequestController extends Controller
             'urgency' => $validated['urgency'],
             'target_role' => $validated['target_role'],
             'deadline' => $validated['deadline'] ?? null,
-            'assigned_to' => $validated['assigned_to'] ?? null,
             'status' => 'request',
             'created_by' => Auth::id(),
         ]);
+
+        if (!empty($validated['assignees'])) {
+            $task->assignees()->attach($validated['assignees']);
+        }
 
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
@@ -176,7 +182,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::with('attachments')->findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasAnyRole(['technician', 'technician-intern']) && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasAnyRole(['technician', 'technician-intern']) && !$task->assignees->contains('id', $user->id)) abort(403);
         if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
         return Inertia::render('requests/edit', [
@@ -188,7 +194,7 @@ class RevisionRequestController extends Controller
                 'urgency' => $task->urgency,
                 'target_role' => $task->target_role,
                 'deadline' => $task->deadline,
-                'assigned_to' => $task->assigned_to,
+                'assignees' => $task->assignees->pluck('id'),
                 'attachments' => $task->attachments->map(fn($a) => [
                     'file_path' => $a->file_path,
                 ]),
@@ -201,7 +207,7 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::findOrFail($id);
         $user = Auth::user();
 
-        if ($user->hasAnyRole(['technician', 'technician-intern']) && $task->assigned_to !== $user->id) abort(403);
+        if ($user->hasAnyRole(['technician', 'technician-intern']) && !$task->assignees->contains('id', $user->id)) abort(403);
 
         foreach ($task->attachments as $file) {
             Storage::disk('public')->delete($file->file_path);
@@ -219,19 +225,11 @@ class RevisionRequestController extends Controller
 
         // 🔐 AUTH
         if ($user->hasAnyRole(['technician', 'technician-intern'])) {
-            $isAssignedToSelf = (string) $task->assigned_to === (string) $user->id;
-            $isUnassigned = $task->assigned_to === null;
-            $incomingAssignedTo = $request->input('assigned_to');
+            $isAssignedToSelf = $task->assignees->contains('id', $user->id);
+            $incomingAssignees = $request->input('assignees', []);
 
-            if (! $isAssignedToSelf && ! $isUnassigned) {
-                abort(403);
-            }
-
-            if ($incomingAssignedTo !== null && (string) $incomingAssignedTo !== (string) $user->id) {
-                abort(403);
-            }
-
-            if ($isUnassigned && (string) $incomingAssignedTo !== (string) $user->id) {
+            // Jika dia bukan assignee, dia tidak bisa edit detail (kecuali di updateStatus untuk claim)
+            if (! $isAssignedToSelf) {
                 abort(403);
             }
         }
@@ -245,7 +243,8 @@ class RevisionRequestController extends Controller
             'urgency' => 'required|in:high,medium,low',
             'target_role' => 'required|in:technician,technician-intern',
             'deadline' => 'required|date',
-            'assigned_to' => 'nullable|exists:users,id',
+            'assignees' => 'nullable|array',
+            'assignees.*' => 'exists:users,id',
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|mimes:jpg,png,jpeg,pdf',
         ]);
@@ -264,7 +263,6 @@ class RevisionRequestController extends Controller
             'urgency' => $validated['urgency'],
             'target_role' => $validated['target_role'],
             'deadline' => $validated['deadline'] ?? null,
-            'assigned_to' => $validated['assigned_to'] ?? null,
         ]);
 
         // ✅ HANDLE FILE BARU (optional, gak hapus lama)
@@ -310,20 +308,22 @@ class RevisionRequestController extends Controller
         $task = RevisionRequest::findOrFail($id);
 
         $oldStatus = $task->status;
-        $oldAssigned = $task->assigned_to;
+        $oldAssignees = $task->assignees->pluck('id')->toArray();
 
         // =========================
         // VALIDATION RULES
         // =========================
         $rules = [
             'status' => 'required|in:request,todo,in_progress,in_review,complete',
-            'assigned_to' => 'nullable|exists:users,id',
+            'assignees' => 'nullable|array',
+            'assignees.*' => 'exists:users,id',
             'estimation_start' => 'nullable|date',
             'estimation_end' => 'nullable|date',
         ];
 
         if (in_array($request->status, ['todo', 'in_progress'])) {
-            $rules['assigned_to'] = 'required|exists:users,id';
+            $rules['assignees'] = 'required|array';
+            $rules['assignees.*'] = 'exists:users,id';
             $rules['estimation_start'] = 'required|date';
             $rules['estimation_end'] = 'required|date|after_or_equal:estimation_start';
         }
@@ -333,21 +333,29 @@ class RevisionRequestController extends Controller
         // =========================
         // UPDATE TASK
         // =========================
-        $task->update($validated);
+        $task->update([
+            'status' => $validated['status'],
+            'estimation_start' => $validated['estimation_start'] ?? null,
+            'estimation_end' => $validated['estimation_end'] ?? null,
+        ]);
+
+        if (isset($validated['assignees'])) {
+            $task->assignees()->sync($validated['assignees']);
+        }
 
         Log::info('Revision request status update processed', [
             'revision_id' => $task->id,
             'updated_by' => $user->id,
             'old_status' => $oldStatus,
             'new_status' => $task->status,
-            'old_assigned_to' => $oldAssigned,
-            'assigned_to' => $validated['assigned_to'] ?? null,
+            'old_assignees' => $oldAssignees,
+            'assignees' => $validated['assignees'] ?? [],
         ]);
 
         // =========================
         // WHATSAPP NOTIF (ASSIGN CHANGE)
         // =========================
-        $this->notifyAssignedTechnician($task, $validated['assigned_to'] ?? null, $oldAssigned);
+        $this->notifyAssignedTechnicians($task, $validated['assignees'] ?? [], $oldAssignees);
 
         // =========================
         // STATUS CHANGE LOG + NOTIF
@@ -446,9 +454,8 @@ class RevisionRequestController extends Controller
         ]);
 
         // Notif WA ke teknisi tentang hasil review
-        if ($task->assigned_to) {
-            $technician = User::find($task->assigned_to);
-            if ($technician) {
+        if ($task->assignees->isNotEmpty()) {
+            foreach ($task->assignees as $technician) {
                 $message = $this->buildReviewActionMessage($task, $user, $validated['action'], $validated['review_note'] ?? null);
                 $this->sendWhatsappMessage($technician->phone, $message, [
                     'revision_id' => $task->id,
@@ -464,44 +471,30 @@ class RevisionRequestController extends Controller
             ->with('success', "Hasil review tiket berhasil {$statusLabel}.");
     }
 
-    private function notifyAssignedTechnician(RevisionRequest $task, int|string|null $assignedTo, int|string|null $oldAssigned): void
+    private function notifyAssignedTechnicians(RevisionRequest $task, array $newAssignees, array $oldAssignees): void
     {
-        $assignedToRaw = $assignedTo;
-        $oldAssignedRaw = $oldAssigned;
+        $newAssigneeIds = array_diff($newAssignees, $oldAssignees);
 
-        $assignedTo = $this->normalizeNullableIdentifier($assignedTo);
-        $oldAssigned = $this->normalizeNullableIdentifier($oldAssigned);
-
-        if (!$assignedTo || $oldAssigned === $assignedTo) {
+        if (empty($newAssigneeIds)) {
             Log::info('Skip WhatsApp assignment notification', [
                 'revision_id' => $task->id,
-                'assigned_to_raw' => $assignedToRaw,
-                'old_assigned_to_raw' => $oldAssignedRaw,
-                'assigned_to' => $assignedTo,
-                'old_assigned_to' => $oldAssigned,
-                'reason' => 'no_new_assignee_or_assignee_unchanged',
+                'assignees' => $newAssignees,
+                'old_assignees' => $oldAssignees,
+                'reason' => 'no_new_assignees',
             ]);
             return;
         }
 
-        $technician = User::find($assignedTo);
+        $technicians = User::whereIn('id', $newAssigneeIds)->get();
 
-        if (!$technician) {
-            Log::warning('Skip WhatsApp assignment notification', [
+        foreach ($technicians as $technician) {
+            $message = $this->buildAssignedTaskMessage($task, $technician);
+            $this->sendWhatsappMessage($technician->phone, $message, [
                 'revision_id' => $task->id,
-                'assigned_to' => $assignedTo,
-                'reason' => 'technician_not_found',
+                'recipient_user_id' => $technician->id,
+                'event' => 'assigned_to_technician',
             ]);
-            return;
         }
-
-        $message = $this->buildAssignedTaskMessage($task, $technician);
-
-        $this->sendWhatsappMessage($technician->phone, $message, [
-            'revision_id' => $task->id,
-            'recipient_user_id' => $technician->id,
-            'event' => 'assigned_to_technician',
-        ]);
     }
 
     private function notifyTaskCreatorStatusUpdate(RevisionRequest $task, User $unitUser): void
@@ -626,9 +619,7 @@ class RevisionRequestController extends Controller
 
     private function buildStatusChangedMessage(RevisionRequest $task, User $unitUser): string
     {
-        $technicianName = $task->assigned_to
-            ? User::find($task->assigned_to)?->name
-            : null;
+        $technicianNames = $task->assignees->pluck('name')->join(', ');
 
         $statusGuidance = $this->buildStatusGuidanceMessage($task->status);
 
@@ -639,7 +630,7 @@ class RevisionRequestController extends Controller
             "Judul: {$this->formatTextForWhatsapp($task->title)}\n" .
             "Status Terbaru: {$this->formatStatusLabel($task->status)}\n" .
             "Prioritas: {$this->formatUrgencyLabel($task->urgency)}\n" .
-            "Ditangani Oleh: {$this->formatTextForWhatsapp($technicianName)}\n" .
+            "Ditangani Oleh: {$this->formatTextForWhatsapp($technicianNames)}\n" .
             "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
             "Estimasi Mulai: {$this->formatDateForWhatsapp($task->estimation_start)}\n" .
             "Estimasi Selesai: {$this->formatDateForWhatsapp($task->estimation_end)}\n" .

@@ -2,10 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
@@ -45,8 +47,8 @@ type Task = {
     urgency?: string;
     target_role?: string;
     created_by_name?: string;
-    assigned_to?: number | string | null;
-    assigned_to_name?: string | null;
+    assignees?: number[] | string[];
+    assignees_name?: string | null;
     deadline?: string | null;
     estimation_start?: string | null;
     estimation_end?: string | null;
@@ -65,7 +67,7 @@ type UpdatePayload = {
     status: string;
     estimation_start: string | null;
     estimation_end: string | null;
-    assigned_to: string;
+    assignees: string[];
 };
 
 const STATUS_OPTIONS = [
@@ -114,26 +116,19 @@ function isImage(filePath: string) {
     return /\.(jpg|jpeg|png|webp|gif)$/i.test(filePath);
 }
 
-function resolveAssignedToId(task: Task | null, users: User[]) {
-    if (task?.assigned_to != null && String(task.assigned_to).length > 0) {
-        return String(task.assigned_to);
+function resolveAssignees(task: Task | null): string[] {
+    if (task?.assignees && Array.isArray(task.assignees)) {
+        return task.assignees.map(String);
     }
-
-    if (task?.assigned_to_name) {
-        const normalizedName = task.assigned_to_name.trim().toLowerCase();
-        const matchedUser = users.find((user) => user.name.trim().toLowerCase() === normalizedName);
-        if (matchedUser) return String(matchedUser.id);
-    }
-
-    return '';
+    return [];
 }
 
-function buildUpdatePayload(task: Task | null, users: User[]): UpdatePayload {
+function buildUpdatePayload(task: Task | null): UpdatePayload {
     return {
         status: task?.status || 'request',
         estimation_start: normalizeDateInput(task?.estimation_start),
         estimation_end: normalizeDateInput(task?.estimation_end),
-        assigned_to: resolveAssignedToId(task, users),
+        assignees: resolveAssignees(task),
     };
 }
 
@@ -144,11 +139,19 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const { auth } = usePage<PageProps>().props;
     const userRoles = (auth?.user?.roles ?? []).map((role) => (typeof role === 'string' ? role.toLowerCase() : role.name.toLowerCase()));
     const isAdmin = userRoles.includes('admin');
-    const isAssignedToCurrentUser = currentUserId != null && task?.assigned_to != null && Number(task.assigned_to) === Number(currentUserId);
-    const canClaimTask = Boolean(task && !isAdmin && (userRoles.includes('technician') || userRoles.includes('technician-intern')) && task.status === 'request' && !task.assigned_to);
+    
+    const taskAssignees = useMemo(() => resolveAssignees(task), [task]);
+    const isAssignedToCurrentUser = currentUserId != null && taskAssignees.includes(String(currentUserId));
+    const canClaimTask = Boolean(
+        task && 
+        !isAdmin && 
+        (userRoles.includes('technician') || userRoles.includes('technician-intern')) && 
+        ['request', 'todo', 'in_progress'].includes(task.status) &&
+        !taskAssignees.includes(String(currentUserId))
+    );
     const canUpdateTask = isAdmin || isAssignedToCurrentUser;
 
-    const initialPayload = useMemo(() => buildUpdatePayload(task, users), [task, users]);
+    const initialPayload = useMemo(() => buildUpdatePayload(task), [task]);
 
     const { data, setData, patch, processing, transform } = useForm<UpdatePayload>(initialPayload);
 
@@ -168,12 +171,9 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
         [data.estimation_start, data.estimation_end],
     );
 
-    const selectedAssignedTo = useMemo(() => {
-        if (data.assigned_to) return data.assigned_to;
-
-        const fallbackAssignedTo = resolveAssignedToId(task, users);
-        return fallbackAssignedTo || 'unassigned';
-    }, [data.assigned_to, task, users]);
+    const selectedAssignees = useMemo(() => {
+        return data.assignees || [];
+    }, [data.assignees]);
 
     const attachments = task?.attachments || [];
 
@@ -181,10 +181,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
         event.preventDefault();
         if (!task) return;
 
-        transform((current) => ({
-            ...current,
-            assigned_to: selectedAssignedTo === 'unassigned' ? '' : selectedAssignedTo,
-        }));
+        // Data sudah sesuai, array of strings
 
         patch(`/requests/${task.id}/status`, {
             preserveScroll: true,
@@ -209,10 +206,13 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
             return;
         }
 
-        transform((current) => ({
-            ...current,
-            assigned_to: String(currentUserId),
-        }));
+        transform((current) => {
+            const currentAssignees = current.assignees || [];
+            return {
+                ...current,
+                assignees: [...currentAssignees, String(currentUserId)],
+            };
+        });
 
         patch(`/requests/${task.id}/status`, {
             preserveScroll: true,
@@ -333,9 +333,18 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                             <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
                                 <Hammer className="h-4 w-4 text-gray-400" />
-                                <div>
+                                <div className='w-full min-w-0'>
                                     <p className="mb-1 text-xs text-gray-500 dark:text-zinc-400">Programmer</p>
-                                    <p className="font-medium text-zinc-900 dark:text-zinc-100">{task.assigned_to_name || 'Belum ditugaskan'}</p>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <p className="font-medium text-zinc-900 dark:text-zinc-100 max-w-full truncate">
+                                                {task.assignees_name || 'Belum ditugaskan'}
+                                            </p>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs whitespace-normal text-center">
+                                            {task.assignees_name || 'Belum ditugaskan'}
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </div>
                             </div>
 
@@ -471,22 +480,39 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                     {isAdmin && (
                                         <div className="space-y-2">
                                             <Label>Pilih Teknisi</Label>
-                                            <Select
-                                                value={selectedAssignedTo}
-                                                onValueChange={(value) => setData('assigned_to', value === 'unassigned' ? '' : value)}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih teknisi" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="unassigned">Belum ditugaskan</SelectItem>
-                                                    {users.map((user) => (
-                                                        <SelectItem key={user.id} value={String(user.id)}>
-                                                            {user.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        type="button"
+                                                        className="w-full justify-between font-normal bg-white dark:bg-zinc-900"
+                                                    >
+                                                        {selectedAssignees.length > 0
+                                                            ? users.filter(u => selectedAssignees.includes(String(u.id))).map(u => u.name).join(', ')
+                                                            : 'Belum ditugaskan'}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[300px] p-2" align="start">
+                                                    <div className="flex flex-col space-y-2 max-h-[200px] overflow-y-auto">
+                                                        {users.map(user => (
+                                                            <label key={user.id} className="flex items-center space-x-2 cursor-pointer p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded">
+                                                                <Checkbox
+                                                                    checked={selectedAssignees.includes(String(user.id))}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const id = String(user.id);
+                                                                        if (checked) {
+                                                                            setData('assignees', [...selectedAssignees, id]);
+                                                                        } else {
+                                                                            setData('assignees', selectedAssignees.filter(uId => uId !== id));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <span className="text-sm">{user.name}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
                                     )}
                                 </div>

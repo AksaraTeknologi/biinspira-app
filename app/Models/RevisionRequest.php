@@ -22,7 +22,6 @@ class RevisionRequest extends Model
         'related_url',
         'review_note',
         'created_by',
-        'assigned_to',
         'estimation_start',
         'estimation_end',
         'actual_start',
@@ -46,10 +45,10 @@ class RevisionRequest extends Model
         return $query->where('urgency', $urgency);
     }
 
-        // Relasi ke user yang ditugaskan (assignee)
-    public function assignee()
+    // Relasi ke user yang ditugaskan (assignees)
+    public function assignees()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsToMany(User::class, 'revision_request_user');
     }
 
         public function attachments()
