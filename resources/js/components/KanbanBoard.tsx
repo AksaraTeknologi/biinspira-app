@@ -32,8 +32,8 @@ type Task = {
     urgency: 'low' | 'medium' | 'high';
     target_role?: string;
     created_by_name?: string;
-    assigned_to?: number | null;
-    assigned_to_name?: string;
+    assignees?: number[] | string[];
+    assignees_name?: string | null;
     deadline?: string | null;
     estimation_start?: string | null;
     estimation_end?: string | null;
@@ -207,7 +207,7 @@ export default function KanbanBoard({
         const finishTasks = Array.from(board[finishColumn]);
         const task = startTasks[source.index];
 
-        if ((finishColumn === 'todo' || finishColumn === 'in_progress') && (!task.assigned_to || !task.estimation_start || !task.estimation_end)) {
+        if ((finishColumn === 'todo' || finishColumn === 'in_progress') && (!task.assignees || task.assignees.length === 0 || !task.estimation_start || !task.estimation_end)) {
             toast.error('Isi programmer dan estimasi waktu sebelum memindahkan');
             return;
         }
@@ -241,7 +241,7 @@ export default function KanbanBoard({
             `/requests/${draggableId}/status`,
             {
                 status: finishColumn,
-                assigned_to: task.assigned_to,
+                assignees: task.assignees || [],
                 estimation_start: task.estimation_start,
                 estimation_end: task.estimation_end,
             },
@@ -260,8 +260,8 @@ export default function KanbanBoard({
             return true;
         }
 
-        if (role === 'technician') {
-            return user_id != null ? Number(task.assigned_to) === Number(user_id) : false;
+        if (role === 'technician' || role === 'technician-intern') {
+            return user_id != null ? Boolean(task.assignees?.some(id => Number(id) === Number(user_id))) : false;
         }
 
         if (role === 'user') {
@@ -424,9 +424,9 @@ export default function KanbanBoard({
                                 </div>
                             )}
 
-                            {task.assigned_to_name && (
+                            {task.assignees_name && (
                                 <span
-                                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold max-w-full truncate ${
                                         overdue
                                             ? 'bg-red-500 text-white'
                                             : col === 'todo'
@@ -440,7 +440,7 @@ export default function KanbanBoard({
                                                     : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
                                     }`}
                                 >
-                                    {task.assigned_to_name}
+                                    {task.assignees_name}
                                 </span>
                             )}
                         </div>
