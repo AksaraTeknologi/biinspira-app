@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
@@ -332,9 +333,18 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                             <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
                                 <Hammer className="h-4 w-4 text-gray-400" />
-                                <div className='w-full'>
+                                <div className='w-full min-w-0'>
                                     <p className="mb-1 text-xs text-gray-500 dark:text-zinc-400">Programmer</p>
-                                    <p className="font-medium text-zinc-900 dark:text-zinc-100 max-w-full truncate">{task.assignees_name || 'Belum ditugaskan'}</p>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <p className="font-medium text-zinc-900 dark:text-zinc-100 max-w-full truncate">
+                                                {task.assignees_name || 'Belum ditugaskan'}
+                                            </p>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs whitespace-normal text-center">
+                                            {task.assignees_name || 'Belum ditugaskan'}
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </div>
                             </div>
 
