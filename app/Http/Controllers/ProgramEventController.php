@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ProgramEventController extends Controller
 {
@@ -23,15 +26,39 @@ class ProgramEventController extends Controller
 
         $programEvents = $query->get();
 
+        $holidays = Cache::remember('indonesian_holidays', now()->addDays(30), function () {
+            try {
+                $apiUrl = 'https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/holidays.json';
+                $response = Http::get($apiUrl);
+                if ($response->successful()) {
+                    return $response->json();
+                }
+            } catch (\Exception $e) {
+                Log::error('Gagal mengambil data hari libur: ' . $e->getMessage());
+            }
+            return [];
+        });
+
         return Inertia::render('admin/program-events/index', [
             'programEvents'    => $programEvents,
+            'holidays'         => $holidays,
             'dashboard_item'   => 'Program Event',
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('admin/program-events/create');
+        $duplicateData = null;
+        if ($request->has('duplicate_from')) {
+            $duplicateData = ProgramEvent::with('schedules')->find($request->query('duplicate_from'));
+            if ($duplicateData && !auth()->user()->hasRole('admin') && $duplicateData->user_id !== auth()->id()) {
+                $duplicateData = null;
+            }
+        }
+
+        return Inertia::render('admin/program-events/create', [
+            'duplicateData' => $duplicateData,
+        ]);
     }
 
     public function store(Request $request)
@@ -211,5 +238,62 @@ class ProgramEventController extends Controller
         $program->delete(); // schedules cascade-deleted via FK
 
         return back()->with('success', 'Program Event berhasil dihapus.');
+    }
+
+    public function move(Request $request, string $id)
+    {
+        $request->validate([
+            'new_start_date' => ['required', 'date'],
+        ]);
+
+        $program = ProgramEvent::with('schedules')->findOrFail($id);
+
+        if (!auth()->user()->hasRole('admin') && $program->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $newStartDate = \Carbon\Carbon::parse($request->new_start_date)->startOfDay();
+
+        if ($program->type === 'webinar') {
+            $oldStart = \Carbon\Carbon::parse($program->start_time)->startOfDay();
+            $diffInDays = $oldStart->diffInDays($newStartDate, false);
+            
+            $program->start_time = \Carbon\Carbon::parse($program->start_time)->addDays($diffInDays);
+            $program->end_time = \Carbon\Carbon::parse($program->end_time)->addDays($diffInDays);
+        } else {
+            $oldStart = \Carbon\Carbon::parse($program->start_date)->startOfDay();
+            $diffInDays = $oldStart->diffInDays($newStartDate, false);
+            
+            $program->start_date = \Carbon\Carbon::parse($program->start_date)->addDays($diffInDays);
+            $program->end_date = \Carbon\Carbon::parse($program->end_date)->addDays($diffInDays);
+            
+            if ($program->socialization_registration_deadline) {
+                $program->socialization_registration_deadline = \Carbon\Carbon::parse($program->socialization_registration_deadline)->addDays($diffInDays);
+            }
+        }
+        
+        if ($program->registration_deadline) {
+            $program->registration_deadline = \Carbon\Carbon::parse($program->registration_deadline)->addDays($diffInDays);
+        }
+
+        $program->save();
+
+        if (isset($diffInDays) && $diffInDays !== 0) {
+            foreach ($program->schedules as $schedule) {
+                if ($schedule->schedule_date) {
+                    $newScheduleDate = \Carbon\Carbon::parse($schedule->schedule_date)->addDays($diffInDays);
+                    $schedule->schedule_date = $newScheduleDate->format('Y-m-d');
+                    
+                    $daysMap = [
+                        0 => 'minggu', 1 => 'senin', 2 => 'selasa', 
+                        3 => 'rabu', 4 => 'kamis', 5 => 'jumat', 6 => 'sabtu'
+                    ];
+                    $schedule->day = $daysMap[$newScheduleDate->dayOfWeek];
+                    $schedule->save();
+                }
+            }
+        }
+
+        return back()->with('success', 'Jadwal acara berhasil digeser.');
     }
 }

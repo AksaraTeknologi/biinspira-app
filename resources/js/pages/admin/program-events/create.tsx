@@ -140,33 +140,41 @@ function DatePickerField({
 }
 
 export default function ProgramEventCreate() {
-    const { auth } = usePage<any>().props;
+    const { auth, duplicateData } = usePage<any>().props;
     const role = auth.role[0] || 'user';
     const isAdmin = role === 'admin';
     const prefix = isAdmin ? 'admin' : 'user';
 
     const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [type, setType] = React.useState('webinar');
-    const [schedules, setSchedules] = React.useState<Schedule[]>([]);
+    const [type, setType] = React.useState(duplicateData?.type ?? 'webinar');
+    const [schedules, setSchedules] = React.useState<Schedule[]>(duplicateData?.schedules ?? []);
     const [errors, setErrors] = React.useState<Record<string, string>>({});
-    const [certifType, setCertifType] = React.useState('regular');
+    const [certifType, setCertifType] = React.useState(duplicateData?.certif_type ?? 'regular');
 
     // Date states
-    const [startDate, setStartDate] = React.useState<Date | undefined>();
-    const [endDate, setEndDate] = React.useState<Date | undefined>();
-    const [regDeadline, setRegDeadline] = React.useState<Date | undefined>();
-    const [socDeadline, setSocDeadline] = React.useState<Date | undefined>();
+    const [startDate, setStartDate] = React.useState<Date | undefined>(
+        duplicateData?.start_time ? new Date(duplicateData.start_time) : (duplicateData?.start_date ? new Date(duplicateData.start_date) : undefined)
+    );
+    const [endDate, setEndDate] = React.useState<Date | undefined>(
+        duplicateData?.end_time ? new Date(duplicateData.end_time) : (duplicateData?.end_date ? new Date(duplicateData.end_date) : undefined)
+    );
+    const [regDeadline, setRegDeadline] = React.useState<Date | undefined>(
+        duplicateData?.registration_deadline ? new Date(duplicateData.registration_deadline) : undefined
+    );
+    const [socDeadline, setSocDeadline] = React.useState<Date | undefined>(
+        duplicateData?.socialization_registration_deadline ? new Date(duplicateData.socialization_registration_deadline) : undefined
+    );
 
     // TinyMCE states
-    const [benefits, setBenefits] = React.useState('');
-    const [requirements, setRequirements] = React.useState('');
-    const [curriculum, setCurriculum] = React.useState('');
-    const [termsConditions, setTermsConditions] = React.useState('');
+    const [benefits, setBenefits] = React.useState(duplicateData?.benefits ?? '');
+    const [requirements, setRequirements] = React.useState(duplicateData?.requirements ?? '');
+    const [curriculum, setCurriculum] = React.useState(duplicateData?.curriculum ?? '');
+    const [termsConditions, setTermsConditions] = React.useState(duplicateData?.terms_conditions ?? '');
 
     // Currency display states
-    const [priceDisplay, setPriceDisplay] = React.useState('');
-    const [strikeDisplay, setStrikeDisplay] = React.useState('');
-    const [scholarDisplay, setScholarDisplay] = React.useState('');
+    const [priceDisplay, setPriceDisplay] = React.useState(duplicateData?.price ? formatRupiah(String(duplicateData.price)) : '');
+    const [strikeDisplay, setStrikeDisplay] = React.useState(duplicateData?.strikethrough_price ? formatRupiah(String(duplicateData.strikethrough_price)) : '');
+    const [scholarDisplay, setScholarDisplay] = React.useState(duplicateData?.scholarship_price ? formatRupiah(String(duplicateData.scholarship_price)) : '');
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Event', href: route(`${prefix}.program-events.index`) },
@@ -303,12 +311,12 @@ export default function ProgramEventCreate() {
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="title">Judul *</Label>
-                                <Input id="title" name="title" placeholder="Judul program..." className="bg-input" />
+                                <Input id="title" name="title" defaultValue={duplicateData?.title ?? ''} placeholder="Judul program..." className="bg-input" />
                                 {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="batch">Batch / Angkatan *</Label>
-                                <Input id="batch" name="batch" placeholder="contoh: Batch 5" className="bg-input" />
+                                <Input id="batch" name="batch" defaultValue={duplicateData?.batch ?? ''} placeholder="contoh: Batch 5" className="bg-input" />
                             </div>
                         </div>
                     </div>
@@ -320,12 +328,12 @@ export default function ProgramEventCreate() {
                             {type === 'certification_program' && (
                                 <div className="space-y-1.5">
                                     <Label htmlFor="short_description">Deskripsi Singkat</Label>
-                                    <Textarea id="short_description" name="short_description" rows={2} placeholder="Deskripsi singkat untuk ditampilkan di card..." />
+                                    <Textarea id="short_description" name="short_description" rows={2} defaultValue={duplicateData?.short_description ?? ''} placeholder="Deskripsi singkat untuk ditampilkan di card..." />
                                 </div>
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="description">Deskripsi Lengkap</Label>
-                                <Textarea id="description" name="description" rows={4} placeholder="Deskripsi lengkap program..." />
+                                <Textarea id="description" name="description" rows={4} defaultValue={duplicateData?.description ?? ''} placeholder="Deskripsi lengkap program..." />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="benefits">Manfaat / What You'll Get</Label>
@@ -528,7 +536,7 @@ export default function ProgramEventCreate() {
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="quota">Kuota Peserta</Label>
-                                <Input id="quota" name="quota" type="number" min="0" defaultValue="0" className="bg-input" />
+                                <Input id="quota" name="quota" type="number" min="0" defaultValue={duplicateData?.quota ?? "0"} className="bg-input" />
                                 <span className="text-[11px] text-muted-foreground block">Isi 0 untuk kuota tidak terbatas</span>
                             </div>
                         </div>
@@ -540,7 +548,7 @@ export default function ProgramEventCreate() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="group_url">Link Grup (WA/Telegram)</Label>
-                                <Input id="group_url" name="group_url" type="url" placeholder="https://chat.whatsapp.com/..." className="bg-input" />
+                                <Input id="group_url" name="group_url" type="url" defaultValue={duplicateData?.group_url ?? ''} placeholder="https://chat.whatsapp.com/..." className="bg-input" />
                             </div>
                         </div>
                     </div>
