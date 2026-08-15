@@ -12,6 +12,7 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isSameDay, setMonth, setYear, addMonths, subMonths } from 'date-fns';
+import DuplicateEventModal, { ProgramEventToDuplicate } from '@/components/DuplicateEventModal';
 
 interface ProgramEvent {
     id: string;
@@ -26,6 +27,7 @@ interface ProgramEvent {
     price: number;
     quota: number;
     user: { id: string; name: string } | null;
+    schedules?: any[];
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -55,6 +57,10 @@ export default function ProgramEventIndex() {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [draggingId, setDraggingId] = React.useState<string | null>(null);
     const [dragOverDay, setDragOverDay] = React.useState<string | null>(null);
+
+    // Modal state for duplication
+    const [duplicateModalOpen, setDuplicateModalOpen] = React.useState(false);
+    const [duplicateEvent, setDuplicateEvent] = React.useState<ProgramEventToDuplicate | null>(null);
 
     const breadcrumbs: BreadcrumbItem[] = [{ title: 'Program Event', href: '' }];
 
@@ -188,7 +194,7 @@ export default function ProgramEventIndex() {
                         ))}
                     </div>
                     {/* Calendar Grid */}
-                    <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto">
+                    <div className="flex-1 grid grid-cols-7 overflow-y-auto" style={{ gridAutoRows: 'minmax(120px, full)' }}>
                         {days.map((day) => {
                             const isCurrentMonth = isSameMonth(day, monthStart);
                             const isToday = isSameDay(day, new Date());
@@ -198,16 +204,28 @@ export default function ProgramEventIndex() {
                             
                             // Get events for this day
                             const dayEvents = programEvents.filter(event => {
-                                const eventDateStr = event.start_time ?? event.start_date;
-                                if (!eventDateStr) return false;
-                                return isSameDay(new Date(eventDateStr), day);
+                                const startDateStr = event.start_time ?? event.start_date;
+                                if (!startDateStr) return false;
+
+                                const endDateStr = event.end_time ?? event.end_date ?? startDateStr;
+                                
+                                const eventStart = new Date(startDateStr);
+                                eventStart.setHours(0, 0, 0, 0);
+                                
+                                const eventEnd = new Date(endDateStr);
+                                eventEnd.setHours(0, 0, 0, 0);
+                                
+                                const currentDay = new Date(day);
+                                currentDay.setHours(0, 0, 0, 0);
+                                
+                                return currentDay.getTime() >= eventStart.getTime() && currentDay.getTime() <= eventEnd.getTime();
                             });
 
                             return (
                                 <div 
                                     key={day.toISOString()} 
                                     className={cn(
-                                        "border-r border-b p-1 sm:p-2 flex flex-col min-h-[100px] transition-colors overflow-hidden",
+                                        "border-r border-b p-1 sm:p-2 transition-colors h-full",
                                         !isCurrentMonth && "bg-muted/20 text-muted-foreground",
                                         isCurrentMonth && "bg-background",
                                         dragOverDay === day.toISOString() && "ring-2 ring-gray-300 ring-inset dark:ring-zinc-600 bg-muted/30"
@@ -238,7 +256,7 @@ export default function ProgramEventIndex() {
                                             {format(day, 'd')}
                                         </span>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                                    <div className="space-y-1.5 pr-1 pb-1">
                                         {dayEvents.map(event => {
                                             const isHighlighted = searchQuery && event.title.toLowerCase().includes(searchQuery.toLowerCase());
                                             
@@ -260,7 +278,7 @@ export default function ProgramEventIndex() {
                                             return (
                                                 <ContextMenu key={event.id}>
                                                     <ContextMenuTrigger asChild>
-                                                        <div className="h-full">
+                                                        <div>
                                                             <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <div 
@@ -281,7 +299,7 @@ export default function ProgramEventIndex() {
                                                                             colorClasses
                                                                         )}
                                                                     >
-                                                                        <div className="font-semibold line-clamp-2 leading-tight">{event.title}</div>
+                                                                        <div className="font-semibold truncate leading-tight">{event.title}</div>
                                                                         <div className="text-[10px] opacity-90 mt-0.5 truncate">{TYPE_LABELS[event.type]}</div>
                                                                     </div>
                                                                 </div>
@@ -321,7 +339,10 @@ export default function ProgramEventIndex() {
                                                     </ContextMenuTrigger>
                                                     <ContextMenuContent className="w-40">
                                                         <ContextMenuItem 
-                                                            onClick={() => router.get(route(`${prefix}.program-events.create`, { duplicate_from: event.id }))}
+                                                            onClick={() => {
+                                                                setDuplicateEvent(event as unknown as ProgramEventToDuplicate);
+                                                                setDuplicateModalOpen(true);
+                                                            }}
                                                         >
                                                             Duplikat
                                                         </ContextMenuItem>
@@ -333,9 +354,19 @@ export default function ProgramEventIndex() {
                                 </div>
                             );
                         })}
-                    </div>
                 </div>
             </div>
+        </div>
+
+            <DuplicateEventModal 
+                isOpen={duplicateModalOpen} 
+                onClose={() => {
+                    setDuplicateModalOpen(false);
+                    setDuplicateEvent(null);
+                }} 
+                event={duplicateEvent} 
+                prefix={prefix} 
+            />
         </AppLayout>
     );
 }
