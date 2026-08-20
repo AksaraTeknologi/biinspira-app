@@ -115,6 +115,8 @@ Route::middleware(['auth', 'verified', 'role:admin|technician'])->prefix('admin'
             Route::post('/program-events', 'store')->name('admin.program-events.store');
             Route::get('/program-events/{id}/edit', 'edit')->name('admin.program-events.edit');
             Route::put('/program-events/{id}', 'update')->name('admin.program-events.update');
+            Route::post('/program-events/{id}/duplicate', 'duplicate')->name('admin.program-events.duplicate');
+            Route::patch('/program-events/{id}/move', 'move')->name('admin.program-events.move');
             Route::delete('/program-events/{id}', 'destroy')->name('admin.program-events.destroy');
         });
     });
@@ -170,6 +172,8 @@ Route::middleware(['auth', 'verified', 'role:user'])->prefix('user')->as('user.'
         Route::post('/program-events', 'store')->name('program-events.store');
         Route::get('/program-events/{id}/edit', 'edit')->name('program-events.edit');
         Route::put('/program-events/{id}', 'update')->name('program-events.update');
+        Route::post('/program-events/{id}/duplicate', 'duplicate')->name('program-events.duplicate');
+        Route::patch('/program-events/{id}/move', 'move')->name('program-events.move');
         Route::delete('/program-events/{id}', 'destroy')->name('program-events.destroy');
     });
 });
