@@ -88,7 +88,7 @@ const platformConfig: Record<string, { label: string; className: string }> = {
         label: 'Skillgrow',
         className: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300',
     },
-    aksademy: { label: 'Aksademy', className: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+    aksademy: { label: 'Aksademy', className: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-primary dark:bg-blue-950 dark:text-blue-300' },
 };
 
 export const columns: ColumnDef<Invoice>[] = [

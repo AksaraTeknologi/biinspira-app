@@ -50,7 +50,7 @@ const calendarCls = cn(
     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
 );
 
@@ -73,7 +73,10 @@ function DatePickerField({
     const [timeStr, setTimeStr] = React.useState('');
 
     const handleDaySelect = (d: Date | undefined) => {
-        if (!d) { onChange(undefined); return; }
+        if (!d) {
+            onChange(undefined);
+            return;
+        }
         if (withTime && timeStr) {
             const [h, m] = timeStr.split(':').map(Number);
             d.setHours(h ?? 0, m ?? 0, 0, 0);
@@ -93,36 +96,25 @@ function DatePickerField({
 
     return (
         <div className="space-y-1.5">
-            <Label>{label}{required ? ' *' : ''}</Label>
+            <Label>
+                {label}
+                {required ? ' *' : ''}
+            </Label>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
                         type="button"
                         variant="outline"
-                        className={cn(
-                            'h-10 w-full justify-start text-left font-normal bg-input border-input',
-                            !value && 'text-muted-foreground',
-                        )}
+                        className={cn('h-10 w-full justify-start border-input bg-input text-left font-normal', !value && 'text-muted-foreground')}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                        {value
-                            ? withTime
-                                ? format(value, 'dd MMM yyyy, HH:mm')
-                                : format(value, 'dd MMM yyyy')
-                            : <span>Pilih tanggal...</span>
-                        }
+                        {value ? withTime ? format(value, 'dd MMM yyyy, HH:mm') : format(value, 'dd MMM yyyy') : <span>Pilih tanggal...</span>}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-background p-4 shadow-lg" align="start">
-                    <Calendar
-                        mode="single"
-                        selected={value}
-                        onSelect={handleDaySelect}
-                        initialFocus
-                        className={calendarCls}
-                    />
+                    <Calendar mode="single" selected={value} onSelect={handleDaySelect} initialFocus className={calendarCls} />
                     {withTime && (
-                        <div className="border-t pt-3 mt-2">
+                        <div className="mt-2 border-t pt-3">
                             <Label className="text-xs text-muted-foreground">Jam</Label>
                             <input
                                 type="time"
@@ -153,16 +145,16 @@ export default function ProgramEventCreate() {
 
     // Date states
     const [startDate, setStartDate] = React.useState<Date | undefined>(
-        duplicateData?.start_time ? new Date(duplicateData.start_time) : (duplicateData?.start_date ? new Date(duplicateData.start_date) : undefined)
+        duplicateData?.start_time ? new Date(duplicateData.start_time) : duplicateData?.start_date ? new Date(duplicateData.start_date) : undefined,
     );
     const [endDate, setEndDate] = React.useState<Date | undefined>(
-        duplicateData?.end_time ? new Date(duplicateData.end_time) : (duplicateData?.end_date ? new Date(duplicateData.end_date) : undefined)
+        duplicateData?.end_time ? new Date(duplicateData.end_time) : duplicateData?.end_date ? new Date(duplicateData.end_date) : undefined,
     );
     const [regDeadline, setRegDeadline] = React.useState<Date | undefined>(
-        duplicateData?.registration_deadline ? new Date(duplicateData.registration_deadline) : undefined
+        duplicateData?.registration_deadline ? new Date(duplicateData.registration_deadline) : undefined,
     );
     const [socDeadline, setSocDeadline] = React.useState<Date | undefined>(
-        duplicateData?.socialization_registration_deadline ? new Date(duplicateData.socialization_registration_deadline) : undefined
+        duplicateData?.socialization_registration_deadline ? new Date(duplicateData.socialization_registration_deadline) : undefined,
     );
 
     // TinyMCE states
@@ -173,8 +165,12 @@ export default function ProgramEventCreate() {
 
     // Currency display states
     const [priceDisplay, setPriceDisplay] = React.useState(duplicateData?.price ? formatRupiah(String(duplicateData.price)) : '');
-    const [strikeDisplay, setStrikeDisplay] = React.useState(duplicateData?.strikethrough_price ? formatRupiah(String(duplicateData.strikethrough_price)) : '');
-    const [scholarDisplay, setScholarDisplay] = React.useState(duplicateData?.scholarship_price ? formatRupiah(String(duplicateData.scholarship_price)) : '');
+    const [strikeDisplay, setStrikeDisplay] = React.useState(
+        duplicateData?.strikethrough_price ? formatRupiah(String(duplicateData.strikethrough_price)) : '',
+    );
+    const [scholarDisplay, setScholarDisplay] = React.useState(
+        duplicateData?.scholarship_price ? formatRupiah(String(duplicateData.scholarship_price)) : '',
+    );
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Event', href: route(`${prefix}.program-events.index`) },
@@ -200,7 +196,7 @@ export default function ProgramEventCreate() {
 
         const formData = new FormData(e.currentTarget);
         const data: Record<string, unknown> = Object.fromEntries(formData.entries());
-        
+
         data.type = type;
         // status auto-managed by platform
 
@@ -239,7 +235,7 @@ export default function ProgramEventCreate() {
         data.strikethrough_price = toPlainNumber(strikeDisplay) || '0';
         if (type === 'certification_program') {
             data.certif_type = certifType;
-            data.scholarship_price = certifType === 'scholarship' ? (toPlainNumber(scholarDisplay) || '0') : '0';
+            data.scholarship_price = certifType === 'scholarship' ? toPlainNumber(scholarDisplay) || '0' : '0';
         } else {
             data.certif_type = null;
             data.scholarship_price = '0';
@@ -247,7 +243,7 @@ export default function ProgramEventCreate() {
 
         // Filter schedules based on type/certifType
         if (type === 'certification_program' && certifType === 'regular') {
-            data.schedules = schedules.filter(s => s.schedule_type === 'main');
+            data.schedules = schedules.filter((s) => s.schedule_type === 'main');
         } else {
             data.schedules = schedules;
         }
@@ -268,7 +264,7 @@ export default function ProgramEventCreate() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Buat Program Event" />
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="space-y-6 p-4 md:p-6">
                 <div className="mb-6">
                     <h2 className="text-2xl font-semibold">Buat Program Event</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -283,7 +279,17 @@ export default function ProgramEventCreate() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="type">Tipe Program *</Label>
-                                <Select name="type" value={type} onValueChange={(v) => { setType(v); setSchedules([]); setStartDate(undefined); setEndDate(undefined); setCertifType('regular'); }}>
+                                <Select
+                                    name="type"
+                                    value={type}
+                                    onValueChange={(v) => {
+                                        setType(v);
+                                        setSchedules([]);
+                                        setStartDate(undefined);
+                                        setEndDate(undefined);
+                                        setCertifType('regular');
+                                    }}
+                                >
                                     <SelectTrigger id="type" className="bg-input">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -311,12 +317,24 @@ export default function ProgramEventCreate() {
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="title">Judul *</Label>
-                                <Input id="title" name="title" defaultValue={duplicateData?.title ?? ''} placeholder="Judul program..." className="bg-input" />
+                                <Input
+                                    id="title"
+                                    name="title"
+                                    defaultValue={duplicateData?.title ?? ''}
+                                    placeholder="Judul program..."
+                                    className="bg-input"
+                                />
                                 {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="batch">Batch / Angkatan *</Label>
-                                <Input id="batch" name="batch" defaultValue={duplicateData?.batch ?? ''} placeholder="contoh: Batch 5" className="bg-input" />
+                                <Input
+                                    id="batch"
+                                    name="batch"
+                                    defaultValue={duplicateData?.batch ?? ''}
+                                    placeholder="contoh: Batch 5"
+                                    className="bg-input"
+                                />
                             </div>
                         </div>
                     </div>
@@ -328,12 +346,24 @@ export default function ProgramEventCreate() {
                             {type === 'certification_program' && (
                                 <div className="space-y-1.5">
                                     <Label htmlFor="short_description">Deskripsi Singkat</Label>
-                                    <Textarea id="short_description" name="short_description" rows={2} defaultValue={duplicateData?.short_description ?? ''} placeholder="Deskripsi singkat untuk ditampilkan di card..." />
+                                    <Textarea
+                                        id="short_description"
+                                        name="short_description"
+                                        rows={2}
+                                        defaultValue={duplicateData?.short_description ?? ''}
+                                        placeholder="Deskripsi singkat untuk ditampilkan di card..."
+                                    />
                                 </div>
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="description">Deskripsi Lengkap</Label>
-                                <Textarea id="description" name="description" rows={4} defaultValue={duplicateData?.description ?? ''} placeholder="Deskripsi lengkap program..." />
+                                <Textarea
+                                    id="description"
+                                    name="description"
+                                    rows={4}
+                                    defaultValue={duplicateData?.description ?? ''}
+                                    placeholder="Deskripsi lengkap program..."
+                                />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="benefits">Manfaat / What You'll Get</Label>
@@ -343,12 +373,23 @@ export default function ProgramEventCreate() {
                                     onEditorChange={(content) => setBenefits(content)}
                                     init={{
                                         plugins: [
-                                            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                            'image', 'link', 'lists', 'media', 'searchreplace',
-                                            'table', 'visualblocks', 'wordcount'
+                                            'anchor',
+                                            'autolink',
+                                            'charmap',
+                                            'codesample',
+                                            'emoticons',
+                                            'image',
+                                            'link',
+                                            'lists',
+                                            'media',
+                                            'searchreplace',
+                                            'table',
+                                            'visualblocks',
+                                            'wordcount',
                                         ],
                                         onboarding: false,
-                                        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                        toolbar:
+                                            'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                         height: 250,
                                     }}
                                 />
@@ -363,12 +404,23 @@ export default function ProgramEventCreate() {
                                             onEditorChange={(content) => setRequirements(content)}
                                             init={{
                                                 plugins: [
-                                                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                    'image', 'link', 'lists', 'media', 'searchreplace',
-                                                    'table', 'visualblocks', 'wordcount'
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
                                                 ],
                                                 onboarding: false,
-                                                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                                 height: 250,
                                             }}
                                         />
@@ -381,12 +433,23 @@ export default function ProgramEventCreate() {
                                             onEditorChange={(content) => setCurriculum(content)}
                                             init={{
                                                 plugins: [
-                                                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                    'image', 'link', 'lists', 'media', 'searchreplace',
-                                                    'table', 'visualblocks', 'wordcount'
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
                                                 ],
                                                 onboarding: false,
-                                                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                                 height: 250,
                                             }}
                                         />
@@ -402,12 +465,23 @@ export default function ProgramEventCreate() {
                                         onEditorChange={(content) => setTermsConditions(content)}
                                         init={{
                                             plugins: [
-                                                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                'image', 'link', 'lists', 'media', 'searchreplace',
-                                                'table', 'visualblocks', 'wordcount'
+                                                'anchor',
+                                                'autolink',
+                                                'charmap',
+                                                'codesample',
+                                                'emoticons',
+                                                'image',
+                                                'link',
+                                                'lists',
+                                                'media',
+                                                'searchreplace',
+                                                'table',
+                                                'visualblocks',
+                                                'wordcount',
                                             ],
                                             onboarding: false,
-                                            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                            toolbar:
+                                                'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                             height: 250,
                                         }}
                                     />
@@ -421,16 +495,56 @@ export default function ProgramEventCreate() {
                         <h3 className="mb-4 font-semibold">Jadwal</h3>
                         {type === 'webinar' ? (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <DatePickerField label="Tanggal & Jam Mulai" value={startDate} onChange={setStartDate} withTime required errorMsg={errors.start_time} />
-                                <DatePickerField label="Tanggal & Jam Selesai" value={endDate} onChange={setEndDate} withTime required errorMsg={errors.end_time} />
-                                <DatePickerField label="Deadline Pendaftaran" value={regDeadline} onChange={setRegDeadline} withTime required errorMsg={errors.registration_deadline} />
+                                <DatePickerField
+                                    label="Tanggal & Jam Mulai"
+                                    value={startDate}
+                                    onChange={setStartDate}
+                                    withTime
+                                    required
+                                    errorMsg={errors.start_time}
+                                />
+                                <DatePickerField
+                                    label="Tanggal & Jam Selesai"
+                                    value={endDate}
+                                    onChange={setEndDate}
+                                    withTime
+                                    required
+                                    errorMsg={errors.end_time}
+                                />
+                                <DatePickerField
+                                    label="Deadline Pendaftaran"
+                                    value={regDeadline}
+                                    onChange={setRegDeadline}
+                                    withTime
+                                    required
+                                    errorMsg={errors.registration_deadline}
+                                />
                             </div>
                         ) : (
                             <>
                                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <DatePickerField label="Tanggal Mulai" value={startDate} onChange={setStartDate} required errorMsg={errors.start_date} />
-                                    <DatePickerField label="Tanggal Selesai" value={endDate} onChange={setEndDate} required errorMsg={errors.end_date} />
-                                    <DatePickerField label="Deadline Pendaftaran" value={regDeadline} onChange={setRegDeadline} withTime required errorMsg={errors.registration_deadline} />
+                                    <DatePickerField
+                                        label="Tanggal Mulai"
+                                        value={startDate}
+                                        onChange={setStartDate}
+                                        required
+                                        errorMsg={errors.start_date}
+                                    />
+                                    <DatePickerField
+                                        label="Tanggal Selesai"
+                                        value={endDate}
+                                        onChange={setEndDate}
+                                        required
+                                        errorMsg={errors.end_date}
+                                    />
+                                    <DatePickerField
+                                        label="Deadline Pendaftaran"
+                                        value={regDeadline}
+                                        onChange={setRegDeadline}
+                                        withTime
+                                        required
+                                        errorMsg={errors.registration_deadline}
+                                    />
                                     {type === 'certification_program' && certifType === 'scholarship' && (
                                         <DatePickerField label="Deadline Daftar Sosialisasi" value={socDeadline} onChange={setSocDeadline} withTime />
                                     )}
@@ -445,14 +559,29 @@ export default function ProgramEventCreate() {
                                         </Button>
                                     </div>
                                     <div className="space-y-3">
-                                        {schedules.filter((s) => s.schedule_type === 'main').map((_, rawIdx) => {
-                                            const idx = schedules.findIndex((s, i) => s.schedule_type === 'main' && schedules.filter((x, j) => j <= i && x.schedule_type === 'main').length === rawIdx + 1);
-                                            return (
-                                                <ScheduleRow key={idx} index={idx} schedule={schedules[idx]} onUpdate={updateSchedule} onRemove={removeSchedule} programType={type} />
-                                            );
-                                        })}
+                                        {schedules
+                                            .filter((s) => s.schedule_type === 'main')
+                                            .map((_, rawIdx) => {
+                                                const idx = schedules.findIndex(
+                                                    (s, i) =>
+                                                        s.schedule_type === 'main' &&
+                                                        schedules.filter((x, j) => j <= i && x.schedule_type === 'main').length === rawIdx + 1,
+                                                );
+                                                return (
+                                                    <ScheduleRow
+                                                        key={idx}
+                                                        index={idx}
+                                                        schedule={schedules[idx]}
+                                                        onUpdate={updateSchedule}
+                                                        onRemove={removeSchedule}
+                                                        programType={type}
+                                                    />
+                                                );
+                                            })}
                                         {schedules.filter((s) => s.schedule_type === 'main').length === 0 && (
-                                            <p className="text-center text-sm text-muted-foreground py-3">Belum ada jadwal. Klik "Tambah Jadwal" untuk menambahkan.</p>
+                                            <p className="py-3 text-center text-sm text-muted-foreground">
+                                                Belum ada jadwal. Klik "Tambah Jadwal" untuk menambahkan.
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -461,19 +590,39 @@ export default function ProgramEventCreate() {
                                     <div className="mt-4 border-t pt-4">
                                         <div className="mb-3 flex items-center justify-between">
                                             <p className="text-sm font-medium">Jadwal Sosialisasi</p>
-                                            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => addSchedule('socialization')}>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="gap-1.5"
+                                                onClick={() => addSchedule('socialization')}
+                                            >
                                                 <Plus className="size-3.5" /> Tambah Sosialisasi
                                             </Button>
                                         </div>
                                         <div className="space-y-3">
-                                            {schedules.filter((s) => s.schedule_type === 'socialization').map((_, rawIdx) => {
-                                                const idx = schedules.findIndex((s, i) => s.schedule_type === 'socialization' && schedules.filter((x, j) => j <= i && x.schedule_type === 'socialization').length === rawIdx + 1);
-                                                return (
-                                                    <ScheduleRow key={idx} index={idx} schedule={schedules[idx]} onUpdate={updateSchedule} onRemove={removeSchedule} programType={type} />
-                                                );
-                                            })}
+                                            {schedules
+                                                .filter((s) => s.schedule_type === 'socialization')
+                                                .map((_, rawIdx) => {
+                                                    const idx = schedules.findIndex(
+                                                        (s, i) =>
+                                                            s.schedule_type === 'socialization' &&
+                                                            schedules.filter((x, j) => j <= i && x.schedule_type === 'socialization').length ===
+                                                                rawIdx + 1,
+                                                    );
+                                                    return (
+                                                        <ScheduleRow
+                                                            key={idx}
+                                                            index={idx}
+                                                            schedule={schedules[idx]}
+                                                            onUpdate={updateSchedule}
+                                                            onRemove={removeSchedule}
+                                                            programType={type}
+                                                        />
+                                                    );
+                                                })}
                                             {schedules.filter((s) => s.schedule_type === 'socialization').length === 0 && (
-                                                <p className="text-center text-sm text-muted-foreground py-3">Belum ada jadwal sosialisasi.</p>
+                                                <p className="py-3 text-center text-sm text-muted-foreground">Belum ada jadwal sosialisasi.</p>
                                             )}
                                         </div>
                                     </div>
@@ -489,7 +638,7 @@ export default function ProgramEventCreate() {
                             <div className="space-y-1.5">
                                 <Label htmlFor="price">Harga Normal *</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                    <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                     <Input
                                         id="price"
                                         name="price"
@@ -505,7 +654,7 @@ export default function ProgramEventCreate() {
                             <div className="space-y-1.5">
                                 <Label htmlFor="strikethrough_price">Harga Coret</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                    <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                     <Input
                                         id="strikethrough_price"
                                         name="strikethrough_price"
@@ -521,7 +670,7 @@ export default function ProgramEventCreate() {
                                 <div className="space-y-1.5">
                                     <Label htmlFor="scholarship_price">Harga Beasiswa</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                         <Input
                                             id="scholarship_price"
                                             name="scholarship_price"
@@ -536,8 +685,15 @@ export default function ProgramEventCreate() {
                             )}
                             <div className="space-y-1.5">
                                 <Label htmlFor="quota">Kuota Peserta</Label>
-                                <Input id="quota" name="quota" type="number" min="0" defaultValue={duplicateData?.quota ?? "0"} className="bg-input" />
-                                <span className="text-[11px] text-muted-foreground block">Isi 0 untuk kuota tidak terbatas</span>
+                                <Input
+                                    id="quota"
+                                    name="quota"
+                                    type="number"
+                                    min="0"
+                                    defaultValue={duplicateData?.quota ?? '0'}
+                                    className="bg-input"
+                                />
+                                <span className="block text-[11px] text-muted-foreground">Isi 0 untuk kuota tidak terbatas</span>
                             </div>
                         </div>
                     </div>
@@ -548,7 +704,14 @@ export default function ProgramEventCreate() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="group_url">Link Grup (WA/Telegram)</Label>
-                                <Input id="group_url" name="group_url" type="url" defaultValue={duplicateData?.group_url ?? ''} placeholder="https://chat.whatsapp.com/..." className="bg-input" />
+                                <Input
+                                    id="group_url"
+                                    name="group_url"
+                                    type="url"
+                                    defaultValue={duplicateData?.group_url ?? ''}
+                                    placeholder="https://chat.whatsapp.com/..."
+                                    className="bg-input"
+                                />
                             </div>
                         </div>
                     </div>
@@ -594,14 +757,10 @@ function ScheduleRow({
 
     return (
         <div className="relative rounded-md border bg-muted/40 p-4">
-            <button
-                type="button"
-                onClick={() => onRemove(index)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-destructive"
-            >
+            <button type="button" onClick={() => onRemove(index)} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive">
                 <Trash2 className="size-4" />
             </button>
-            <div className={cn("grid gap-3", isBootcamp ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
+            <div className={cn('grid gap-3', isBootcamp ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3')}>
                 {!isBootcamp && (
                     <div className="space-y-1">
                         <Label className="text-xs">Judul Sesi</Label>
@@ -609,7 +768,7 @@ function ScheduleRow({
                             value={schedule.title}
                             onChange={(e) => onUpdate(index, 'title', e.target.value)}
                             placeholder="Sesi 1 / Pertemuan 1"
-                            className="bg-input h-8 text-sm"
+                            className="h-8 bg-input text-sm"
                         />
                     </div>
                 )}
@@ -621,7 +780,7 @@ function ScheduleRow({
                                 type="button"
                                 variant="outline"
                                 className={cn(
-                                    'h-8 w-full justify-start text-left text-sm font-normal px-2',
+                                    'h-8 w-full justify-start px-2 text-left text-sm font-normal',
                                     !schedule.schedule_date && 'text-muted-foreground',
                                 )}
                             >
@@ -649,12 +808,14 @@ function ScheduleRow({
                 <div className="space-y-1">
                     <Label className="text-xs">Hari *</Label>
                     <Select value={schedule.day} onValueChange={(v) => onUpdate(index, 'day', v)} disabled>
-                        <SelectTrigger className="bg-input h-8 text-sm">
+                        <SelectTrigger className="h-8 bg-input text-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             {DAYS.map((d) => (
-                                <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                                <SelectItem key={d} value={d}>
+                                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -665,7 +826,7 @@ function ScheduleRow({
                         type="time"
                         value={schedule.start_time}
                         onChange={(e) => onUpdate(index, 'start_time', e.target.value)}
-                        className="bg-input h-8 text-sm"
+                        className="h-8 bg-input text-sm"
                     />
                 </div>
                 <div className="space-y-1">
@@ -674,7 +835,7 @@ function ScheduleRow({
                         type="time"
                         value={schedule.end_time}
                         onChange={(e) => onUpdate(index, 'end_time', e.target.value)}
-                        className="bg-input h-8 text-sm"
+                        className="h-8 bg-input text-sm"
                     />
                 </div>
             </div>

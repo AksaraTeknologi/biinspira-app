@@ -79,7 +79,7 @@ const calendarCls = cn(
     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
 );
 
@@ -100,11 +100,14 @@ function DatePickerField({
     errorMsg?: string;
 }) {
     const [timeStr, setTimeStr] = React.useState(
-        value ? `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}` : ''
+        value ? `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}` : '',
     );
 
     const handleDaySelect = (d: Date | undefined) => {
-        if (!d) { onChange(undefined); return; }
+        if (!d) {
+            onChange(undefined);
+            return;
+        }
         if (withTime && timeStr) {
             const [h, m] = timeStr.split(':').map(Number);
             d.setHours(h ?? 0, m ?? 0, 0, 0);
@@ -124,36 +127,25 @@ function DatePickerField({
 
     return (
         <div className="space-y-1.5">
-            <Label>{label}{required ? ' *' : ''}</Label>
+            <Label>
+                {label}
+                {required ? ' *' : ''}
+            </Label>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
                         type="button"
                         variant="outline"
-                        className={cn(
-                            'h-10 w-full justify-start text-left font-normal bg-input border-input',
-                            !value && 'text-muted-foreground',
-                        )}
+                        className={cn('h-10 w-full justify-start border-input bg-input text-left font-normal', !value && 'text-muted-foreground')}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                        {value
-                            ? withTime
-                                ? format(value, 'dd MMM yyyy, HH:mm')
-                                : format(value, 'dd MMM yyyy')
-                            : <span>Pilih tanggal...</span>
-                        }
+                        {value ? withTime ? format(value, 'dd MMM yyyy, HH:mm') : format(value, 'dd MMM yyyy') : <span>Pilih tanggal...</span>}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto rounded-2xl border border-zinc-200 bg-background p-4 shadow-lg" align="start">
-                    <Calendar
-                        mode="single"
-                        selected={value}
-                        onSelect={handleDaySelect}
-                        initialFocus
-                        className={calendarCls}
-                    />
+                    <Calendar mode="single" selected={value} onSelect={handleDaySelect} initialFocus className={calendarCls} />
                     {withTime && (
-                        <div className="border-t pt-3 mt-2">
+                        <div className="mt-2 border-t pt-3">
                             <Label className="text-xs text-muted-foreground">Jam</Label>
                             <input
                                 type="time"
@@ -210,14 +202,23 @@ function ScheduleSection({
             <div className="space-y-3">
                 {filtered.map(({ s, i }) => (
                     <div key={i} className="relative rounded-md border bg-muted/40 p-4">
-                        <button type="button" onClick={() => onRemove(i)} className="absolute right-3 top-3 text-muted-foreground hover:text-destructive">
+                        <button
+                            type="button"
+                            onClick={() => onRemove(i)}
+                            className="absolute top-3 right-3 text-muted-foreground hover:text-destructive"
+                        >
                             <Trash2 className="size-4" />
                         </button>
-                        <div className={cn("grid gap-3", isBootcamp ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
+                        <div className={cn('grid gap-3', isBootcamp ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3')}>
                             {!isBootcamp && (
                                 <div className="space-y-1">
                                     <Label className="text-xs">Judul Sesi</Label>
-                                    <Input value={s.title} onChange={(e) => onUpdate(i, 'title', e.target.value)} placeholder="Sesi 1" className="bg-input h-8 text-sm" />
+                                    <Input
+                                        value={s.title}
+                                        onChange={(e) => onUpdate(i, 'title', e.target.value)}
+                                        placeholder="Sesi 1"
+                                        className="h-8 bg-input text-sm"
+                                    />
                                 </div>
                             )}
                             <div className="space-y-1">
@@ -228,7 +229,7 @@ function ScheduleSection({
                                             type="button"
                                             variant="outline"
                                             className={cn(
-                                                'h-8 w-full justify-start text-left text-sm font-normal px-2',
+                                                'h-8 w-full justify-start px-2 text-left text-sm font-normal',
                                                 !s.schedule_date && 'text-muted-foreground',
                                             )}
                                         >
@@ -256,19 +257,35 @@ function ScheduleSection({
                             <div className="space-y-1">
                                 <Label className="text-xs">Hari *</Label>
                                 <Select value={s.day} onValueChange={(v) => onUpdate(i, 'day', v)} disabled>
-                                    <SelectTrigger className="bg-input h-8 text-sm"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-8 bg-input text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
                                     <SelectContent>
-                                        {DAYS.map((d) => <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>)}
+                                        {DAYS.map((d) => (
+                                            <SelectItem key={d} value={d}>
+                                                {d.charAt(0).toUpperCase() + d.slice(1)}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs">Jam Mulai *</Label>
-                                <Input type="time" value={s.start_time} onChange={(e) => onUpdate(i, 'start_time', e.target.value)} className="bg-input h-8 text-sm" />
+                                <Input
+                                    type="time"
+                                    value={s.start_time}
+                                    onChange={(e) => onUpdate(i, 'start_time', e.target.value)}
+                                    className="h-8 bg-input text-sm"
+                                />
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs">Jam Selesai *</Label>
-                                <Input type="time" value={s.end_time} onChange={(e) => onUpdate(i, 'end_time', e.target.value)} className="bg-input h-8 text-sm" />
+                                <Input
+                                    type="time"
+                                    value={s.end_time}
+                                    onChange={(e) => onUpdate(i, 'end_time', e.target.value)}
+                                    className="h-8 bg-input text-sm"
+                                />
                             </div>
                         </div>
                     </div>
@@ -303,24 +320,16 @@ export default function ProgramEventEdit() {
             start_time: toInputTime(s.start_time),
             end_time: toInputTime(s.end_time),
             schedule_date: s.schedule_date,
-        }))
+        })),
     );
     const [errors, setErrors] = React.useState<Record<string, string>>({});
     const [certifType, setCertifType] = React.useState(program.certif_type || 'regular');
 
     // Date states initialized from program data
-    const [startDate, setStartDate] = React.useState<Date | undefined>(
-        parseDate(program.start_time ?? program.start_date)
-    );
-    const [endDate, setEndDate] = React.useState<Date | undefined>(
-        parseDate(program.end_time ?? program.end_date)
-    );
-    const [regDeadline, setRegDeadline] = React.useState<Date | undefined>(
-        parseDate(program.registration_deadline)
-    );
-    const [socDeadline, setSocDeadline] = React.useState<Date | undefined>(
-        parseDate(program.socialization_registration_deadline)
-    );
+    const [startDate, setStartDate] = React.useState<Date | undefined>(parseDate(program.start_time ?? program.start_date));
+    const [endDate, setEndDate] = React.useState<Date | undefined>(parseDate(program.end_time ?? program.end_date));
+    const [regDeadline, setRegDeadline] = React.useState<Date | undefined>(parseDate(program.registration_deadline));
+    const [socDeadline, setSocDeadline] = React.useState<Date | undefined>(parseDate(program.socialization_registration_deadline));
 
     // TinyMCE states
     const [benefits, setBenefits] = React.useState(program.benefits || '');
@@ -395,7 +404,7 @@ export default function ProgramEventEdit() {
         data.strikethrough_price = toPlainNumber(strikeDisplay) || '0';
         if (type === 'certification_program') {
             data.certif_type = certifType;
-            data.scholarship_price = certifType === 'scholarship' ? (toPlainNumber(scholarDisplay) || '0') : '0';
+            data.scholarship_price = certifType === 'scholarship' ? toPlainNumber(scholarDisplay) || '0' : '0';
         } else {
             data.certif_type = null;
             data.scholarship_price = '0';
@@ -403,7 +412,7 @@ export default function ProgramEventEdit() {
 
         // Filter schedules based on type/certifType
         if (type === 'certification_program' && certifType === 'regular') {
-            data.schedules = schedules.filter(s => s.schedule_type === 'main');
+            data.schedules = schedules.filter((s) => s.schedule_type === 'main');
         } else {
             data.schedules = schedules;
         }
@@ -424,10 +433,12 @@ export default function ProgramEventEdit() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit: ${program.title}`} />
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="space-y-6 p-4 md:p-6">
                 <div className="mb-6">
                     <h2 className="text-2xl font-semibold">Edit Program Event</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">Perbarui data program. Perubahan akan tercermin di API yang dikonsumsi platform lain.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Perbarui data program. Perubahan akan tercermin di API yang dikonsumsi platform lain.
+                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -437,8 +448,20 @@ export default function ProgramEventEdit() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label>Tipe Program *</Label>
-                                <Select name="type" value={type} onValueChange={(v) => { setType(v); setSchedules([]); setStartDate(undefined); setEndDate(undefined); setCertifType('regular'); }}>
-                                    <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                                <Select
+                                    name="type"
+                                    value={type}
+                                    onValueChange={(v) => {
+                                        setType(v);
+                                        setSchedules([]);
+                                        setStartDate(undefined);
+                                        setEndDate(undefined);
+                                        setCertifType('regular');
+                                    }}
+                                >
+                                    <SelectTrigger className="bg-input">
+                                        <SelectValue />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="webinar">Webinar</SelectItem>
                                         <SelectItem value="bootcamp">Bootcamp</SelectItem>
@@ -450,7 +473,9 @@ export default function ProgramEventEdit() {
                                 <div className="space-y-1.5">
                                     <Label>Tipe Sertifikasi *</Label>
                                     <Select name="certif_type" value={certifType} onValueChange={setCertifType}>
-                                        <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="bg-input">
+                                            <SelectValue />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="regular">Regular</SelectItem>
                                             <SelectItem value="scholarship">Beasiswa</SelectItem>
@@ -492,12 +517,23 @@ export default function ProgramEventEdit() {
                                     onEditorChange={(content) => setBenefits(content)}
                                     init={{
                                         plugins: [
-                                            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                            'image', 'link', 'lists', 'media', 'searchreplace',
-                                            'table', 'visualblocks', 'wordcount'
+                                            'anchor',
+                                            'autolink',
+                                            'charmap',
+                                            'codesample',
+                                            'emoticons',
+                                            'image',
+                                            'link',
+                                            'lists',
+                                            'media',
+                                            'searchreplace',
+                                            'table',
+                                            'visualblocks',
+                                            'wordcount',
                                         ],
                                         onboarding: false,
-                                        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                        toolbar:
+                                            'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                         height: 250,
                                     }}
                                 />
@@ -512,12 +548,23 @@ export default function ProgramEventEdit() {
                                             onEditorChange={(content) => setRequirements(content)}
                                             init={{
                                                 plugins: [
-                                                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                    'image', 'link', 'lists', 'media', 'searchreplace',
-                                                    'table', 'visualblocks', 'wordcount'
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
                                                 ],
                                                 onboarding: false,
-                                                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                                 height: 250,
                                             }}
                                         />
@@ -530,12 +577,23 @@ export default function ProgramEventEdit() {
                                             onEditorChange={(content) => setCurriculum(content)}
                                             init={{
                                                 plugins: [
-                                                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                    'image', 'link', 'lists', 'media', 'searchreplace',
-                                                    'table', 'visualblocks', 'wordcount'
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
                                                 ],
                                                 onboarding: false,
-                                                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                                 height: 250,
                                             }}
                                         />
@@ -551,12 +609,23 @@ export default function ProgramEventEdit() {
                                         onEditorChange={(content) => setTermsConditions(content)}
                                         init={{
                                             plugins: [
-                                                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
-                                                'image', 'link', 'lists', 'media', 'searchreplace',
-                                                'table', 'visualblocks', 'wordcount'
+                                                'anchor',
+                                                'autolink',
+                                                'charmap',
+                                                'codesample',
+                                                'emoticons',
+                                                'image',
+                                                'link',
+                                                'lists',
+                                                'media',
+                                                'searchreplace',
+                                                'table',
+                                                'visualblocks',
+                                                'wordcount',
                                             ],
                                             onboarding: false,
-                                            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                                            toolbar:
+                                                'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                                             height: 250,
                                         }}
                                     />
@@ -570,16 +639,56 @@ export default function ProgramEventEdit() {
                         <h3 className="mb-4 font-semibold">Jadwal</h3>
                         {type === 'webinar' ? (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <DatePickerField label="Tanggal & Jam Mulai" value={startDate} onChange={setStartDate} withTime required errorMsg={errors.start_time} />
-                                <DatePickerField label="Tanggal & Jam Selesai" value={endDate} onChange={setEndDate} withTime required errorMsg={errors.end_time} />
-                                <DatePickerField label="Deadline Pendaftaran" value={regDeadline} onChange={setRegDeadline} withTime required errorMsg={errors.registration_deadline} />
+                                <DatePickerField
+                                    label="Tanggal & Jam Mulai"
+                                    value={startDate}
+                                    onChange={setStartDate}
+                                    withTime
+                                    required
+                                    errorMsg={errors.start_time}
+                                />
+                                <DatePickerField
+                                    label="Tanggal & Jam Selesai"
+                                    value={endDate}
+                                    onChange={setEndDate}
+                                    withTime
+                                    required
+                                    errorMsg={errors.end_time}
+                                />
+                                <DatePickerField
+                                    label="Deadline Pendaftaran"
+                                    value={regDeadline}
+                                    onChange={setRegDeadline}
+                                    withTime
+                                    required
+                                    errorMsg={errors.registration_deadline}
+                                />
                             </div>
                         ) : (
                             <>
                                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <DatePickerField label="Tanggal Mulai" value={startDate} onChange={setStartDate} required errorMsg={errors.start_date} />
-                                    <DatePickerField label="Tanggal Selesai" value={endDate} onChange={setEndDate} required errorMsg={errors.end_date} />
-                                    <DatePickerField label="Deadline Pendaftaran" value={regDeadline} onChange={setRegDeadline} withTime required errorMsg={errors.registration_deadline} />
+                                    <DatePickerField
+                                        label="Tanggal Mulai"
+                                        value={startDate}
+                                        onChange={setStartDate}
+                                        required
+                                        errorMsg={errors.start_date}
+                                    />
+                                    <DatePickerField
+                                        label="Tanggal Selesai"
+                                        value={endDate}
+                                        onChange={setEndDate}
+                                        required
+                                        errorMsg={errors.end_date}
+                                    />
+                                    <DatePickerField
+                                        label="Deadline Pendaftaran"
+                                        value={regDeadline}
+                                        onChange={setRegDeadline}
+                                        withTime
+                                        required
+                                        errorMsg={errors.registration_deadline}
+                                    />
                                     {type === 'certification_program' && certifType === 'scholarship' && (
                                         <DatePickerField label="Deadline Daftar Sosialisasi" value={socDeadline} onChange={setSocDeadline} withTime />
                                     )}
@@ -615,7 +724,7 @@ export default function ProgramEventEdit() {
                             <div className="space-y-1.5">
                                 <Label>Harga Normal *</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                    <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                     <Input
                                         name="price"
                                         inputMode="numeric"
@@ -630,7 +739,7 @@ export default function ProgramEventEdit() {
                             <div className="space-y-1.5">
                                 <Label>Harga Coret</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                    <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                     <Input
                                         name="strikethrough_price"
                                         inputMode="numeric"
@@ -645,7 +754,7 @@ export default function ProgramEventEdit() {
                                 <div className="space-y-1.5">
                                     <Label>Harga Beasiswa</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                                        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
                                         <Input
                                             name="scholarship_price"
                                             inputMode="numeric"
@@ -660,7 +769,7 @@ export default function ProgramEventEdit() {
                             <div className="space-y-1.5">
                                 <Label>Kuota Peserta</Label>
                                 <Input name="quota" type="number" min="0" defaultValue={program.quota ?? 0} className="bg-input" />
-                                <span className="text-[11px] text-muted-foreground block">Isi 0 untuk kuota tidak terbatas</span>
+                                <span className="block text-[11px] text-muted-foreground">Isi 0 untuk kuota tidak terbatas</span>
                             </div>
                         </div>
                     </div>
@@ -671,7 +780,13 @@ export default function ProgramEventEdit() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label>Link Grup (WA/Telegram)</Label>
-                                <Input name="group_url" type="url" defaultValue={program.group_url ?? ''} placeholder="https://chat.whatsapp.com/..." className="bg-input" />
+                                <Input
+                                    name="group_url"
+                                    type="url"
+                                    defaultValue={program.group_url ?? ''}
+                                    placeholder="https://chat.whatsapp.com/..."
+                                    className="bg-input"
+                                />
                             </div>
                         </div>
                     </div>

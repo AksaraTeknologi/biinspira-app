@@ -55,7 +55,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
     const [isLoading, setIsLoading] = useState(false);
     const initialDate = event.end_date ? new Date(event.end_date) : undefined;
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
-    const currentUser = users.find(u => u.id === (authUserRole === 'admin' ? event.user.id : authUserId));
+    const currentUser = users.find((u) => u.id === (authUserRole === 'admin' ? event.user.id : authUserId));
     const form = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -105,10 +105,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                                 <FormItem>
                                     <FormLabel>Nama Event</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            placeholder="Masukkan nama event"
-                                            {...field}
-                                        />
+                                        <Input placeholder="Masukkan nama event" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -123,10 +120,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                                 <FormItem>
                                     <FormLabel>Batch</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            placeholder="Masukkan batch event (contoh: 1, 2, 3)"
-                                            {...field}
-                                        />
+                                        <Input placeholder="Masukkan batch event (contoh: 1, 2, 3)" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -141,10 +135,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                                     <FormLabel>User</FormLabel>
                                     {authUserRole === 'admin' ? (
                                         <>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                            >
+                                            <Select value={field.value} onValueChange={field.onChange}>
                                                 <FormControl>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="-- Pilih User --" />
@@ -158,27 +149,19 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Admin dapat mengubah user event
-                                            </p>
+                                            <p className="mt-1 text-xs text-gray-500">Admin dapat mengubah user event</p>
                                         </>
                                     ) : (
                                         <>
                                             <FormControl>
                                                 <Input
-                                                    value={currentUser?.name || "User tidak ditemukan"}
+                                                    value={currentUser?.name || 'User tidak ditemukan'}
                                                     readOnly
                                                     className="bg-white dark:bg-black dark:text-white"
                                                 />
                                             </FormControl>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Anda tidak dapat mengubah user event
-                                            </p>
-                                            <input
-                                                type="hidden"
-                                                {...field}
-                                                value={String(authUserId)}
-                                            />
+                                            <p className="mt-1 text-xs text-gray-500">Anda tidak dapat mengubah user event</p>
+                                            <input type="hidden" {...field} value={String(authUserId)} />
                                         </>
                                     )}
                                     <FormMessage />
@@ -213,7 +196,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                                                     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                                     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                                     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                                     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                                 )}
                                             />
@@ -228,7 +211,7 @@ export function EditEventModal({ event, users, onSuccess, authUserRole, authUser
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                                 Batal
                             </Button>
-                            <Button type="submit" disabled={isLoading} className="bg-blue-600 text-white hover:bg-blue-700">
+                            <Button type="submit" disabled={isLoading} className="bg-primary text-white hover:bg-blue-700">
                                 {isLoading ? 'Menyimpan...' : 'Simpan'}
                             </Button>
                         </div>

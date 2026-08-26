@@ -102,13 +102,13 @@ export function EditTechnicianModal({ user, onSuccess }: EditTechnicianModalProp
 
         router.patch(route('technicians.update', { id: user.id }), payload, {
             onSuccess: () => {
-                toast.success('Technician berhasil diperbarui');
+                toast.success('Programmer berhasil diperbarui');
                 setOpen(false);
                 setIsLoading(false);
                 onSuccess?.();
             },
             onError: (errors) => {
-                toast.error(errors.name || errors.email || errors.password || 'Gagal memperbarui technician');
+                toast.error(errors.name || errors.email || errors.password || 'Gagal memperbarui programmer');
                 setIsLoading(false);
             },
         });
@@ -122,7 +122,7 @@ export function EditTechnicianModal({ user, onSuccess }: EditTechnicianModalProp
 
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]" aria-describedby={undefined}>
                 <DialogHeader>
-                    <DialogTitle>Edit Technician</DialogTitle>
+                    <DialogTitle>Edit Programmer</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -134,7 +134,7 @@ export function EditTechnicianModal({ user, onSuccess }: EditTechnicianModalProp
                                 <FormItem>
                                     <FormLabel>Nama</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Masukkan nama technician" {...field} />
+                                        <Input placeholder="Masukkan nama programmer" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -182,8 +182,8 @@ export function EditTechnicianModal({ user, onSuccess }: EditTechnicianModalProp
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="technician">Technician</SelectItem>
-                                            <SelectItem value="technician-intern">Technician Intern</SelectItem>
+                                            <SelectItem value="technician">Programmer</SelectItem>
+                                            <SelectItem value="technician-intern">Programmer Magang</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

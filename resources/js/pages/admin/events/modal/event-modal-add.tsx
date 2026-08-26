@@ -39,7 +39,7 @@ interface AddEventModalProps {
     onSuccess?: () => void;
 }
 
-export function AddEventModal({ users, onSuccess,authUserRole }: AddEventModalProps) {
+export function AddEventModal({ users, onSuccess, authUserRole }: AddEventModalProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -56,7 +56,7 @@ export function AddEventModal({ users, onSuccess,authUserRole }: AddEventModalPr
 
     const onSubmit = async (data: FormData) => {
         setIsLoading(true);
-        const isAdmin = authUserRole === "admin";
+        const isAdmin = authUserRole === 'admin';
         console.log(isAdmin);
         router.post(isAdmin ? route('admin.events.store') : route('user.events.store'), data, {
             onSuccess: () => {
@@ -180,7 +180,7 @@ export function AddEventModal({ users, onSuccess,authUserRole }: AddEventModalPr
                                                     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                                     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                                     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                                     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                                 )}
                                             />
@@ -195,7 +195,7 @@ export function AddEventModal({ users, onSuccess,authUserRole }: AddEventModalPr
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                                 Batal
                             </Button>
-                            <Button type="submit" disabled={isLoading} className="bg-blue-600 text-white hover:bg-blue-700">
+                            <Button type="submit" disabled={isLoading} className="bg-primary text-white hover:bg-blue-700">
                                 {isLoading ? 'Menyimpan...' : 'Simpan'}
                             </Button>
                         </div>

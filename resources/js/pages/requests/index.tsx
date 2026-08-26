@@ -127,7 +127,7 @@ export default function Index({ tasks, users }: Props) {
                                 {isUserOrAdmin && (
                                     <Link
                                         href="/requests/create"
-                                        className="flex items-center gap-1.5 rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900"
+                                        className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900"
                                     >
                                         <Plus size={16} />
                                         Buat Tiket Baru
@@ -136,19 +136,19 @@ export default function Index({ tasks, users }: Props) {
                             </div>
 
                             <div className="relative w-full sm:max-w-md">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-500 pointer-events-none" />
+                                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
                                 <input
                                     type="text"
                                     placeholder="Cari judul tiket..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-400"
+                                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pr-8 pl-9 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-400"
                                 />
                                 {search && (
                                     <button
                                         type="button"
                                         onClick={() => setSearch('')}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200"
+                                        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200"
                                     >
                                         <X className="h-3.5 w-3.5" />
                                     </button>
@@ -159,7 +159,14 @@ export default function Index({ tasks, users }: Props) {
 
                     <div className="p-5">
                         <div className="w-full overflow-x-auto pb-1">
-                            <KanbanBoard key={search} tasks={filteredTasks} users={users} user_role={userRole} user_id={currentUserId} user_name={user_name} />
+                            <KanbanBoard
+                                key={search}
+                                tasks={filteredTasks}
+                                users={users}
+                                user_role={userRole}
+                                user_id={currentUserId}
+                                user_name={user_name}
+                            />
                         </div>
                     </div>
                 </div>

@@ -47,7 +47,7 @@ const calendarClassName = cn(
     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
     '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
 );
@@ -130,7 +130,15 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!data.title.trim() || !data.description.trim() || !data.related_url.trim() || !data.urgency || !data.target_role || !data.deadline || !hasAttachmentValue) {
+        if (
+            !data.title.trim() ||
+            !data.description.trim() ||
+            !data.related_url.trim() ||
+            !data.urgency ||
+            !data.target_role ||
+            !data.deadline ||
+            !hasAttachmentValue
+        ) {
             toast.error('Semua input wajib diisi.');
             return;
         }
@@ -204,13 +212,16 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-3">
                             <Label>Target Role</Label>
-                            <Select value={data.target_role} onValueChange={(value: 'technician' | 'technician-intern') => setData('target_role', value)}>
+                            <Select
+                                value={data.target_role}
+                                onValueChange={(value: 'technician' | 'technician-intern') => setData('target_role', value)}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Pilih target role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="technician">Technician</SelectItem>
-                                    <SelectItem value="technician-intern">Intern</SelectItem>
+                                    <SelectItem value="technician">Programmer</SelectItem>
+                                    <SelectItem value="technician-intern">Programmer Magang</SelectItem>
                                 </SelectContent>
                             </Select>
                             {errors.target_role && <p className="text-sm text-red-500">{errors.target_role}</p>}
@@ -295,7 +306,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
                                                 href={`/storage/${attachment.file_path}`}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="block rounded-md px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-800"
+                                                className="block rounded-md px-2 py-2 text-sm text-primary hover:bg-blue-50 dark:hover:bg-zinc-800"
                                             >
                                                 {attachment.file_path.split('/').pop()}
                                             </a>

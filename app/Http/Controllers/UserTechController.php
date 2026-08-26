@@ -78,7 +78,7 @@ class UserTechController extends Controller
 
         return redirect()
             ->route('technicians.index')
-            ->with('success', 'Technician created successfully');
+            ->with('success', 'Programmer berhasil ditambahkan');
     }
 
     public function updateTechnician(Request $request, string $id)
@@ -117,7 +117,7 @@ class UserTechController extends Controller
 
         return redirect()
             ->route('technicians.index')
-            ->with('success', 'Technician updated successfully');
+            ->with('success', 'Programmer berhasil diupdate');
     }
 
     public function destroyTechnician(string $id)
@@ -135,6 +135,6 @@ class UserTechController extends Controller
 
         return redirect()
             ->route('technicians.index')
-            ->with('success', 'Technician deleted successfully');
+            ->with('success', 'Programmer berhasil dihapus');
     }
 }
