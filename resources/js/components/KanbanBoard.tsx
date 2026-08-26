@@ -10,11 +10,11 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Textarea } from '@/components/ui/textarea';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { router } from '@inertiajs/react';
-import { Check, X, AlertCircle, ChevronLeft, ChevronRight, Inbox, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, Check, ChevronLeft, ChevronRight, Inbox, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -74,7 +74,7 @@ const COLUMN_CONFIG = {
     in_progress: {
         label: 'Sedang Dikerjakan',
         icon: '↻',
-        headerBg: 'bg-blue-500 dark:bg-blue-600',
+        headerBg: 'bg-blue-500 dark:bg-primary',
         headerBorder: 'border border-blue-500 dark:border-blue-500',
         headerText: 'text-white',
         iconColor: 'text-white',
@@ -230,7 +230,7 @@ export default function KanbanBoard({
         if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
         if (!canDrag) {
-            toast.error('Hanya admin atau technician yang bisa memindahkan task');
+            toast.error('Hanya admin atau programmer yang bisa memindahkan task');
             return;
         }
 
@@ -250,7 +250,10 @@ export default function KanbanBoard({
         if (!task) return;
 
         // Validation rules
-        if ((finishColumn === 'todo' || finishColumn === 'in_progress') && (!task.assignees || task.assignees.length === 0 || !task.estimation_start || !task.estimation_end)) {
+        if (
+            (finishColumn === 'todo' || finishColumn === 'in_progress') &&
+            (!task.assignees || task.assignees.length === 0 || !task.estimation_start || !task.estimation_end)
+        ) {
             toast.error('Isi programmer dan estimasi waktu sebelum memindahkan');
             return;
         }
@@ -452,7 +455,7 @@ export default function KanbanBoard({
                         )}
 
                         <p
-                            className={`mb-1.5 pr-4 text-xs font-semibold leading-relaxed ${overdue ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-zinc-100'}`}
+                            className={`mb-1.5 pr-4 text-xs leading-relaxed font-semibold ${overdue ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-zinc-100'}`}
                         >
                             {task.title}
                         </p>
@@ -494,7 +497,9 @@ export default function KanbanBoard({
                             {task.deadline && (
                                 <div
                                     className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                                        overdue ? 'bg-red-500 font-semibold text-white' : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
+                                        overdue
+                                            ? 'bg-red-500 font-semibold text-white'
+                                            : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
                                     }`}
                                 >
                                     <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -619,8 +624,8 @@ export default function KanbanBoard({
                                 }}
                                 className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                                     pageSize === size
-                                        ? 'bg-blue-600 text-white shadow-xs'
-                                        : 'text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                        ? 'bg-primary text-white shadow-xs'
+                                            : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100'
                                 }`}
                             >
                                 {size === 'all' ? 'Semua (Scroll)' : `${size}`}
@@ -647,8 +652,8 @@ export default function KanbanBoard({
                                 }}
                                 className={`rounded-md px-2 py-1 text-xs font-medium transition-all ${
                                     urgencyFilter === item.id
-                                        ? 'bg-gray-800 text-white dark:bg-zinc-200 dark:text-zinc-900 shadow-xs'
-                                        : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                        ? 'bg-primary text-white shadow-xs'
+                                            : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100'
                                 }`}
                             >
                                 {item.label}
@@ -662,8 +667,8 @@ export default function KanbanBoard({
                             {(
                                 [
                                     { id: 'all', label: 'Semua Role' },
-                                    { id: 'technician', label: 'Teknisi' },
-                                    { id: 'technician-intern', label: 'Intern' },
+                                    { id: 'technician', label: 'Programmer' },
+                                    { id: 'technician-intern', label: 'Programmer Magang' },
                                 ] as const
                             ).map((item) => (
                                 <button
@@ -675,7 +680,7 @@ export default function KanbanBoard({
                                     }}
                                     className={`rounded-md px-2 py-1 text-xs font-medium transition-all ${
                                         targetRoleFilter === item.id
-                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            ? 'bg-primary text-white shadow-xs'
                                             : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100'
                                     }`}
                                 >
@@ -717,7 +722,8 @@ export default function KanbanBoard({
                             const limit = pageSize === 'all' ? Infinity : pageSize;
                             const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(totalCount / limit));
                             const currentPage = Math.min(columnPages[col] || 1, totalPages);
-                            const paginatedTasks = pageSize === 'all' ? filteredList : filteredList.slice((currentPage - 1) * limit, currentPage * limit);
+                            const paginatedTasks =
+                                pageSize === 'all' ? filteredList : filteredList.slice((currentPage - 1) * limit, currentPage * limit);
 
                             const startItem = totalCount === 0 ? 0 : (currentPage - 1) * (pageSize === 'all' ? totalCount : pageSize) + 1;
                             const endItem = pageSize === 'all' ? totalCount : Math.min(currentPage * pageSize, totalCount);
@@ -755,13 +761,13 @@ export default function KanbanBoard({
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.droppableProps}
-                                                className={`flex-1 overflow-y-auto max-h-[calc(100vh-320px)] min-h-[420px] rounded-xl p-1 transition-colors duration-200 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-track]:bg-transparent ${
+                                                className={`max-h-[calc(100vh-320px)] min-h-[420px] flex-1 overflow-y-auto rounded-xl p-1 transition-colors duration-200 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-track]:bg-transparent ${
                                                     config.columnBg
                                                 } ${snapshot.isDraggingOver ? 'ring-2 ring-blue-400 ring-inset dark:ring-blue-500' : ''}`}
                                             >
                                                 {paginatedTasks.length === 0 ? (
                                                     <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 dark:text-zinc-500">
-                                                        <Inbox className="mb-2 h-7 w-7 opacity-40 stroke-[1.5]" />
+                                                        <Inbox className="mb-2 h-7 w-7 stroke-[1.5] opacity-40" />
                                                         <p className="text-xs font-medium">Belum ada tiket</p>
                                                     </div>
                                                 ) : (
@@ -773,7 +779,9 @@ export default function KanbanBoard({
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
                                                                         {...provided.dragHandleProps}
-                                                                        className={snapshot.isDragging ? 'scale-105 rotate-1 opacity-90 shadow-xl' : ''}
+                                                                        className={
+                                                                            snapshot.isDragging ? 'scale-105 rotate-1 opacity-90 shadow-xl' : ''
+                                                                        }
                                                                     >
                                                                         {renderTaskCard(task, col)}
                                                                     </div>
@@ -792,7 +800,7 @@ export default function KanbanBoard({
 
                                     {/* Column Pagination Footer (when count > pageSize) */}
                                     {pageSize !== 'all' && totalPages > 1 && (
-                                        <div className="mt-2.5 flex items-center justify-between border-t border-gray-200/80 pt-2 px-1 dark:border-zinc-800">
+                                        <div className="mt-2.5 flex items-center justify-between border-t border-gray-200/80 px-1 pt-2 dark:border-zinc-800">
                                             <Button
                                                 type="button"
                                                 variant="ghost"
@@ -804,7 +812,7 @@ export default function KanbanBoard({
                                                         [col]: Math.max(1, currentPage - 1),
                                                     }))
                                                 }
-                                                className="h-6 w-6 rounded-md hover:bg-gray-200 dark:hover:bg-zinc-800 disabled:opacity-25"
+                                                className="h-6 w-6 rounded-md hover:bg-gray-200 disabled:opacity-25 dark:hover:bg-zinc-800"
                                                 title="Halaman sebelumnya"
                                             >
                                                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -830,7 +838,7 @@ export default function KanbanBoard({
                                                         [col]: Math.min(totalPages, currentPage + 1),
                                                     }))
                                                 }
-                                                className="h-6 w-6 rounded-md hover:bg-gray-200 dark:hover:bg-zinc-800 disabled:opacity-25"
+                                                className="h-6 w-6 rounded-md hover:bg-gray-200 disabled:opacity-25 dark:hover:bg-zinc-800"
                                                 title="Halaman berikutnya"
                                             >
                                                 <ChevronRight className="h-3.5 w-3.5" />
@@ -900,7 +908,7 @@ export default function KanbanBoard({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Kembalikan ke Pengerjaan?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tiket akan dikembalikan ke <strong>Sedang Dikerjakan</strong>. Tulis catatan revisi agar teknisi mengetahui apa yang perlu
+                            Tiket akan dikembalikan ke <strong>Sedang Dikerjakan</strong>. Tulis catatan revisi agar programmer mengetahui apa yang perlu
                             diperbaiki.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -916,11 +924,7 @@ export default function KanbanBoard({
 
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={reviewProcessing}>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-orange-500 hover:bg-orange-600"
-                            disabled={reviewProcessing}
-                            onClick={handleReject}
-                        >
+                        <AlertDialogAction className="bg-orange-500 hover:bg-orange-600" disabled={reviewProcessing} onClick={handleReject}>
                             {reviewProcessing ? 'Memproses...' : 'Kembalikan ke Pengerjaan'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -929,4 +933,3 @@ export default function KanbanBoard({
         </>
     );
 }
-

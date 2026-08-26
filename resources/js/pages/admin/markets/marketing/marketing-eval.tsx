@@ -243,7 +243,7 @@ ${platformTotals.join('\n\n')}`;
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                 </Button>
 
-                                <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
+                                <Button type="submit" disabled={processing} className="bg-primary text-white hover:bg-blue-700">
                                     {processing ? 'Menyimpan...' : 'Simpan Evaluasi'}
                                     <Save className="ml-2 h-4 w-4" />
                                 </Button>

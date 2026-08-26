@@ -59,14 +59,14 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
 
         router.post(route('technicians.store'), data, {
             onSuccess: () => {
-                toast.success('Technician berhasil ditambahkan');
+                toast.success('Programmer berhasil ditambahkan');
                 setOpen(false);
                 form.reset();
                 setIsLoading(false);
                 onSuccess?.();
             },
             onError: (errors) => {
-                toast.error(errors.name || errors.email || errors.password || 'Gagal menambahkan technician');
+                toast.error(errors.name || errors.email || errors.password || 'Gagal menambahkan programmer');
                 setIsLoading(false);
             },
         });
@@ -76,13 +76,13 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="gap-2">
-                    <Plus className="h-4 w-4" /> Tambah Technician
+                    <Plus className="h-4 w-4" /> Tambah Programmer
                 </Button>
             </DialogTrigger>
 
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Tambah Technician</DialogTitle>
+                    <DialogTitle>Tambah Programmer</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -94,7 +94,7 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
                                 <FormItem>
                                     <FormLabel>Nama</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Masukkan nama technician" {...field} />
+                                        <Input placeholder="Masukkan nama programmer" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -142,8 +142,8 @@ export function AddTechnicianModal({ onSuccess }: AddTechnicianModalProps) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="technician">Technician</SelectItem>
-                                            <SelectItem value="technician-intern">Technician Intern</SelectItem>
+                                            <SelectItem value="technician">Programmer</SelectItem>
+                                            <SelectItem value="technician-intern">Programmer Magang</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

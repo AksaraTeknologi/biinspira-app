@@ -1,14 +1,14 @@
-import { useWatch } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
+import { useWatch } from 'react-hook-form';
 
 interface Props {
     form: any;
@@ -17,23 +17,22 @@ interface Props {
     goals: { id: number; name: string }[];
 }
 
-export default function FormPlan({
-    form,
-    events = [],
-    platforms = [],
-    goals = []
-}: Props) {
-
-    const { register, setValue, control, formState: { errors } } = form;
+export default function FormPlan({ form, events = [], platforms = [], goals = [] }: Props) {
+    const {
+        register,
+        setValue,
+        control,
+        formState: { errors },
+    } = form;
     const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
 
     // watch ad_plan_id
-    const selectedEvent = useWatch({ control, name: "ad_plan_id" }) || "";
-    const selectedGoal = useWatch({ control, name: "goals_id" }) || "";
-    const targetType = useWatch({ control, name: "audience_type" }) || "targeted";
-    const typeAudiens = useWatch({ control, name: "type_audience_targeted" });
-    const startDate = useWatch({ control, name: "start_date" });
-    const endDate = useWatch({ control, name: "end_date" });
+    const selectedEvent = useWatch({ control, name: 'ad_plan_id' }) || '';
+    const selectedGoal = useWatch({ control, name: 'goals_id' }) || '';
+    const targetType = useWatch({ control, name: 'audience_type' }) || 'targeted';
+    const typeAudiens = useWatch({ control, name: 'type_audience_targeted' });
+    const startDate = useWatch({ control, name: 'start_date' });
+    const endDate = useWatch({ control, name: 'end_date' });
 
     const showTargeting = targetType === 'targeted' || targetType === 'combined';
     const showBroad = targetType === 'broad' || targetType === 'combined';
@@ -49,10 +48,7 @@ export default function FormPlan({
             {/* bagian pertama */}
             <div>
                 <Label>Nama Event</Label>
-                <Select
-                    value={String(selectedEvent || "")}
-                    onValueChange={(value) => setValue("ad_plan_id", value)}
-                >
+                <Select value={String(selectedEvent || '')} onValueChange={(value) => setValue('ad_plan_id', value)}>
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Pilih Event" />
                     </SelectTrigger>
@@ -64,14 +60,12 @@ export default function FormPlan({
                         ))}
                     </SelectContent>
                 </Select>
-                <input type="hidden" {...register("ad_plan_id")} />
-                {errors?.ad_plan_id && (
-                    <p className="text-red-500 text-sm">{errors.ad_plan_id.message}</p>
-                )}
+                <input type="hidden" {...register('ad_plan_id')} />
+                {errors?.ad_plan_id && <p className="text-sm text-red-500">{errors.ad_plan_id.message}</p>}
             </div>
 
             {/* bagian kedua */}
-            <div className="border p-4 rounded-md mt-4 flex flex-col gap-y-4">
+            <div className="mt-4 flex flex-col gap-y-4 rounded-md border p-4">
                 <div className="flex flex-col gap-y-4">
                     <div>
                         <Label>Periode Iklan</Label>
@@ -102,25 +96,23 @@ export default function FormPlan({
                                         '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                         '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                         '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                        '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                        '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                         '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                         '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                     )}
                                 />
                             </PopoverContent>
                         </Popover>
-                        <input type="hidden" {...register("start_date")} />
-                        <input type="hidden" {...register("end_date")} />
-                        {errors?.start_date && (
-                            <p className="text-red-500 text-sm">{errors.start_date.message}</p>
-                        )}
-                        {errors?.end_date && (
-                            <p className="text-red-500 text-sm">{errors.end_date.message}</p>
-                        )}
+                        <input type="hidden" {...register('start_date')} />
+                        <input type="hidden" {...register('end_date')} />
+                        {errors?.start_date && <p className="text-sm text-red-500">{errors.start_date.message}</p>}
+                        {errors?.end_date && <p className="text-sm text-red-500">{errors.end_date.message}</p>}
                         <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
                             <div className="flex flex-col rounded-md border bg-muted/30 p-2">
                                 <span className="text-xs text-muted-foreground">Tanggal Mulai</span>
-                                <span>{range.from ? format(range.from, 'dd MMM yyyy') : startDate ? format(new Date(startDate), 'dd MMM yyyy') : '—'}</span>
+                                <span>
+                                    {range.from ? format(range.from, 'dd MMM yyyy') : startDate ? format(new Date(startDate), 'dd MMM yyyy') : '—'}
+                                </span>
                             </div>
                             <div className="flex flex-col rounded-md border bg-muted/30 p-2">
                                 <span className="text-xs text-muted-foreground">Tanggal Selesai</span>
@@ -132,10 +124,7 @@ export default function FormPlan({
                     <div className="grid grid-cols-2 gap-x-5 gap-y-4">
                         <div>
                             <Label>Tujuan Iklan</Label>
-                            <Select
-                                value={String(selectedGoal || "")}
-                                onValueChange={(val) => setValue("goals_id", val)}
-                            >
+                            <Select value={String(selectedGoal || '')} onValueChange={(val) => setValue('goals_id', val)}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Pilih tujuan iklan" />
                                 </SelectTrigger>
@@ -147,42 +136,23 @@ export default function FormPlan({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <input type="hidden" {...register("goals_id")} />
-                            {errors?.goals_id && (
-                                <p className="text-red-500 text-sm">{errors.goals_id.message}</p>
-                            )}
+                            <input type="hidden" {...register('goals_id')} />
+                            {errors?.goals_id && <p className="text-sm text-red-500">{errors.goals_id.message}</p>}
                         </div>
 
                         <div>
                             <Label>Budget Harian</Label>
-                            <Input
-                                type="number"
-                                {...register("daily_budget")}
-                                placeholder="Rp. 0"
-                                min={0}
-                            />
-                            {errors?.daily_budget && (
-                                <p className="text-red-500 text-sm">{errors.daily_budget.message}</p>
-                            )}
+                            <Input type="number" {...register('daily_budget')} placeholder="Rp. 0" min={0} />
+                            {errors?.daily_budget && <p className="text-sm text-red-500">{errors.daily_budget.message}</p>}
                         </div>
                         <div>
                             <Label>Target Peserta (jumlah)</Label>
-                            <Input
-                                type="number"
-                                {...register("audience_target")}
-                                placeholder="Masukkan jumlah target audiens"
-                                min={0}
-                            />
-                            {errors?.audience_target && (
-                                <p className="text-red-500 text-sm">{errors.audience_target.message}</p>
-                            )}
+                            <Input type="number" {...register('audience_target')} placeholder="Masukkan jumlah target audiens" min={0} />
+                            {errors?.audience_target && <p className="text-sm text-red-500">{errors.audience_target.message}</p>}
                         </div>
                         <div>
                             <Label>Jenis Target Peserta</Label>
-                            <Select
-                                value={targetType}
-                                onValueChange={(val) => setValue("audience_type", val)}
-                            >
+                            <Select value={targetType} onValueChange={(val) => setValue('audience_type', val)}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Pilih jenis audiens" />
                                 </SelectTrigger>
@@ -192,7 +162,7 @@ export default function FormPlan({
                                     <SelectItem value="combined">Combined</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <input type="hidden" {...register("audience_type")} />
+                            <input type="hidden" {...register('audience_type')} />
                         </div>
                     </div>
 
@@ -203,49 +173,37 @@ export default function FormPlan({
                                 <div className="space-y-4">
                                     <div>
                                         <Label>Umur (Targeted)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Masukkan umur target"
-                                            min={0}
-                                            {...register("age_targeted")}
-                                        />
+                                        <Input type="number" placeholder="Masukkan umur target" min={0} {...register('age_targeted')} />
                                     </div>
 
                                     <div>
                                         <Label>Lokasi</Label>
-                                        <Input
-                                            placeholder="Masukkan lokasi audiens"
-                                            {...register("location_targeted")}
-                                        />
+                                        <Input placeholder="Masukkan lokasi audiens" {...register('location_targeted')} />
                                     </div>
 
                                     <div>
                                         <Label>Jenis Target Peserta</Label>
-                                        <Select
-                                            value={typeAudiens ?? ''}
-                                            onValueChange={(val) => setValue("type_audience_targeted", val)}
-                                        >
+                                        <Select value={typeAudiens ?? ''} onValueChange={(val) => setValue('type_audience_targeted', val)}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Pilih jenis audiens" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map((item) => (
-                                                    <SelectItem key={item} value={item}>
-                                                        {item}
-                                                    </SelectItem>
-                                                ))}
+                                                {['Industri', 'Pekerjaan', 'Bidang Studi', 'Tingkat Pendidikan', 'Minat', 'Lain - Lain'].map(
+                                                    (item) => (
+                                                        <SelectItem key={item} value={item}>
+                                                            {item}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
                                             </SelectContent>
                                         </Select>
-                                        <input type="hidden" {...register("type_audience_targeted")} />
+                                        <input type="hidden" {...register('type_audience_targeted')} />
                                     </div>
 
                                     {typeAudiens && (
                                         <div>
                                             <Label>Detail Target Peserta ({typeAudiens})</Label>
-                                            <Input
-                                                placeholder={`Masukkan detail untuk ${typeAudiens}`}
-                                                {...register("name_audience_targeted")}
-                                            />
+                                            <Input placeholder={`Masukkan detail untuk ${typeAudiens}`} {...register('name_audience_targeted')} />
                                         </div>
                                     )}
                                 </div>
@@ -255,27 +213,19 @@ export default function FormPlan({
                                 <div className="space-y-4">
                                     <div>
                                         <Label>Umur (Broad)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Masukkan umur broad"
-                                            min={0}
-                                            {...register("age_broad")}
-                                        />
+                                        <Input type="number" placeholder="Masukkan umur broad" min={0} {...register('age_broad')} />
                                     </div>
 
                                     <div>
                                         <Label>Lokasi Broad</Label>
-                                        <Input
-                                            placeholder="Masukkan lokasi broad"
-                                            {...register("location_broad")}
-                                        />
+                                        <Input placeholder="Masukkan lokasi broad" {...register('location_broad')} />
                                     </div>
                                 </div>
                             )}
-                        </div >
-                    </div >
-                </div >
-            </div >
+                        </div>
+                    </div>
+                </div>
+            </div>
         </>
     );
 }

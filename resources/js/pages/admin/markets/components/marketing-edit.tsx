@@ -62,19 +62,19 @@ export default function MarketingEdit() {
                 names: Array.isArray(a.names)
                     ? a.names
                     : a.name
-                        ? String(a.name)
+                      ? String(a.name)
                             .split(',')
                             .map((s: string) => s.trim())
                             .filter(Boolean)
-                        : [],
+                      : [],
             }));
         }
 
         const types = typeStr
             ? typeStr
-                .split(';')
-                .map((s) => s.trim())
-                .filter(Boolean)
+                  .split(';')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
             : [];
         const groups = nameStr ? nameStr.split(';').map((g) => g.trim()) : [];
 
@@ -86,9 +86,9 @@ export default function MarketingEdit() {
             const g = groups[i] || '';
             const names = g
                 ? g
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
                 : [];
             result.push({ id: genId(), type: t, names });
         }
@@ -158,8 +158,12 @@ export default function MarketingEdit() {
         }
     }, [data.user_id, events, data.event_id]);
 
-    const activePlatform = data.platforms.find((p: { platform_id: number | string }) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
-    const tab = mergedPlatforms.find((p: { platform_id: number | string; platform: { name: string } }) => Number(p.platform_id) === Number(activePlatformId))?.platform?.name.toLowerCase() || '';
+    const activePlatform =
+        data.platforms.find((p: { platform_id: number | string }) => Number(p.platform_id) === Number(activePlatformId)) || data.platforms[0];
+    const tab =
+        mergedPlatforms
+            .find((p: { platform_id: number | string; platform: { name: string } }) => Number(p.platform_id) === Number(activePlatformId))
+            ?.platform?.name.toLowerCase() || '';
     const [range, setRange] = useState<DateRange | undefined>({
         from: activePlatform?.start_date ? parseISO(activePlatform.start_date) : undefined,
         to: activePlatform?.end_date ? parseISO(activePlatform.end_date) : undefined,
@@ -183,7 +187,9 @@ export default function MarketingEdit() {
     }, [activePlatform?.end_date]);
 
     const handleTabChange = (val: string) => {
-        const selected = mergedPlatforms.find((p: { platform: { name: string }; platform_id: number | string }) => p.platform.name.toLowerCase() === val);
+        const selected = mergedPlatforms.find(
+            (p: { platform: { name: string }; platform_id: number | string }) => p.platform.name.toLowerCase() === val,
+        );
         if (selected) setActivePlatformId(selected.platform_id);
     };
 
@@ -201,10 +207,10 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                        ...p,
-                        start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
-                        end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
-                    }
+                          ...p,
+                          start_date: rangeValue?.from ? format(rangeValue.from, 'yyyy-MM-dd') : p.start_date,
+                          end_date: rangeValue?.to ? format(rangeValue.to, 'yyyy-MM-dd') : p.end_date,
+                      }
                     : p,
             ),
         );
@@ -217,9 +223,9 @@ export default function MarketingEdit() {
             data.platforms.map((p: any) =>
                 Number(p.platform_id) === Number(activePlatformId)
                     ? {
-                        ...p,
-                        audience_details: [...(p.audience_details || []), newItem],
-                    }
+                          ...p,
+                          audience_details: [...(p.audience_details || []), newItem],
+                      }
                     : p,
             ),
         );
@@ -398,7 +404,7 @@ export default function MarketingEdit() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                                        className="w-full bg-primary text-white hover:bg-blue-700"
                                         onClick={addAudience}
                                     >
                                         + Tambah Jenis Audiens
@@ -474,7 +480,7 @@ export default function MarketingEdit() {
                                     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                     '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                 )}
@@ -630,19 +636,13 @@ export default function MarketingEdit() {
                                     </div>
                                 </div>
 
-                                <Tabs
-                                    value={String(tab)}
-                                    onValueChange={handleTabChange}
-                                >
-                                    <TabsList
-                                        className="w-full flex flex-row gap-3 overflow-x-auto justify-start"
-                                        style={{ scrollbarWidth: "none" }}
-                                    >
+                                <Tabs value={String(tab)} onValueChange={handleTabChange}>
+                                    <TabsList className="flex w-full flex-row justify-start gap-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                                         {mergedPlatforms.map((p: any) => (
                                             <TabsTrigger
                                                 key={p.platform?.id ?? p.platform_id}
                                                 value={p.platform.name.toLowerCase()}
-                                                className='px-20'
+                                                className="px-20"
                                             >
                                                 {p.platform.name}
                                             </TabsTrigger>

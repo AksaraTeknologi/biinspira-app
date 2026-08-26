@@ -184,7 +184,7 @@ export function AddUserModal({ onSuccess }: { onSuccess?: () => void }) {
                                 Batal
                             </Button>
 
-                            <Button type="submit" disabled={isLoading} className="bg-blue-600 text-white hover:bg-blue-700">
+                            <Button type="submit" disabled={isLoading} className="bg-primary text-white hover:bg-blue-700">
                                 {isLoading ? 'Menyimpan...' : 'Simpan'}
                             </Button>
                         </div>

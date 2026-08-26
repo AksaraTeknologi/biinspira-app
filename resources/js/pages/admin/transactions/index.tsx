@@ -363,7 +363,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                                                 '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                                 '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                                 '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                                 '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                                 '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                             )}

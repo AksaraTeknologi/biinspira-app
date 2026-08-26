@@ -453,7 +453,7 @@ class RevisionRequestController extends Controller
             'changed_at' => now(),
         ]);
 
-        // Notif WA ke teknisi tentang hasil review
+        // Notif WA ke Programmer tentang hasil review
         if ($task->assignees->isNotEmpty()) {
             foreach ($task->assignees as $technician) {
                 $message = $this->buildReviewActionMessage($task, $user, $validated['action'], $validated['review_note'] ?? null);
@@ -576,7 +576,7 @@ class RevisionRequestController extends Controller
             "Urgensi: {$this->formatUrgencyLabel($task->urgency)}\n" .
             "Deadline: {$this->formatDateForWhatsapp($task->deadline)}\n" .
             "Link Terkait: {$this->formatTextForWhatsapp($task->related_url)}\n\n" .
-            "*Silakan assign teknisi/programmer dan tentukan waktu pengerjaan.*\n\n" .
+            "*Silakan assign programmer dan tentukan waktu pengerjaan.*\n\n" .
             "Pantau tiket: https://biinsight.id/requests";
     }
 

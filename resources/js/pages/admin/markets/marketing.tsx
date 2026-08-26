@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ColumnDef,
     flexRender,
@@ -20,12 +21,10 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
-import { Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon, Eye, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
-import { toast } from 'sonner';
 
 interface Event {
     id: number;
@@ -103,14 +102,7 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                                     <Pencil className="h-4 w-4" />
                                 </Link>
                             </Button>
-                            {isAdmin && (
-                                <DeleteButton
-                                    id={plan.id}
-                                    routeTable="marketing"
-                                    name={plan.event?.name}
-                                    role="admin"
-                                />
-                            )}
+                            {isAdmin && <DeleteButton id={plan.id} routeTable="marketing" name={plan.event?.name} role="admin" />}
                         </div>
                     );
                 },
@@ -180,15 +172,13 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
             {
                 id: 'platform',
                 header: 'Platform',
-                cell: ({ row }) =>
-                    row.original.plan_platforms?.map((p) => p.platform?.name).join(', ') || '-',
+                cell: ({ row }) => row.original.plan_platforms?.map((p) => p.platform?.name).join(', ') || '-',
                 enableSorting: false,
             },
             {
                 id: 'goal',
                 header: 'Goal',
-                cell: ({ row }) =>
-                    row.original.plan_platforms?.map((p) => p.goal?.name).join(', ') || '-',
+                cell: ({ row }) => row.original.plan_platforms?.map((p) => p.goal?.name).join(', ') || '-',
                 enableSorting: false,
             },
             {
@@ -201,10 +191,10 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                                 p.audience_type === 'targeted'
                                     ? 'Targetting Audiens'
                                     : p.audience_type === 'broad'
-                                    ? 'Broad'
-                                    : p.audience_type === 'combined'
-                                    ? 'Combined'
-                                    : '-',
+                                      ? 'Broad'
+                                      : p.audience_type === 'combined'
+                                        ? 'Combined'
+                                        : '-',
                             ),
                         ),
                     ].join(', ');
@@ -215,8 +205,7 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
             {
                 id: 'end_date',
                 header: 'Tanggal Berakhir',
-                cell: ({ row }) =>
-                    row.original.plan_platforms?.map((p) => formatDate(p.end_date)).join(', ') || '-',
+                cell: ({ row }) => row.original.plan_platforms?.map((p) => formatDate(p.end_date)).join(', ') || '-',
                 enableSorting: false,
             },
             {
@@ -230,8 +219,8 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                                 s === 'active'
                                     ? 'bg-green-100 text-green-700'
                                     : s === 'draft'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-gray-100 text-gray-700'
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-gray-100 text-gray-700'
                             }`}
                         >
                             {s || '-'}
@@ -297,9 +286,7 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
                                     <TableHead key={header.id}>
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                     </TableHead>
                                 ))}
                             </TableRow>
@@ -310,9 +297,7 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                             table.getRowModel().rows.map((row) => (
                                 <TableRow key={row.id}>
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
+                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                                     ))}
                                 </TableRow>
                             ))
@@ -329,24 +314,12 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
 
             {/* Pagination */}
             <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredRowModel().rows.length} iklan ditemukan.
-                </div>
+                <div className="flex-1 text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} iklan ditemukan.</div>
                 <div className="space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                         Previous
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                         Next
                     </Button>
                 </div>
@@ -458,7 +431,7 @@ export default function Marketing() {
                                                 '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
                                                 '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
                                                 '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-                                                '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+                                                '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
                                                 '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
                                                 '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
                                             )}

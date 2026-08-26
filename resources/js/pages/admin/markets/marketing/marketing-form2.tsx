@@ -201,7 +201,10 @@ export default function MarketingForm2() {
 
                             {/* PLATFORM TABS */}
                             <Tabs value={tab} onValueChange={setTab}>
-                                <TabsList className={`mb-4 w-full flex flex-row gap-3 overflow-x-auto justify-start`} style={{ scrollbarWidth: 'none' }}>
+                                <TabsList
+                                    className={`mb-4 flex w-full flex-row justify-start gap-3 overflow-x-auto`}
+                                    style={{ scrollbarWidth: 'none' }}
+                                >
                                     {platformList.map((p) => (
                                         <TabsTrigger key={p.id} value={getPlatformKey(p.name)} className="px-20">
                                             {p.name}
@@ -366,7 +369,7 @@ export default function MarketingForm2() {
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                                 </Button>
 
-                                <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
+                                <Button type="submit" disabled={processing} className="bg-primary text-white hover:bg-blue-700">
                                     {processing ? 'Menyimpan...' : data.ad_result_id ? 'Perbarui' : 'Simpan'}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>

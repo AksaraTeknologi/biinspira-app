@@ -1,14 +1,14 @@
+import GraphShow from '@/components/custom/graphshow';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { SharedData } from '@/types';
+import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { usePage } from '@inertiajs/react';
 import { Minus, Plus } from 'lucide-react';
-import GraphShow from '@/components/custom/graphshow';
 import { useState } from 'react';
-import { PageProps as InertiaPageProps } from '@inertiajs/core'
 
 export interface AdPlanData {
     id: string | null;
@@ -19,8 +19,7 @@ export interface AdPlanData {
     name_event: string | null;
     status: string | null;
 
-
-    batch?: number | string | null;          
+    batch?: number | string | null;
     previous_batch?: number | string | null;
     event_batch?: number | string | null;
 
@@ -125,10 +124,9 @@ interface RawDataEvent {
     audience: number;
 }
 
-
-export default function MarketingShow({ }: AdPlanProps) {
+export default function MarketingShow({}: AdPlanProps) {
     const { data, graphData } = usePage<PageProps>().props;
-    console.log("PAGE PROPS:", data, graphData);
+    console.log('PAGE PROPS:', data, graphData);
     const [openPlan, setOpenPlan] = useState(true);
     const [openResult, setOpenResult] = useState(true);
     const [openEvaluation, setOpenEvaluation] = useState(true);
@@ -190,8 +188,7 @@ export default function MarketingShow({ }: AdPlanProps) {
     const userRole = auth.role[0];
 
     const breadcrumbs = [{ title: 'Marketing', href: route('admin.marketing.index') }];
-    
-     
+
     interface PageProps extends InertiaPageProps {
         data: AdPlanData;
         graphData: {
@@ -200,7 +197,6 @@ export default function MarketingShow({ }: AdPlanProps) {
             event: RawDataEvent[];
         };
     }
-
 
     interface RawDataMonthly {
         month: string;
@@ -223,8 +219,8 @@ export default function MarketingShow({ }: AdPlanProps) {
         pengeluaran: number;
         audience: number;
     }
-        
-    console.log("GRAPH DATA BULANAN:", graphData?.bulanan);
+
+    console.log('GRAPH DATA BULANAN:', graphData?.bulanan);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -238,7 +234,7 @@ export default function MarketingShow({ }: AdPlanProps) {
                             const url = userRole === 'admin' ? route('admin.marketing.print', id) : route('user.marketing.print', id);
                             window.open(url, '_blank');
                         }}
-                        className="dark:bg-blue-700 dark:hover:bg-blue-600"
+                        className="dark:bg-blue-700 dark:hover:bg-primary"
                     >
                         Print PDF
                     </Button>
@@ -301,7 +297,7 @@ export default function MarketingShow({ }: AdPlanProps) {
                                                 </a>
                                             </Button>
 
-                                            <Button asChild size="sm" className="dark:bg-blue-700 dark:hover:bg-blue-600">
+                                            <Button asChild size="sm" className="dark:bg-blue-700 dark:hover:bg-primary">
                                                 <a href={data.image_flayer} download>
                                                     Download
                                                 </a>
@@ -639,29 +635,22 @@ export default function MarketingShow({ }: AdPlanProps) {
                 )}
 
                 {/* ================= GRAPH SECTION ================= */}
-               
-             <Card className="w-full border-zinc-200 shadow-md">
-                
-                <CardHeader>
-                    <div>Grafik Performa Iklan {data?.name_event || '-'} </div>
-                </CardHeader>
-                <CardContent>
-                    {graphData ? (
-                        <div className="w-full h-[400px]">
-                            
-                            <GraphShow RawData={graphData} />
-                        </div>
-                    ) : (
-                        <div className="text-sm text-gray-500">
-                            Tidak ada data grafik
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+
+                <Card className="w-full border-zinc-200 shadow-md">
+                    <CardHeader>
+                        <div>Grafik Performa Iklan {data?.name_event || '-'} </div>
+                    </CardHeader>
+                    <CardContent>
+                        {graphData ? (
+                            <div className="h-[400px] w-full">
+                                <GraphShow RawData={graphData} />
+                            </div>
+                        ) : (
+                            <div className="text-sm text-gray-500">Tidak ada data grafik</div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );
-    
 }
-
-

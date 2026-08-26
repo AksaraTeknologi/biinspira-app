@@ -91,7 +91,7 @@ const calendarClassName = cn(
     '[&_.rdp-months]:flex [&_.rdp-months]:gap-6',
     '[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-zinc-500',
     '[&_.rdp-day]:h-9 [&_.rdp-day]:w-9 [&_.rdp-day]:rounded-lg [&_.rdp-day]:text-sm',
-    '[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white',
+    '[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-white',
     '[&_.rdp-day_range_middle]:bg-blue-100 [&_.rdp-day_range_middle]:text-zinc-800',
     '[&_.rdp-caption_label]:font-semibold [&_.rdp-caption_label]:text-zinc-700',
 );
@@ -139,15 +139,15 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const { auth } = usePage<PageProps>().props;
     const userRoles = (auth?.user?.roles ?? []).map((role) => (typeof role === 'string' ? role.toLowerCase() : role.name.toLowerCase()));
     const isAdmin = userRoles.includes('admin');
-    
+
     const taskAssignees = useMemo(() => resolveAssignees(task), [task]);
     const isAssignedToCurrentUser = currentUserId != null && taskAssignees.includes(String(currentUserId));
     const canClaimTask = Boolean(
-        task && 
-        !isAdmin && 
-        (userRoles.includes('technician') || userRoles.includes('technician-intern')) && 
+        task &&
+        !isAdmin &&
+        (userRoles.includes('technician') || userRoles.includes('technician-intern')) &&
         ['request', 'todo', 'in_progress'].includes(task.status) &&
-        !taskAssignees.includes(String(currentUserId))
+        !taskAssignees.includes(String(currentUserId)),
     );
     const canUpdateTask = isAdmin || isAssignedToCurrentUser;
 
@@ -245,7 +245,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                         <div>
                             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{task.title}</h2>
                             <div className="mt-2 flex flex-wrap gap-2">
-                                <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                                <span className="rounded bg-blue-100 px-2 py-1 text-xs text-primary dark:bg-blue-900/40 dark:text-blue-300">
                                     {STATUS_OPTIONS.find((item) => item.value === task.status)?.label ?? task.status}
                                 </span>
                                 {userRoles.includes('technician') && task.target_role === 'technician-intern' && (
@@ -271,7 +271,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                 <button
                                     type="button"
                                     onClick={() => setExpandedDesc((state) => !state)}
-                                    className="mt-2 text-xs text-blue-600 hover:underline dark:text-blue-400"
+                                    className="mt-2 text-xs text-primary hover:underline dark:text-blue-400"
                                 >
                                     {expandedDesc ? 'Tutup' : 'Selengkapnya'}
                                 </button>
@@ -282,7 +282,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                         {task.review_note && (
                             <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/30">
                                 <p className="mb-1 text-xs font-semibold text-orange-600 dark:text-orange-400">📝 Catatan Revisi</p>
-                                <p className="whitespace-pre-wrap text-sm text-orange-800 dark:text-orange-300">{task.review_note}</p>
+                                <p className="text-sm whitespace-pre-wrap text-orange-800 dark:text-orange-300">{task.review_note}</p>
                             </div>
                         )}
 
@@ -311,7 +311,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                                 href={url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="flex items-center gap-2 rounded-md border p-3 text-sm text-blue-600 hover:bg-blue-50 dark:border-zinc-700 dark:text-blue-400 dark:hover:bg-zinc-800"
+                                                className="flex items-center gap-2 rounded-md border p-3 text-sm text-primary hover:bg-blue-50 dark:border-zinc-700 dark:text-blue-400 dark:hover:bg-zinc-800"
                                             >
                                                 <Link2 className="h-4 w-4" />
                                                 Buka File
@@ -333,15 +333,15 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                             <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
                                 <Hammer className="h-4 w-4 text-gray-400" />
-                                <div className='w-full min-w-0'>
+                                <div className="w-full min-w-0">
                                     <p className="mb-1 text-xs text-gray-500 dark:text-zinc-400">Programmer</p>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <p className="font-medium text-zinc-900 dark:text-zinc-100 max-w-full truncate">
+                                            <p className="max-w-full truncate font-medium text-zinc-900 dark:text-zinc-100">
                                                 {task.assignees_name || 'Belum ditugaskan'}
                                             </p>
                                         </TooltipTrigger>
-                                        <TooltipContent className="max-w-xs whitespace-normal text-center">
+                                        <TooltipContent className="max-w-xs text-center whitespace-normal">
                                             {task.assignees_name || 'Belum ditugaskan'}
                                         </TooltipContent>
                                     </Tooltip>
@@ -360,7 +360,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                 <ShieldAlert className="h-4 w-4 text-gray-400" />
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-zinc-400">Urgensi</p>
-                                    <p className="font-medium text-zinc-900 dark:text-zinc-100 capitalize">{task.urgency || '-'}</p>
+                                    <p className="font-medium text-zinc-900 capitalize dark:text-zinc-100">{task.urgency || '-'}</p>
                                 </div>
                             </div>
 
@@ -373,7 +373,7 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                             href={task.related_url}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                            className="truncate text-sm font-medium text-primary hover:underline dark:text-blue-400"
                                         >
                                             {task.related_url}
                                         </a>
@@ -421,7 +421,10 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                className={cn('w-full justify-start text-left font-normal bg-white dark:bg-zinc-900 border-amber-200', !range.from && 'text-muted-foreground')}
+                                                className={cn(
+                                                    'w-full justify-start border-amber-200 bg-white text-left font-normal dark:bg-zinc-900',
+                                                    !range.from && 'text-muted-foreground',
+                                                )}
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {range.from
@@ -479,23 +482,29 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
 
                                     {isAdmin && (
                                         <div className="space-y-2">
-                                            <Label>Pilih Teknisi</Label>
+                                            <Label>Pilih Programmer</Label>
                                             <Popover>
                                                 <PopoverTrigger asChild>
-                                                    <Button 
-                                                        variant="outline" 
+                                                    <Button
+                                                        variant="outline"
                                                         type="button"
-                                                        className="w-full justify-between font-normal bg-white dark:bg-zinc-900"
+                                                        className="w-full justify-between bg-white font-normal dark:bg-zinc-900"
                                                     >
                                                         {selectedAssignees.length > 0
-                                                            ? users.filter(u => selectedAssignees.includes(String(u.id))).map(u => u.name).join(', ')
+                                                            ? users
+                                                                  .filter((u) => selectedAssignees.includes(String(u.id)))
+                                                                  .map((u) => u.name)
+                                                                  .join(', ')
                                                             : 'Belum ditugaskan'}
                                                     </Button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-[300px] p-2" align="start">
-                                                    <div className="flex flex-col space-y-2 max-h-[200px] overflow-y-auto">
-                                                        {users.map(user => (
-                                                            <label key={user.id} className="flex items-center space-x-2 cursor-pointer p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded">
+                                                    <div className="flex max-h-[200px] flex-col space-y-2 overflow-y-auto">
+                                                        {users.map((user) => (
+                                                            <label
+                                                                key={user.id}
+                                                                className="flex cursor-pointer items-center space-x-2 rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                            >
                                                                 <Checkbox
                                                                     checked={selectedAssignees.includes(String(user.id))}
                                                                     onCheckedChange={(checked) => {
@@ -503,7 +512,10 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                                                         if (checked) {
                                                                             setData('assignees', [...selectedAssignees, id]);
                                                                         } else {
-                                                                            setData('assignees', selectedAssignees.filter(uId => uId !== id));
+                                                                            setData(
+                                                                                'assignees',
+                                                                                selectedAssignees.filter((uId) => uId !== id),
+                                                                            );
                                                                         }
                                                                     }}
                                                                 />

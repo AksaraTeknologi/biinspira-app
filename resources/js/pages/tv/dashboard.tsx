@@ -229,8 +229,11 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                         <Deferred data="platformStats" fallback={<StatsSkeletonGrid />}>
                             <>
-                                <TabsContent value="grid" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
-                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-2 lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-0.5">
+                                <TabsContent
+                                    value="grid"
+                                    className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto lg:justify-between lg:overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-1 gap-2 pr-0.5 md:grid-cols-2 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-y-auto">
                                         {stats.map((item) => (
                                             <PlatformStatCardGrid
                                                 key={item.key}
@@ -246,9 +249,9 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('month')}
-                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-3"
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none xl:p-3"
                                         >
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-11 xl:w-11">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-primary text-white shadow-xs xl:h-11 xl:w-11">
                                                 <TrendingUp className="h-5 w-5 xl:h-6 xl:w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -256,7 +259,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
@@ -267,7 +270,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('month')}
-                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-3"
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-sky-400 focus:outline-none xl:p-3"
                                         >
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <CalendarIcon className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -277,7 +280,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
@@ -288,7 +291,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('day')}
-                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-3"
+                                            className="flex items-center gap-3 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-emerald-400 focus:outline-none xl:p-3"
                                         >
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-11 xl:w-11">
                                                 <Sparkles className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -298,7 +301,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
@@ -308,7 +311,10 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="carousel" className="mt-0 flex flex-1 flex-col min-h-0 overflow-y-auto lg:overflow-hidden lg:justify-between">
+                                <TabsContent
+                                    value="carousel"
+                                    className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto lg:justify-between lg:overflow-hidden"
+                                >
                                     <div className="pb-3">
                                         <div className="rounded-3xl border border-white/40 bg-white/16 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.25)] backdrop-blur-xl">
                                             <Carousel setApi={setCarouselApi} opts={{ loop: true, align: 'start' }} className="h-full">
@@ -332,9 +338,9 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('month')}
-                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 xl:p-4.5"
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-indigo-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none xl:p-4.5"
                                         >
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-xs xl:h-12 xl:w-12">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-primary text-white shadow-xs xl:h-12 xl:w-12">
                                                 <TrendingUp className="h-6 w-6" />
                                             </div>
                                             <div className="min-w-0">
@@ -342,7 +348,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Total Omset Group (YTD)
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.total)}
                                                 >
                                                     {formatCurrency(groupStats.total)}
@@ -353,7 +359,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('month')}
-                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400 xl:p-4.5"
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-sky-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-sky-400 focus:outline-none xl:p-4.5"
                                         >
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <CalendarIcon className="h-6 w-6" />
@@ -363,7 +369,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Bulan Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.thisMonth)}
                                                 >
                                                     {formatCurrency(groupStats.thisMonth)}
@@ -374,7 +380,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         <button
                                             type="button"
                                             onClick={() => handleOpenGroupDrilldown('day')}
-                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 xl:p-4.5"
+                                            className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur transition hover:cursor-pointer hover:border-emerald-400/80 hover:bg-white hover:shadow-lg focus:ring-2 focus:ring-emerald-400 focus:outline-none xl:p-4.5"
                                         >
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
                                                 <Sparkles className="h-6 w-6" />
@@ -384,7 +390,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                     Omset Group Hari Ini
                                                 </p>
                                                 <p
-                                                    className="mt-0.5 truncate text-base font-black leading-tight text-slate-900 xl:text-lg 2xl:text-2xl"
+                                                    className="mt-0.5 truncate text-base leading-tight font-black text-slate-900 xl:text-lg 2xl:text-2xl"
                                                     title={formatCurrency(groupStats.today)}
                                                 >
                                                     {formatCurrency(groupStats.today)}
