@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProgramEvent;
+use App\Models\ProgramEventGroupLink;
 use App\Models\ProgramEventSchedule;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,11 +19,7 @@ class ProgramEventController extends Controller
 {
     public function index()
     {
-        $query = ProgramEvent::with(['user', 'schedules'])->orderBy('created_at', 'desc');
-
-        if (!auth()->user()->hasRole('admin')) {
-            $query->where('user_id', auth()->id());
-        }
+        $query = ProgramEvent::with(['user', 'schedules', 'groupLinks.user:id,name,avatar,email'])->orderBy('created_at', 'desc');
 
         $programEvents = $query->get();
 
@@ -50,10 +47,7 @@ class ProgramEventController extends Controller
     {
         $duplicateData = null;
         if ($request->has('duplicate_from')) {
-            $duplicateData = ProgramEvent::with('schedules')->find($request->query('duplicate_from'));
-            if ($duplicateData && !auth()->user()->hasRole('admin') && $duplicateData->user_id !== auth()->id()) {
-                $duplicateData = null;
-            }
+            $duplicateData = ProgramEvent::with(['schedules', 'groupLinks.user:id,name,avatar,email'])->find($request->query('duplicate_from'));
         }
 
         return Inertia::render('admin/program-events/create', [
@@ -69,12 +63,14 @@ class ProgramEventController extends Controller
             'type'                  => ['required', 'in:webinar,bootcamp,certification_program'],
             'title'                 => ['required', 'string', 'max:255'],
             'batch'                 => ['nullable', 'string', 'max:100'],
+            'mentor'                => ['nullable', 'string', 'max:255'],
             'description'           => ['nullable', 'string'],
             'benefits'              => ['nullable', 'string'],
             'price'                 => ['required', 'integer', 'min:0'],
             'strikethrough_price'   => ['nullable', 'integer', 'min:0'],
             'quota'                 => ['nullable', 'integer', 'min:0'],
-            'group_url'             => ['nullable', 'url'],
+            'group_links'           => ['nullable', 'array'],
+            'group_links.*.url'     => ['required', 'url'],
             'registration_deadline' => ['required', 'date'],
         ];
 
@@ -118,12 +114,22 @@ class ProgramEventController extends Controller
         $data['user_id']  = Auth::id();
         $data['quota']    = $data['quota'] ?? 0;
         $schedules        = $data['schedules'] ?? [];
-        unset($data['schedules']);
+        $groupLinks       = $data['group_links'] ?? [];
+        unset($data['schedules'], $data['group_links']);
 
         $program = ProgramEvent::create($data);
 
         foreach ($schedules as $schedule) {
             $program->schedules()->create($schedule);
+        }
+
+        foreach ($groupLinks as $link) {
+            if (!empty($link['url'])) {
+                $program->groupLinks()->create([
+                    'user_id' => Auth::id(),
+                    'url'     => $link['url'],
+                ]);
+            }
         }
 
         $route = auth()->user()->hasRole('admin') ? 'admin.program-events.index' : 'user.program-events.index';
@@ -134,13 +140,12 @@ class ProgramEventController extends Controller
 
     public function edit(string $id)
     {
-        $program = ProgramEvent::with(['schedules' => function ($q) {
-            $q->orderBy('schedule_date');
-        }])->findOrFail($id);
-
-        if (!auth()->user()->hasRole('admin') && $program->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        $program = ProgramEvent::with([
+            'schedules' => function ($q) {
+                $q->orderBy('schedule_date');
+            },
+            'groupLinks.user:id,name,avatar,email'
+        ])->findOrFail($id);
 
         return Inertia::render('admin/program-events/edit', [
             'program' => $program,
@@ -151,22 +156,21 @@ class ProgramEventController extends Controller
     {
         $program = ProgramEvent::findOrFail($id);
 
-        if (!auth()->user()->hasRole('admin') && $program->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
         $type = $request->input('type', $program->type);
 
         $rules = [
             'type'                  => ['required', 'in:webinar,bootcamp,certification_program'],
             'title'                 => ['required', 'string', 'max:255'],
             'batch'                 => ['nullable', 'string', 'max:100'],
+            'mentor'                => ['nullable', 'string', 'max:255'],
             'description'           => ['nullable', 'string'],
             'benefits'              => ['nullable', 'string'],
             'price'                 => ['required', 'integer', 'min:0'],
             'strikethrough_price'   => ['nullable', 'integer', 'min:0'],
             'quota'                 => ['nullable', 'integer', 'min:0'],
-            'group_url'             => ['nullable', 'url'],
+            'group_links'           => ['nullable', 'array'],
+            'group_links.*.id'      => ['nullable', 'string'],
+            'group_links.*.url'     => ['required', 'url'],
             'registration_deadline' => ['required', 'date'],
         ];
 
@@ -206,10 +210,11 @@ class ProgramEventController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $data      = $validator->validated();
-        $data['quota'] = $data['quota'] ?? 0;
-        $schedules = $data['schedules'] ?? null;
-        unset($data['schedules']);
+        $data           = $validator->validated();
+        $data['quota']  = $data['quota'] ?? 0;
+        $schedules      = $data['schedules'] ?? null;
+        $submittedLinks = $data['group_links'] ?? null;
+        unset($data['schedules'], $data['group_links']);
 
         $program->update($data);
 
@@ -218,6 +223,46 @@ class ProgramEventController extends Controller
             $program->schedules()->delete();
             foreach ($schedules as $schedule) {
                 $program->schedules()->create($schedule);
+            }
+        }
+
+        // Handle group links synchronization with ownership protection
+        if ($submittedLinks !== null) {
+            $existingLinks = $program->groupLinks()->get();
+            $submittedIds  = collect($submittedLinks)->pluck('id')->filter()->toArray();
+            $isAdmin       = auth()->user()->hasRole('admin');
+            $currentUserId = auth()->id();
+
+            // 1. Delete removed links (only if admin OR user is the owner of that link)
+            foreach ($existingLinks as $existing) {
+                if (!in_array($existing->id, $submittedIds)) {
+                    if ($isAdmin || $existing->user_id === $currentUserId) {
+                        $existing->delete();
+                    }
+                }
+            }
+
+            // 2. Update existing links or create new ones
+            foreach ($submittedLinks as $linkData) {
+                if (!empty($linkData['id'])) {
+                    $link = $existingLinks->firstWhere('id', $linkData['id']);
+                    if ($link) {
+                        // Only allow edit if admin OR user is the owner of that link
+                        if ($isAdmin || $link->user_id === $currentUserId) {
+                            $link->update([
+                                'url' => $linkData['url'],
+                            ]);
+                        }
+                    }
+                } else {
+                    // New link added
+                    if (!empty($linkData['url'])) {
+                        $program->groupLinks()->create([
+                            'user_id' => $currentUserId,
+                            'url'     => $linkData['url'],
+                        ]);
+                    }
+                }
             }
         }
 
@@ -231,11 +276,7 @@ class ProgramEventController extends Controller
     {
         $program = ProgramEvent::findOrFail($id);
 
-        if (!auth()->user()->hasRole('admin') && $program->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $program->delete(); // schedules cascade-deleted via FK
+        $program->delete(); // schedules & group_links cascade-deleted via FK
 
         return back()->with('success', 'Program Event berhasil dihapus.');
     }
@@ -247,10 +288,6 @@ class ProgramEventController extends Controller
         ]);
 
         $program = ProgramEvent::with('schedules')->findOrFail($id);
-
-        if (!auth()->user()->hasRole('admin') && $program->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
 
         $newStartDate = \Carbon\Carbon::parse($request->new_start_date)->startOfDay();
 
@@ -301,12 +338,9 @@ class ProgramEventController extends Controller
     {
         $original = ProgramEvent::findOrFail($id);
 
-        if (!auth()->user()->hasRole('admin') && $original->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
         $validated = $request->validate([
             'batch'                                 => ['nullable', 'string', 'max:255'],
+            'mentor'                                => ['nullable', 'string', 'max:255'],
             'start_date'                            => ['nullable', 'date'],
             'end_date'                              => ['nullable', 'date', 'after_or_equal:start_date'],
             'start_time'                            => ['nullable', 'date'],
@@ -314,10 +348,13 @@ class ProgramEventController extends Controller
             'registration_deadline'                 => ['nullable', 'date'],
             'socialization_registration_deadline'   => ['nullable', 'date'],
             'schedules'                             => ['nullable', 'array'],
+            'group_links'                           => ['nullable', 'array'],
+            'group_links.*.url'                     => ['required', 'url'],
         ]);
 
         $duplicate = $original->replicate();
         if (isset($validated['batch'])) $duplicate->batch = $validated['batch'];
+        if (isset($validated['mentor'])) $duplicate->mentor = $validated['mentor'];
         
         // Update dates if provided
         if (isset($validated['start_date'])) $duplicate->start_date = $validated['start_date'];
@@ -341,10 +378,18 @@ class ProgramEventController extends Controller
                     'end_time'      => $scheduleData['end_time'],
                 ]);
             }
-        } else {
-            // Copy old schedules if new ones aren't provided? 
-            // Wait, the frontend should always pass schedules for bootcamp/certification
-            // If they don't, we can copy them. Let's just assume frontend passes everything.
+        }
+
+        // Save new group links if provided in duplicate form (default empty, do not duplicate old ones)
+        if (!empty($validated['group_links'])) {
+            foreach ($validated['group_links'] as $linkData) {
+                if (!empty($linkData['url'])) {
+                    $duplicate->groupLinks()->create([
+                        'user_id' => auth()->id(),
+                        'url'     => $linkData['url'],
+                    ]);
+                }
+            }
         }
 
         return redirect()->back()->with('success', 'Program event berhasil diduplikat.');

@@ -26,6 +26,7 @@ export interface ProgramEventToDuplicate {
     id: string;
     title: string;
     batch: string | null;
+    mentor?: string | null;
     type: 'webinar' | 'bootcamp' | 'certification_program';
     start_date: string | null;
     end_date: string | null;
@@ -33,6 +34,7 @@ export interface ProgramEventToDuplicate {
     end_time: string | null;
     registration_deadline: string | null;
     schedules?: Schedule[];
+    group_links?: any[];
     // ...other fields we don't strictly need to type here
 }
 
@@ -251,6 +253,7 @@ export default function DuplicateEventModal({ isOpen, onClose, event, prefix }: 
     const [endDate, setEndDate] = React.useState<Date | undefined>();
     const [regDeadline, setRegDeadline] = React.useState<Date | undefined>();
     const [schedules, setSchedules] = React.useState<Schedule[]>([]);
+    const [groupLinks, setGroupLinks] = React.useState<{ url: string }[]>([]);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     // Initialize state when modal opens
@@ -261,6 +264,7 @@ export default function DuplicateEventModal({ isOpen, onClose, event, prefix }: 
             setEndDate(event.end_time ? new Date(event.end_time) : event.end_date ? new Date(event.end_date) : undefined);
             setRegDeadline(event.registration_deadline ? new Date(event.registration_deadline) : undefined);
             setSchedules(event.schedules || []);
+            setGroupLinks([]); // Default empty when duplicating
         }
     }, [isOpen, event]);
 
@@ -280,6 +284,9 @@ export default function DuplicateEventModal({ isOpen, onClose, event, prefix }: 
             data.schedules = schedules;
         }
         if (regDeadline) data.registration_deadline = format(regDeadline, "yyyy-MM-dd'T'HH:mm");
+
+        const validGroupLinks = groupLinks.filter((g) => g.url && g.url.trim() !== '');
+        data.group_links = validGroupLinks;
 
         router.post(route(`${prefix}.program-events.duplicate`, event.id), data, {
             onSuccess: () => {
@@ -304,6 +311,18 @@ export default function DuplicateEventModal({ isOpen, onClose, event, prefix }: 
 
     const addSchedule = () => {
         setSchedules((prev) => [...prev, { ...emptySchedule() }]);
+    };
+
+    const addGroupLink = () => {
+        setGroupLinks((prev) => [...prev, { url: '' }]);
+    };
+
+    const updateGroupLink = (index: number, url: string) => {
+        setGroupLinks((prev) => prev.map((item, i) => (i === index ? { url } : item)));
+    };
+
+    const removeGroupLink = (index: number) => {
+        setGroupLinks((prev) => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -364,6 +383,57 @@ export default function DuplicateEventModal({ isOpen, onClose, event, prefix }: 
                             </div>
                         </div>
                     )}
+
+                    {/* ── Link Grup (Opsional) ── */}
+                    <div className="mt-4 border-t pt-4">
+                        <div className="mb-3 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium">Link Grup (Opsional)</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Secara default dikosongkan. Tambahkan jika ingin menyematkan link grup baru untuk duplikat acara ini.
+                                </p>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addGroupLink}>
+                                <Plus className="size-3.5" /> Tambah Link Grup
+                            </Button>
+                        </div>
+
+                        {groupLinks.length === 0 ? (
+                            <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+                                Tidak ada link grup untuk duplikat ini (dikosongkan). Klik <strong>"Tambah Link Grup"</strong> jika ingin menambahkan.
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {groupLinks.map((link, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2.5">
+                                        <div className="flex-1 space-y-1">
+                                            <Label htmlFor={`dup_group_link_${idx}`} className="text-xs font-medium text-muted-foreground">
+                                                Link URL #{idx + 1}
+                                            </Label>
+                                            <Input
+                                                id={`dup_group_link_${idx}`}
+                                                type="url"
+                                                value={link.url}
+                                                onChange={(e) => updateGroupLink(idx, e.target.value)}
+                                                placeholder="https://chat.whatsapp.com/... atau https://t.me/..."
+                                                className="h-8 bg-input text-xs"
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeGroupLink(idx)}
+                                            className="mt-4 size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                            title="Hapus Link"
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
