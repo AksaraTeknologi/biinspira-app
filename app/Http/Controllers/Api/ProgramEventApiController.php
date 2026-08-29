@@ -14,9 +14,12 @@ class ProgramEventApiController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProgramEvent::with(['schedules' => function ($q) {
-            $q->orderBy('schedule_date');
-        }])->orderBy('created_at', 'desc');
+        $query = ProgramEvent::with([
+            'schedules' => function ($q) {
+                $q->orderBy('schedule_date');
+            },
+            'groupLinks.user:id,name,email,avatar',
+        ])->orderBy('created_at', 'desc');
 
         // Filter by type
         if ($request->has('type') && in_array($request->type, ['webinar', 'bootcamp', 'certification_program'])) {
@@ -36,9 +39,12 @@ class ProgramEventApiController extends Controller
      */
     public function show(string $id)
     {
-        $program = ProgramEvent::with(['schedules' => function ($q) {
-            $q->orderBy('schedule_date');
-        }])->find($id);
+        $program = ProgramEvent::with([
+            'schedules' => function ($q) {
+                $q->orderBy('schedule_date');
+            },
+            'groupLinks.user:id,name,email,avatar',
+        ])->find($id);
 
         if (!$program) {
             return response()->json([

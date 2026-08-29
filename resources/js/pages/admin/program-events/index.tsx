@@ -1,8 +1,18 @@
 'use client';
 
 import DuplicateEventModal, { ProgramEventToDuplicate } from '@/components/DuplicateEventModal';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,14 +34,16 @@ import {
     startOfWeek,
     subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Edit, Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 interface ProgramEvent {
     id: string;
     type: 'webinar' | 'bootcamp' | 'certification_program';
     title: string;
     batch: string | null;
+    mentor?: string | null;
     start_time: string | null;
     end_time: string | null;
     start_date: string | null;
@@ -41,6 +53,7 @@ interface ProgramEvent {
     quota: number;
     user: { id: string; name: string } | null;
     schedules?: any[];
+    group_links?: any[];
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -71,6 +84,10 @@ export default function ProgramEventIndex() {
     // Modal state for duplication
     const [duplicateModalOpen, setDuplicateModalOpen] = React.useState(false);
     const [duplicateEvent, setDuplicateEvent] = React.useState<ProgramEventToDuplicate | null>(null);
+
+    // Dialog state for deletion
+    const [deleteEvent, setDeleteEvent] = React.useState<ProgramEvent | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [{ title: 'Program Event', href: '' }];
 
@@ -276,7 +293,11 @@ export default function ProgramEventIndex() {
                                     </div>
                                     <div className="space-y-1.5 pr-1 pb-1">
                                         {dayEvents.map((event) => {
-                                            const isHighlighted = searchQuery && event.title.toLowerCase().includes(searchQuery.toLowerCase());
+                                            const isHighlighted = Boolean(
+                                                searchQuery &&
+                                                    ((event.title && event.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                                                        (event.mentor && event.mentor.toLowerCase().includes(searchQuery.toLowerCase()))),
+                                            );
 
                                             // Determine base colors based on type
                                             let colorClasses = '';
@@ -364,20 +385,47 @@ export default function ProgramEventIndex() {
                                                                                     </span>
                                                                                 </div>
                                                                             )}
+                                                                            {event.mentor && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="opacity-80">Mentor:</span>
+                                                                                    <span className="max-w-[120px] truncate font-medium">
+                                                                                        {event.mentor}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </TooltipContent>
                                                             </Tooltip>
                                                         </div>
                                                     </ContextMenuTrigger>
-                                                    <ContextMenuContent className="w-40">
+                                                    <ContextMenuContent className="w-44">
+                                                        <ContextMenuItem
+                                                            onClick={() => {
+                                                                router.get(route(`${prefix}.program-events.edit`, event.id));
+                                                            }}
+                                                        >
+                                                            <Edit className="mr-2 size-4" />
+                                                            Edit Program
+                                                        </ContextMenuItem>
                                                         <ContextMenuItem
                                                             onClick={() => {
                                                                 setDuplicateEvent(event as unknown as ProgramEventToDuplicate);
                                                                 setDuplicateModalOpen(true);
                                                             }}
                                                         >
+                                                            <Copy className="mr-2 size-4" />
                                                             Duplikat
+                                                        </ContextMenuItem>
+                                                        <ContextMenuSeparator />
+                                                        <ContextMenuItem
+                                                            variant="destructive"
+                                                            onClick={() => {
+                                                                setDeleteEvent(event);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="mr-2 size-4 text-destructive" />
+                                                            Hapus Program
                                                         </ContextMenuItem>
                                                     </ContextMenuContent>
                                                 </ContextMenu>
@@ -400,6 +448,43 @@ export default function ProgramEventIndex() {
                 event={duplicateEvent}
                 prefix={prefix}
             />
+
+            {/* Modal Konfirmasi Hapus Program Event */}
+            <AlertDialog open={!!deleteEvent} onOpenChange={(open) => !open && setDeleteEvent(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Program Event</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus program <strong>"{deleteEvent?.title}"</strong>? Semua jadwal dan link grup terkait akan dihapus secara permanen.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (!deleteEvent) return;
+                                setIsDeleting(true);
+                                router.delete(route(`${prefix}.program-events.destroy`, deleteEvent.id), {
+                                    onSuccess: () => {
+                                        toast.success('Program event berhasil dihapus!');
+                                        setDeleteEvent(null);
+                                        setIsDeleting(false);
+                                    },
+                                    onError: () => {
+                                        toast.error('Gagal menghapus program event.');
+                                        setIsDeleting(false);
+                                    },
+                                });
+                            }}
+                        >
+                            {isDeleting ? 'Menghapus...' : 'Hapus'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

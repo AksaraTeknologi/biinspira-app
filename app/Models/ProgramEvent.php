@@ -68,4 +68,9 @@ class ProgramEvent extends Model
             ->where('schedule_type', 'socialization')
             ->orderBy('schedule_date');
     }
+
+    public function groupLinks()
+    {
+        return $this->hasMany(ProgramEventGroupLink::class, 'program_event_id');
+    }
 }

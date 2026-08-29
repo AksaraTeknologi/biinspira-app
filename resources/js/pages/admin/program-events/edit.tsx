@@ -13,7 +13,7 @@ import { BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
 import { format } from 'date-fns';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Copy, ExternalLink, Lock, Plus, Trash2, User } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -29,12 +29,28 @@ interface Schedule {
     end_time: string;
 }
 
+interface GroupLinkUser {
+    id: string;
+    name: string;
+    email?: string;
+    avatar?: string | null;
+}
+
+interface GroupLink {
+    id?: string;
+    program_event_id?: string;
+    user_id?: string;
+    url: string;
+    user?: GroupLinkUser | null;
+}
+
 interface ProgramEvent {
     id: string;
     type: string;
     title: string;
     slug: string;
     batch: string | null;
+    mentor: string | null;
     description: string | null;
     short_description: string | null;
     benefits: string | null;
@@ -51,7 +67,7 @@ interface ProgramEvent {
     strikethrough_price: number;
     scholarship_price: number;
     quota: number;
-    group_url: string | null;
+    group_links?: GroupLink[];
     certif_type: string | null;
     schedules: Schedule[];
 }
@@ -342,6 +358,41 @@ export default function ProgramEventEdit() {
     const [strikeDisplay, setStrikeDisplay] = React.useState(numberToRupiah(program.strikethrough_price));
     const [scholarDisplay, setScholarDisplay] = React.useState(numberToRupiah(program.scholarship_price));
 
+    // Multi group links state
+    const currentUserId = auth?.user?.id;
+    const [groupLinks, setGroupLinks] = React.useState<GroupLink[]>(() => {
+        if (program.group_links && program.group_links.length > 0) {
+            return program.group_links;
+        }
+        return [];
+    });
+
+    const addGroupLink = () => {
+        setGroupLinks((prev) => [
+            ...prev,
+            {
+                url: '',
+                user_id: currentUserId,
+                user: auth?.user,
+            },
+        ]);
+    };
+
+    const updateGroupLink = (index: number, url: string) => {
+        setGroupLinks((prev) =>
+            prev.map((item, i) => {
+                if (i === index) {
+                    return { ...item, url };
+                }
+                return item;
+            }),
+        );
+    };
+
+    const removeGroupLink = (index: number) => {
+        setGroupLinks((prev) => prev.filter((_, i) => i !== index));
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Event', href: route(`${prefix}.program-events.index`) },
         { title: 'Edit Program', href: '' },
@@ -417,6 +468,13 @@ export default function ProgramEventEdit() {
             data.schedules = schedules;
         }
 
+        // Multi group links
+        const validGroupLinks = groupLinks.filter((g) => g.url && g.url.trim() !== '');
+        data.group_links = validGroupLinks.map((g) => ({
+            id: g.id,
+            url: g.url,
+        }));
+
         router.post(route(`${prefix}.program-events.update`, program.id), data as Record<string, string>, {
             onError: (errs) => {
                 setErrors(errs);
@@ -491,6 +549,11 @@ export default function ProgramEventEdit() {
                             <div className="space-y-1.5">
                                 <Label>Batch / Angkatan *</Label>
                                 <Input name="batch" defaultValue={program.batch ?? ''} className="bg-input" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Mentor / Pemateri (Opsional)</Label>
+                                <Input name="mentor" defaultValue={program.mentor ?? ''} placeholder="contoh: Muhammad Alif Zaidan, S.Kom., CFTR." className="bg-input" />
+                                {errors.mentor && <p className="text-xs text-destructive">{errors.mentor}</p>}
                             </div>
                         </div>
                     </div>
@@ -776,19 +839,123 @@ export default function ProgramEventEdit() {
 
                     {/* ── Link Grup ── */}
                     <div className="rounded-lg border bg-card p-5 shadow-sm">
-                        <h3 className="mb-4 font-semibold">Link Grup</h3>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="space-y-1.5">
-                                <Label>Link Grup (WA/Telegram)</Label>
-                                <Input
-                                    name="group_url"
-                                    type="url"
-                                    defaultValue={program.group_url ?? ''}
-                                    placeholder="https://chat.whatsapp.com/..."
-                                    className="bg-input"
-                                />
+                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h3 className="font-semibold">Link Grup (WhatsApp / Telegram / dll.)</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Dapat diisi lebih dari 1 link grup. Anda dapat melihat semua link grup dan mengelola link milik akun Anda.
+                                </p>
                             </div>
+                            <Button type="button" variant="outline" size="sm" className="gap-1.5 self-start sm:self-auto" onClick={addGroupLink}>
+                                <Plus className="size-3.5" /> Tambah Link Grup
+                            </Button>
                         </div>
+
+                        {groupLinks.length === 0 ? (
+                            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                Belum ada link grup yang ditambahkan. Klik <strong className="text-foreground">"Tambah Link Grup"</strong> jika ingin menyematkan link grup peserta.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {groupLinks.map((link, idx) => {
+                                    const isOwner = !link.user_id || link.user_id === currentUserId || isAdmin;
+                                    const creatorName = link.user?.name || (link.user_id === currentUserId ? auth?.user?.name : 'Akun Pengguna');
+                                    const isSelf = link.user_id === currentUserId || (!link.user_id && !link.id);
+
+                                    return (
+                                        <div
+                                            key={link.id || idx}
+                                            className={cn(
+                                                'rounded-lg border p-4 transition-all',
+                                                isOwner ? 'bg-card border-border shadow-xs' : 'bg-muted/40 border-muted'
+                                            )}
+                                        >
+                                            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                        <User className="size-3.5" />
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-foreground">
+                                                        {creatorName}
+                                                    </span>
+                                                    {isSelf ? (
+                                                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                            Milik Anda
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                                            <Lock className="size-2.5" /> Read-Only
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center gap-1">
+                                                    {link.url && (
+                                                        <>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(link.url);
+                                                                    toast.success('Link berhasil disalin ke clipboard!');
+                                                                }}
+                                                                title="Salin Link"
+                                                            >
+                                                                <Copy className="mr-1 size-3" /> Salin
+                                                            </Button>
+                                                            <a
+                                                                href={link.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex h-7 items-center rounded-md px-2 text-xs text-primary hover:underline"
+                                                                title="Buka Link di Tab Baru"
+                                                            >
+                                                                <ExternalLink className="mr-1 size-3" /> Buka
+                                                            </a>
+                                                        </>
+                                                    )}
+
+                                                    {isOwner && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => removeGroupLink(idx)}
+                                                            className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                                            title="Hapus Link"
+                                                        >
+                                                            <Trash2 className="size-3.5" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label htmlFor={`edit_group_link_${idx}`} className="text-xs font-medium text-muted-foreground">
+                                                    Link URL #{idx + 1}
+                                                </Label>
+                                                <Input
+                                                    id={`edit_group_link_${idx}`}
+                                                    type="url"
+                                                    value={link.url}
+                                                    disabled={!isOwner}
+                                                    onChange={(e) => updateGroupLink(idx, e.target.value)}
+                                                    placeholder="https://chat.whatsapp.com/... atau https://t.me/..."
+                                                    className={cn('bg-input text-sm', !isOwner && 'cursor-not-allowed opacity-80 bg-muted/60')}
+                                                />
+                                                {!isOwner && (
+                                                    <p className="text-[11px] text-muted-foreground italic">
+                                                        Link ini diisi oleh {creatorName} dan hanya dapat diubah atau dihapus oleh pemiliknya.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end gap-3">

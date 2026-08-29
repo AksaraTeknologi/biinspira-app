@@ -172,6 +172,26 @@ export default function ProgramEventCreate() {
         duplicateData?.scholarship_price ? formatRupiah(String(duplicateData.scholarship_price)) : '',
     );
 
+    // Multi-group links state
+    const [groupLinks, setGroupLinks] = React.useState<{ url: string }[]>(() => {
+        if (duplicateData?.group_links && duplicateData.group_links.length > 0) {
+            return duplicateData.group_links.map((g: any) => ({ url: g.url }));
+        }
+        return [];
+    });
+
+    const addGroupLink = () => {
+        setGroupLinks((prev) => [...prev, { url: '' }]);
+    };
+
+    const updateGroupLink = (index: number, url: string) => {
+        setGroupLinks((prev) => prev.map((item, i) => (i === index ? { url } : item)));
+    };
+
+    const removeGroupLink = (index: number) => {
+        setGroupLinks((prev) => prev.filter((_, i) => i !== index));
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Event', href: route(`${prefix}.program-events.index`) },
         { title: 'Buat Program Baru', href: '' },
@@ -247,6 +267,10 @@ export default function ProgramEventCreate() {
         } else {
             data.schedules = schedules;
         }
+
+        // Multi group links
+        const validGroupLinks = groupLinks.filter((g) => g.url && g.url.trim() !== '');
+        data.group_links = validGroupLinks;
 
         router.post(route(`${prefix}.program-events.store`), data as Record<string, string>, {
             onError: (errs) => {
@@ -335,6 +359,17 @@ export default function ProgramEventCreate() {
                                     placeholder="contoh: Batch 5"
                                     className="bg-input"
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="mentor">Mentor / Pemateri (Opsional)</Label>
+                                <Input
+                                    id="mentor"
+                                    name="mentor"
+                                    defaultValue={duplicateData?.mentor ?? ''}
+                                    placeholder="contoh: Muhammad Alif Zaidan, S.Kom., CFTR."
+                                    className="bg-input"
+                                />
+                                {errors.mentor && <p className="text-xs text-destructive">{errors.mentor}</p>}
                             </div>
                         </div>
                     </div>
@@ -608,7 +643,7 @@ export default function ProgramEventCreate() {
                                                         (s, i) =>
                                                             s.schedule_type === 'socialization' &&
                                                             schedules.filter((x, j) => j <= i && x.schedule_type === 'socialization').length ===
-                                                                rawIdx + 1,
+                                                            rawIdx + 1,
                                                     );
                                                     return (
                                                         <ScheduleRow
@@ -700,20 +735,53 @@ export default function ProgramEventCreate() {
 
                     {/* ── Link Grup ── */}
                     <div className="rounded-lg border bg-card p-5 shadow-sm">
-                        <h3 className="mb-4 font-semibold">Link Grup</h3>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="group_url">Link Grup (WA/Telegram)</Label>
-                                <Input
-                                    id="group_url"
-                                    name="group_url"
-                                    type="url"
-                                    defaultValue={duplicateData?.group_url ?? ''}
-                                    placeholder="https://chat.whatsapp.com/..."
-                                    className="bg-input"
-                                />
+                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h3 className="font-semibold">Link Grup (WhatsApp / Telegram / dll.)</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Opsional. Anda dapat menambahkan lebih dari 1 link grup.
+                                </p>
                             </div>
+                            <Button type="button" variant="outline" size="sm" className="gap-1.5 self-start sm:self-auto" onClick={addGroupLink}>
+                                <Plus className="size-3.5" /> Tambah Link Grup
+                            </Button>
                         </div>
+
+                        {groupLinks.length === 0 ? (
+                            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                Belum ada link grup yang ditambahkan. Klik <strong className="text-foreground">"Tambah Link Grup"</strong> jika ingin menyematkan link grup peserta.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {groupLinks.map((link, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                                        <div className="flex-1 space-y-1">
+                                            <Label htmlFor={`group_link_${idx}`} className="text-xs font-medium text-muted-foreground">
+                                                Link URL #{idx + 1}
+                                            </Label>
+                                            <Input
+                                                id={`group_link_${idx}`}
+                                                type="url"
+                                                value={link.url}
+                                                onChange={(e) => updateGroupLink(idx, e.target.value)}
+                                                placeholder="https://chat.whatsapp.com/... atau https://t.me/..."
+                                                className="bg-input text-sm"
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeGroupLink(idx)}
+                                            className="mt-5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                            title="Hapus Link"
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Submit ── */}
