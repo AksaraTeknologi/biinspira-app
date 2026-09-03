@@ -285,6 +285,7 @@ class ProgramEventController extends Controller
     {
         $request->validate([
             'new_start_date' => ['required', 'date'],
+            'source_date'    => ['nullable', 'date'],
         ]);
 
         $program = ProgramEvent::with('schedules')->findOrFail($id);
@@ -298,8 +299,13 @@ class ProgramEventController extends Controller
             $program->start_time = \Carbon\Carbon::parse($program->start_time)->addDays($diffInDays);
             $program->end_time = \Carbon\Carbon::parse($program->end_time)->addDays($diffInDays);
         } else {
-            $oldStart = \Carbon\Carbon::parse($program->start_date)->startOfDay();
-            $diffInDays = $oldStart->diffInDays($newStartDate, false);
+            if ($request->filled('source_date')) {
+                $oldRef = \Carbon\Carbon::parse($request->source_date)->startOfDay();
+                $diffInDays = $oldRef->diffInDays($newStartDate, false);
+            } else {
+                $oldStart = \Carbon\Carbon::parse($program->start_date)->startOfDay();
+                $diffInDays = $oldStart->diffInDays($newStartDate, false);
+            }
             
             $program->start_date = \Carbon\Carbon::parse($program->start_date)->addDays($diffInDays);
             $program->end_date = \Carbon\Carbon::parse($program->end_date)->addDays($diffInDays);

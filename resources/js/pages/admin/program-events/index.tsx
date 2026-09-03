@@ -38,6 +38,17 @@ import { ChevronLeft, ChevronRight, Copy, Edit, Plus, Trash2 } from 'lucide-reac
 import * as React from 'react';
 import { toast } from 'sonner';
 
+interface ProgramEventSchedule {
+    id?: string;
+    program_event_id?: string;
+    schedule_type?: 'main' | 'socialization';
+    title?: string | null;
+    schedule_date?: string | null;
+    day?: string;
+    start_time?: string;
+    end_time?: string;
+}
+
 interface ProgramEvent {
     id: string;
     type: 'webinar' | 'bootcamp' | 'certification_program';
@@ -52,7 +63,7 @@ interface ProgramEvent {
     price: number;
     quota: number;
     user: { id: string; name: string } | null;
-    schedules?: any[];
+    schedules?: ProgramEventSchedule[];
     group_links?: any[];
 }
 
@@ -106,8 +117,11 @@ export default function ProgramEventIndex() {
         setCurrentDate(setYear(currentDate, parseInt(yearStr)));
     };
 
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, eventId: string) => {
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, eventId: string, sourceDate?: string) => {
         e.dataTransfer.setData('eventId', eventId);
+        if (sourceDate) {
+            e.dataTransfer.setData('sourceDate', sourceDate);
+        }
         e.dataTransfer.effectAllowed = 'move';
         setTimeout(() => setDraggingId(eventId), 0);
     };
@@ -133,12 +147,14 @@ export default function ProgramEventIndex() {
         setDragOverDay(null);
         setDraggingId(null);
         const eventId = e.dataTransfer.getData('eventId');
+        const sourceDate = e.dataTransfer.getData('sourceDate');
         if (eventId) {
             const dateString = format(targetDate, 'yyyy-MM-dd');
             router.patch(
                 route(`${prefix}.program-events.move`, eventId),
                 {
                     new_start_date: dateString,
+                    source_date: sourceDate || undefined,
                 },
                 {
                     preserveScroll: true,
@@ -233,10 +249,38 @@ export default function ProgramEventIndex() {
 
                             // Get events for this day
                             const dayEvents = programEvents.filter((event) => {
-                                const startDateStr = event.start_time ?? event.start_date;
+                                if (event.type === 'webinar') {
+                                    const startDateStr = event.start_time ?? event.start_date;
+                                    if (!startDateStr) return false;
+
+                                    const endDateStr = event.end_time ?? event.end_date ?? startDateStr;
+
+                                    const eventStart = new Date(startDateStr);
+                                    eventStart.setHours(0, 0, 0, 0);
+
+                                    const eventEnd = new Date(endDateStr);
+                                    eventEnd.setHours(0, 0, 0, 0);
+
+                                    const currentDay = new Date(day);
+                                    currentDay.setHours(0, 0, 0, 0);
+
+                                    return currentDay.getTime() >= eventStart.getTime() && currentDay.getTime() <= eventEnd.getTime();
+                                }
+
+                                // Untuk bootcamp & sertifikasi: muncul jika tanggal kalender cocok dengan salah satu jadwal sesi
+                                const validSchedules = event.schedules?.filter((s) => Boolean(s.schedule_date)) ?? [];
+                                if (validSchedules.length > 0) {
+                                    return validSchedules.some((s) => {
+                                        const sDate = s.schedule_date ? s.schedule_date.split('T')[0].split(' ')[0] : '';
+                                        return sDate === dateString;
+                                    });
+                                }
+
+                                // Fallback jika belum ada jadwal sesi yang diisi: gunakan rentang tanggal mulai & selesai
+                                const startDateStr = event.start_date ?? event.start_time;
                                 if (!startDateStr) return false;
 
-                                const endDateStr = event.end_time ?? event.end_date ?? startDateStr;
+                                const endDateStr = event.end_date ?? event.end_time ?? startDateStr;
 
                                 const eventStart = new Date(startDateStr);
                                 eventStart.setHours(0, 0, 0, 0);
@@ -318,6 +362,13 @@ export default function ProgramEventIndex() {
                                                     'bg-yellow-300 text-yellow-900 border-yellow-400 dark:bg-yellow-500 dark:text-yellow-950 dark:border-yellow-600 ring-2 ring-yellow-500/50 shadow-md scale-[1.02] z-10 relative';
                                             }
 
+                                            // Sesi yang cocok dengan hari ini
+                                            const daySchedules = event.schedules?.filter((s) => {
+                                                if (!s.schedule_date) return false;
+                                                const sDate = s.schedule_date.split('T')[0].split(' ')[0];
+                                                return sDate === dateString;
+                                            });
+
                                             return (
                                                 <ContextMenu key={event.id}>
                                                     <ContextMenuTrigger asChild>
@@ -326,7 +377,7 @@ export default function ProgramEventIndex() {
                                                                 <TooltipTrigger asChild>
                                                                     <div
                                                                         draggable
-                                                                        onDragStart={(e) => handleDragStart(e, event.id)}
+                                                                        onDragStart={(e) => handleDragStart(e, event.id, dateString)}
                                                                         onDragEnd={handleDragEnd}
                                                                         onClick={(e) => {
                                                                             router.get(route(`${prefix}.program-events.edit`, event.id));
@@ -343,8 +394,17 @@ export default function ProgramEventIndex() {
                                                                             )}
                                                                         >
                                                                             <div className="truncate leading-tight font-semibold">{event.title}</div>
-                                                                            <div className="mt-0.5 truncate text-[10px] opacity-90">
-                                                                                {TYPE_LABELS[event.type]}
+                                                                            <div className="mt-0.5 flex items-center justify-between gap-1 truncate text-[10px] opacity-90">
+                                                                                <span className="truncate">{TYPE_LABELS[event.type]}</span>
+                                                                                {daySchedules && daySchedules.length > 0 && daySchedules[0]?.start_time ? (
+                                                                                    <span className="shrink-0 font-mono text-[9px] opacity-85">
+                                                                                        {daySchedules[0].start_time.slice(0, 5)}
+                                                                                    </span>
+                                                                                ) : event.type === 'webinar' && event.start_time ? (
+                                                                                    <span className="shrink-0 font-mono text-[9px] opacity-85">
+                                                                                        {format(new Date(event.start_time), 'HH:mm')}
+                                                                                    </span>
+                                                                                ) : null}
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -394,6 +454,23 @@ export default function ProgramEventIndex() {
                                                                                 </div>
                                                                             )}
                                                                         </div>
+                                                                        {daySchedules && daySchedules.length > 0 && (
+                                                                            <div className="border-t pt-2 space-y-1 text-xs">
+                                                                                <span className="text-[11px] font-semibold text-muted-foreground block">
+                                                                                    Jadwal Sesi Hari Ini:
+                                                                                </span>
+                                                                                {daySchedules.map((s, idx) => (
+                                                                                    <div key={idx} className="flex justify-between items-center text-xs">
+                                                                                        <span className="truncate max-w-[130px] font-medium">
+                                                                                            {s.title || (s.schedule_type === 'socialization' ? 'Sosialisasi' : `Sesi ${idx + 1}`)}
+                                                                                        </span>
+                                                                                        <span className="text-muted-foreground font-mono text-[11px]">
+                                                                                            {s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </TooltipContent>
                                                             </Tooltip>
