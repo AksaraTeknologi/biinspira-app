@@ -59,3 +59,64 @@ export type TimeBasedMessage = {
     title: string;
     message: string;
 };
+
+export type MonthlyComparisonItem = {
+    month: number;
+    month_key: string;
+    month_name: string;
+    short_name: string;
+    omset_2025: number;
+    omset_2026: number;
+    difference: number;
+    growth_percentage: number;
+    growth_direction: 'up' | 'down' | 'flat';
+    cumulative_2025: number;
+    cumulative_2026: number;
+    platforms_2025: Record<string, number>;
+    platforms_2026: Record<string, number>;
+    is_current_or_past: boolean;
+};
+
+export type PlatformComparisonItem = {
+    key: string;
+    label: string;
+    logo: string | null;
+    total_2025: number;
+    total_2026: number;
+    difference: number;
+    growth_percentage: number;
+    growth_direction: 'up' | 'down' | 'flat';
+    share_2025: number;
+    share_2026: number;
+};
+
+export type OmsetSummary = {
+    total_2025: number;
+    total_2026: number;
+    difference: number;
+    growth_percentage: number;
+    growth_direction: 'up' | 'down' | 'flat';
+    ytd_2025: number;
+    ytd_2026: number;
+    ytd_difference: number;
+    ytd_growth_percentage: number;
+    ytd_growth_direction: 'up' | 'down' | 'flat';
+    current_month_name: string;
+    monthly_avg_2025: number;
+    monthly_avg_2026: number;
+    best_month_2025: { month: string; value: number };
+    best_month_2026: { month: string; value: number };
+};
+
+export type ComparisonData = {
+    summary: OmsetSummary;
+    monthly_comparison: MonthlyComparisonItem[];
+    platform_comparison: PlatformComparisonItem[];
+    platforms: { key: string; label: string; logo: string | null }[];
+    generated_at: string;
+};
+
+export interface StatisticsOmsetProps {
+    comparisonData?: ComparisonData;
+    generatedAt: string;
+}

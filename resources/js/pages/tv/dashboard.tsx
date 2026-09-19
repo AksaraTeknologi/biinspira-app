@@ -1,7 +1,7 @@
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Deferred, Head, router } from '@inertiajs/react';
-import { CalendarIcon, Sparkles, TrendingUp } from 'lucide-react';
+import { Deferred, Head, Link, router } from '@inertiajs/react';
+import { BarChart3, CalendarIcon, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
@@ -205,27 +205,27 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                 </h1>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex shrink-0 items-center gap-1.5 xl:gap-2">
                                 {/* Keterangan / Legend Warna Perbandingan */}
-                                <div className="flex flex-wrap items-center gap-2 rounded-full border border-white/45 bg-white/20 px-3 py-2 text-xs text-white backdrop-blur-sm sm:gap-3">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-sm font-bold text-white/95 sm:text-xs">Kiri (vs Rata-rata):</span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-indigo-400/80 bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-800">
+                                <div className="flex items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-2.5 py-1 text-xs text-white backdrop-blur-sm sm:gap-2 xl:px-3 xl:py-1.5">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[11px] font-bold text-white/95 xl:text-xs">vs Rata-rata:</span>
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-indigo-400/80 bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-800">
                                             ↑ Naik
                                         </span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/80 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/80 bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
                                             ↓ Turun
                                         </span>
                                     </div>
 
-                                    <span className="hidden text-[10px] text-white/40 sm:inline">•</span>
+                                    <span className="text-[10px] text-white/40">•</span>
 
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-sm font-bold text-white/95 sm:text-xs">Kanan (vs Bulan Lalu):</span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-400/80 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[11px] font-bold text-white/95 xl:text-xs">vs Bulan Lalu:</span>
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-400/80 bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800">
                                             ↑ Naik
                                         </span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-rose-400/80 bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-rose-400/80 bg-rose-100 px-1.5 py-0.2 text-[10px] font-bold text-rose-800">
                                             ↓ Turun
                                         </span>
                                     </div>
@@ -234,19 +234,28 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                 <TabsList className="h-auto rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
                                     <TabsTrigger
                                         value="grid"
-                                        className="h-7 rounded-full px-3 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white"
+                                        className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
                                     >
                                         Grid
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="carousel"
-                                        className="h-7 rounded-full px-3 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white"
+                                        className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
                                     >
                                         Carousel
                                     </TabsTrigger>
                                 </TabsList>
 
-                                <p className="rounded-full border border-white/45 bg-white/20 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm sm:text-sm">
+                                <Link
+                                    href="/statistics-omset"
+                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
+                                    title="Buka Halaman Statistik Omset"
+                                >
+                                    <BarChart3 className="h-3.5 w-3.5 text-white" />
+                                    <span>Statistik Omset</span>
+                                </Link>
+
+                                <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
                                     Update: {new Date(generatedAt).toLocaleString('id-ID')}
                                 </p>
                             </div>

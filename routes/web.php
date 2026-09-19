@@ -11,6 +11,7 @@ use App\Http\Controllers\AdResultPlatformController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
 use App\Http\Controllers\TvDashboardController;
+use App\Http\Controllers\StatisticsOmsetController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserTechController;
 use App\Http\Controllers\RevisionRequestController;
@@ -41,6 +42,11 @@ Route::get('/', function () {
 
 Route::get('/statistics', [TvDashboardController::class, 'index'])->name('tv.statistics');
 Route::get('/statistics/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
+
+// ✅ BARU: Halaman TV Statistik Grafik Omset 2025 vs 2026
+Route::get('/statistics-omset', [StatisticsOmsetController::class, 'index'])->name('tv.statistics.omset');
+Route::get('/statistics-omset/data', [StatisticsOmsetController::class, 'data'])->name('tv.statistics.omset.data');
+Route::post('/statistics-omset/refresh', [StatisticsOmsetController::class, 'refresh'])->name('tv.statistics.omset.refresh');
 
 // ─────────────────────────────────────────────
 // ADMIN ROUTES
