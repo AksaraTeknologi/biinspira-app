@@ -87,84 +87,107 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
     return (
         <>
             <Head title="Statistik Omset - Biinspira Group" />
-            <div className="flex h-screen w-screen flex-col overflow-hidden bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center">
+            <div className="flex min-h-screen w-screen flex-col bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center lg:h-screen lg:overflow-hidden">
                 {/* Main Light Glassmorphic Container matching /statistics */}
-                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-0 pt-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
+                <div className="flex flex-1 flex-col overflow-y-auto bg-slate-900/18 px-3 py-2.5 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:overflow-hidden">
                     {/* Header Bar */}
-                    <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p className="text-xs tracking-[0.28em] text-slate-100/90 uppercase">LIVE MONITORING BIINSPIRA GROUP</p>
-                            <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">
-                                Perbandingan Omset 2025 vs 2026
-                            </h1>
+                    <div className="mb-2.5 flex shrink-0 flex-col gap-2 sm:mb-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] tracking-[0.2em] text-slate-100/90 uppercase sm:text-xs sm:tracking-[0.28em]">
+                                    LIVE MONITORING BIINSPIRA GROUP
+                                </p>
+                                <h1 className="text-lg font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">
+                                    Perbandingan Omset 2025 vs 2026
+                                </h1>
+                            </div>
+                            {/* Mobile Quick Action Link to Platform TV */}
+                            <div className="flex items-center gap-1.5 sm:hidden">
+                                <Link
+                                    href="/statistics"
+                                    className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
+                                    title="Buka Statistik Platform"
+                                >
+                                    <Tv className="h-3.5 w-3.5 text-sky-200" />
+                                    <span>Platform</span>
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={toggleFullscreen}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95"
+                                    title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
+                                >
+                                    {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Top Controls & Navigation in a single neat row */}
-                        <div className="flex shrink-0 items-center gap-1.5 xl:gap-2">
+                        {/* Top Controls & Navigation */}
+                        <div className="flex shrink-0 items-center justify-between gap-1.5 sm:justify-end xl:gap-2">
                             {/* Tab Switcher */}
-                            <div className="inline-flex h-9 items-center rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
+                            <div className="grid w-full grid-cols-4 items-center rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm sm:inline-flex sm:w-auto">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('monthly')}
-                                    className={`h-7 rounded-full px-2.5 text-xs font-medium transition xl:px-3 ${
+                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
                                         activeTab === 'monthly' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
                                     }`}
                                 >
-                                    Per Bulan
+                                    <span className="hidden sm:inline">Per </span>Bulan
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('cumulative')}
-                                    className={`h-7 rounded-full px-2.5 text-xs font-medium transition xl:px-3 ${
+                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
                                         activeTab === 'cumulative' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
                                     }`}
                                 >
-                                    Tren Kumulatif
+                                    <span className="hidden sm:inline">Tren </span>Kumulatif
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('platform')}
-                                    className={`h-7 rounded-full px-2.5 text-xs font-medium transition xl:px-3 ${
+                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
                                         activeTab === 'platform' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
                                     }`}
                                 >
-                                    Per Platform
+                                    <span className="hidden sm:inline">Per </span>Platform
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('table')}
-                                    className={`h-7 rounded-full px-2.5 text-xs font-medium transition xl:px-3 ${
+                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
                                         activeTab === 'table' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
                                     }`}
                                 >
-                                    Tabel Rincian
+                                    <span className="hidden sm:inline">Tabel </span>Rincian
                                 </button>
                             </div>
 
-                            {/* Link to TV Platform Dashboard */}
-                            <Link
-                                href="/statistics"
-                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                title="Buka Statistik Platform TV"
-                            >
-                                <Tv className="h-3.5 w-3.5 text-sky-200" />
-                                <span>Statistik Platform</span>
-                            </Link>
+                            {/* Desktop Navigation Actions */}
+                            <div className="hidden sm:flex sm:items-center sm:gap-1.5 xl:gap-2">
+                                <Link
+                                    href="/statistics"
+                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                    title="Buka Statistik Platform TV"
+                                >
+                                    <Tv className="h-3.5 w-3.5 text-sky-200" />
+                                    <span>Statistik Platform</span>
+                                </Link>
 
-                            {/* Fullscreen Button */}
-                            <button
-                                type="button"
-                                onClick={toggleFullscreen}
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
-                            >
-                                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={toggleFullscreen}
+                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                    title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
+                                >
+                                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                                </button>
 
-                            {/* Update Badge */}
-                            <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm">
-                                Update: {new Date(generatedAt).toLocaleString('id-ID')}
-                            </p>
+                                <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm">
+                                    Update: {new Date(generatedAt).toLocaleString('id-ID')}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -234,78 +257,78 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
     const summary = data.summary;
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {/* Top 4 KPI Cards in White Frosted Glassmorphism matching /statistics */}
-            <div className="mb-3 grid shrink-0 grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
+            {/* Top 4 KPI Cards: Compact 2-column grid on mobile, 4-column on desktop */}
+            <div className="mb-2.5 grid shrink-0 grid-cols-2 gap-2 sm:mb-3 sm:gap-2.5 lg:grid-cols-4">
                 {/* Card 1: Total Omset 2026 */}
-                <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/80 text-white shadow-xs xl:h-12 xl:w-12">
-                        <TrendingUp className="h-6 w-6" />
+                <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:gap-3.5 sm:p-3 xl:p-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
+                        <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                            <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
-                                Total Omset 2026 (YTD)
+                            <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">
+                                2026 (YTD)
                             </p>
                             <span
-                                className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-2 text-[10px] font-bold ${
+                                className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-1.5 text-[9px] font-bold sm:px-2 sm:text-[10px] ${
                                     summary.growth_direction === 'up'
                                         ? 'border border-emerald-400/80 bg-emerald-100 text-emerald-800'
                                         : 'border border-rose-400/80 bg-rose-100 text-rose-800'
                                 }`}
                             >
                                 {summary.growth_direction === 'up' ? '↑ +' : '↓ -'}
-                                {summary.growth_percentage}% YoY
+                                {summary.growth_percentage}%
                             </span>
                         </div>
                         <p
-                            className="mt-0.5 truncate text-lg leading-tight font-black text-slate-900 xl:text-xl 2xl:text-2xl"
+                            className="mt-0.5 truncate text-xs leading-tight font-black text-slate-900 sm:text-lg xl:text-xl 2xl:text-2xl"
                             title={formatCurrency(summary.total_2026)}
                         >
                             {formatCurrency(summary.total_2026)}
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
-                            Rata-rata: <span className="font-semibold text-slate-700">{formatCurrency(summary.monthly_avg_2026)}</span> / bln
+                        <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 sm:text-[11px]">
+                            Avg: <span className="font-semibold text-slate-700">{formatCompactCurrency(summary.monthly_avg_2026)}</span>/bln
                         </p>
                     </div>
                 </div>
 
                 {/* Card 2: Total Omset 2025 */}
-                <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-xs xl:h-12 xl:w-12">
-                        <CalendarIcon className="h-6 w-6" />
+                <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:gap-3.5 sm:p-3 xl:p-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
+                        <CalendarIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                            <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">Total Omset 2025</p>
-                            <span className="py-0.2 rounded-full border border-slate-300 bg-slate-100 px-2 text-[10px] font-bold text-slate-700">
-                                Full Year
+                            <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">Omset 2025</p>
+                            <span className="py-0.2 rounded-full border border-slate-300 bg-slate-100 px-1.5 text-[9px] font-bold text-slate-700 sm:px-2 sm:text-[10px]">
+                                Full
                             </span>
                         </div>
                         <p
-                            className="mt-0.5 truncate text-lg leading-tight font-black text-slate-900 xl:text-xl 2xl:text-2xl"
+                            className="mt-0.5 truncate text-xs leading-tight font-black text-slate-900 sm:text-lg xl:text-xl 2xl:text-2xl"
                             title={formatCurrency(summary.total_2025)}
                         >
                             {formatCurrency(summary.total_2025)}
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
-                            Rata-rata: <span className="font-semibold text-slate-700">{formatCurrency(summary.monthly_avg_2025)}</span> / bln
+                        <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 sm:text-[11px]">
+                            Avg: <span className="font-semibold text-slate-700">{formatCompactCurrency(summary.monthly_avg_2025)}</span>/bln
                         </p>
                     </div>
                 </div>
 
                 {/* Card 3: Periode Setara (Jan - Bulan Berjalan) */}
-                <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs xl:h-12 xl:w-12">
-                        <CalendarIcon className="h-6 w-6" />
+                <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:gap-3.5 sm:p-3 xl:p-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
+                        <CalendarIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                            <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
-                                Setara (Jan - {summary.current_month_name.slice(0, 3)})
+                            <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">
+                                Setara (Jan-{summary.current_month_name.slice(0, 3)})
                             </p>
                             <span
-                                className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-2 text-[10px] font-bold ${
+                                className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-1.5 text-[9px] font-bold sm:px-2 sm:text-[10px] ${
                                     summary.ytd_growth_direction === 'up'
                                         ? 'border border-emerald-400/80 bg-emerald-100 text-emerald-800'
                                         : 'border border-rose-400/80 bg-rose-100 text-rose-800'
@@ -316,39 +339,39 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                             </span>
                         </div>
                         <p
-                            className="mt-0.5 truncate text-lg leading-tight font-black text-slate-900 xl:text-xl 2xl:text-2xl"
+                            className="mt-0.5 truncate text-xs leading-tight font-black text-slate-900 sm:text-lg xl:text-xl 2xl:text-2xl"
                             title={formatCurrency(summary.ytd_2026)}
                         >
                             {formatCurrency(summary.ytd_2026)}
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
-                            2025 periode sama: <span className="font-semibold text-slate-700">{formatCurrency(summary.ytd_2025)}</span>
+                        <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 sm:text-[11px]">
+                            2025: <span className="font-semibold text-slate-700">{formatCompactCurrency(summary.ytd_2025)}</span>
                         </p>
                     </div>
                 </div>
 
                 {/* Card 4: Bulan Tertinggi */}
-                <div className="flex items-center gap-3.5 rounded-2xl border border-white/55 bg-white/88 p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs xl:h-12 xl:w-12">
-                        <Sparkles className="h-6 w-6" />
+                <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:gap-3.5 sm:p-3 xl:p-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
+                        <Sparkles className="h-4 w-4 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                            <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">Rekor Bulan Tertinggi</p>
-                            <span className="py-0.2 rounded-full border border-emerald-300 bg-emerald-50 px-2 text-[10px] font-bold text-emerald-800">
-                                Peak Month
+                            <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">Bulan Tertinggi</p>
+                            <span className="py-0.2 rounded-full border border-emerald-300 bg-emerald-50 px-1.5 text-[9px] font-bold text-emerald-800 sm:px-2 sm:text-[10px]">
+                                Peak
                             </span>
                         </div>
-                        <div className="mt-1 flex items-baseline justify-between gap-2">
+                        <div className="mt-0.5 flex items-baseline justify-between gap-1 sm:mt-1">
                             <div>
-                                <span className="text-[10px] font-bold text-slate-500">2026: </span>
-                                <span className="text-sm font-black text-primary">{summary.best_month_2026.month}</span>
-                                <p className="text-xs font-black text-primary">{formatCompactCurrency(summary.best_month_2026.value)}</p>
+                                <span className="text-[9px] font-bold text-slate-500 sm:text-[10px]">26: </span>
+                                <span className="text-xs font-black text-primary sm:text-sm">{summary.best_month_2026.month.slice(0, 3)}</span>
+                                <p className="text-[10px] font-black text-primary sm:text-xs">{formatCompactCurrency(summary.best_month_2026.value)}</p>
                             </div>
                             <div className="text-right">
-                                <span className="text-[10px] font-bold text-slate-500">2025: </span>
-                                <span className="text-sm font-bold text-slate-700">{summary.best_month_2025.month}</span>
-                                <p className="text-xs font-bold text-slate-700">{formatCompactCurrency(summary.best_month_2025.value)}</p>
+                                <span className="text-[9px] font-bold text-slate-500 sm:text-[10px]">25: </span>
+                                <span className="text-xs font-bold text-slate-700 sm:text-sm">{summary.best_month_2025.month.slice(0, 3)}</span>
+                                <p className="text-[10px] font-bold text-slate-700 sm:text-xs">{formatCompactCurrency(summary.best_month_2025.value)}</p>
                             </div>
                         </div>
                     </div>
@@ -356,42 +379,42 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
             </div>
 
             {/* Main Chart Container in White Glassmorphism matching Dialog/Cards */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/55 bg-white/88 p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.18)] backdrop-blur-xl xl:p-4">
+            <div className="flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-3xl border border-white/55 bg-white/88 p-3 shadow-[0_14px_36px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:p-3.5 xl:p-4 lg:min-h-0">
                 {/* Toolbar inside card */}
-                <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-200/80 pb-2">
+                <div className="mb-2 flex shrink-0 flex-col gap-2 border-b border-slate-200/80 pb-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-8 sm:w-8">
                             {activeTab === 'monthly' && <BarChart3 className="h-4 w-4" />}
                             {activeTab === 'cumulative' && <LineChartIcon className="h-4 w-4" />}
                             {activeTab === 'platform' && <Layers className="h-4 w-4" />}
                             {activeTab === 'table' && <TableIcon className="h-4 w-4" />}
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-slate-900 xl:text-base">
-                                {activeTab === 'monthly' && 'Grafik Perbandingan Omset Bulanan (Januari - Desember)'}
-                                {activeTab === 'cumulative' && 'Kurva Pertumbuhan Akumulatif Omset (YTD)'}
-                                {activeTab === 'platform' && 'Rincian Performa Omset Tiap Platform'}
+                            <h2 className="text-xs font-bold text-slate-900 sm:text-sm xl:text-base">
+                                {activeTab === 'monthly' && 'Grafik Perbandingan Omset Bulanan'}
+                                {activeTab === 'cumulative' && 'Kurva Pertumbuhan Akumulatif (YTD)'}
+                                {activeTab === 'platform' && 'Rincian Performa Tiap Platform'}
                                 {activeTab === 'table' && 'Matriks Data Omset Bulanan 2025 vs 2026'}
                             </h2>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[10px] text-slate-500 sm:text-[11px]">
                                 {activeTab === 'monthly' && 'Perbandingan omset aktual bulan demi bulan antara 2025 dan 2026'}
                                 {activeTab === 'cumulative' && 'Progres akumulasi pendapatan group sepanjang tahun berjalan'}
-                                {activeTab === 'platform' && 'Kontribusi omset 8 platform Biinspira Group'}
+                                {activeTab === 'platform' && 'Kontribusi omset platform Biinspira Group'}
                                 {activeTab === 'table' && 'Rincian angka nominal, selisih dan persentase pertumbuhan'}
                             </p>
                         </div>
                     </div>
 
                     {/* Chart Legend Badges */}
-                    <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs shadow-2xs">
+                    <div className="flex items-center self-start sm:self-auto gap-3 rounded-full border border-slate-200 bg-white/80 px-2.5 py-0.5 text-[11px] shadow-2xs sm:px-3 sm:py-1 sm:text-xs">
                         <div className="flex items-center gap-1.5">
-                            <span className="h-3 w-3 rounded-sm bg-slate-400" />
-                            <span className="font-semibold text-slate-600">Tahun 2025</span>
+                            <span className="h-2.5 w-2.5 rounded-sm bg-slate-400 sm:h-3 sm:w-3" />
+                            <span className="font-semibold text-slate-600">2025</span>
                         </div>
                         <span className="text-slate-300">•</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="h-3 w-3 rounded-sm bg-primary" />
-                            <span className="font-bold text-primary">Tahun 2026</span>
+                            <span className="h-2.5 w-2.5 rounded-sm bg-primary sm:h-3 sm:w-3" />
+                            <span className="font-bold text-primary">2026</span>
                         </div>
                     </div>
                 </div>
@@ -399,7 +422,7 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                 {/* Tab 1: Monthly Comparison Bar Chart */}
                 {activeTab === 'monthly' && (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="min-h-0 w-full flex-1">
+                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthly_comparison} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
                                     <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
@@ -482,7 +505,7 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                 {/* Tab 2: Cumulative Area / Line Chart */}
                 {activeTab === 'cumulative' && (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="min-h-0 w-full flex-1">
+                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={data.monthly_comparison} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
                                     <defs>
@@ -641,8 +664,8 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
 
                 {/* Tab 4: Tabular Details Matrix */}
                 {activeTab === 'table' && (
-                    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-                        <table className="w-full text-left text-xs">
+                    <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto">
+                        <table className="min-w-[540px] sm:min-w-full text-left text-xs">
                             <thead className="sticky top-0 border-b border-slate-200 bg-slate-100 text-[11px] font-bold tracking-wider text-slate-600 uppercase">
                                 <tr>
                                     <th className="px-3 py-2.5">Bulan</th>
