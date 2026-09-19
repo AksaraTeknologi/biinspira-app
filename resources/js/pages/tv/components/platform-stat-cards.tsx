@@ -124,24 +124,24 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
             )}
         >
             <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
-                <h2 className="truncate text-base font-bold text-slate-800 xl:text-lg" title={item.label}>
+                <h2 className="truncate text-sm font-bold text-slate-800 sm:text-base xl:text-lg" title={item.label}>
                     {item.label}
                 </h2>
-                <div className="flex min-h-7 shrink-0 items-center justify-end">
+                <div className="flex min-h-6 sm:min-h-7 shrink-0 items-center justify-end">
                     <PlatformLogo item={item} />
                 </div>
             </div>
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-1.5 overflow-hidden sm:grid-cols-3">
-                <div className="flex min-h-0 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 xl:p-2">
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Total Tahun Ini</p>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-1.5 overflow-hidden">
+                <div className="flex min-h-0 min-w-0 flex-row items-center justify-between sm:flex-col sm:justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 sm:p-1.5 xl:p-2">
+                    <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Total Tahun Ini</p>
                     <p
-                        className="my-auto truncate py-0.5 text-sm leading-none font-bold tracking-tight text-slate-900 sm:text-base xl:text-lg 2xl:text-3xl"
+                        className="truncate text-xs sm:text-base leading-none font-bold tracking-tight text-slate-900 sm:my-auto sm:py-0.5 xl:text-lg 2xl:text-3xl"
                         title={formatCurrency(item.total)}
                     >
                         {formatCurrency(item.total)}
                     </p>
-                    <div className="invisible mt-0.5 flex shrink-0 items-center" aria-hidden="true">
+                    <div className="hidden sm:flex invisible sm:mt-0.5 shrink-0 items-center" aria-hidden="true">
                         <ChangeBadge percentage={0} direction="flat" />
                     </div>
                 </div>
@@ -149,47 +149,51 @@ export function PlatformStatCardGrid({ item, className, onOpenDetail }: CardProp
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'month')}
-                    className="flex min-h-0 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2"
+                    className="flex min-h-0 min-w-0 flex-row items-center justify-between sm:flex-col sm:justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 sm:p-1.5 xl:p-2"
                 >
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Bulan Ini</p>
-                    <p
-                        className="my-auto truncate py-0.5 text-sm leading-none font-bold tracking-tight text-slate-900 sm:text-base xl:text-lg 2xl:text-3xl"
-                        title={formatCurrency(item.this_month)}
-                    >
-                        {formatCurrency(item.this_month)}
-                    </p>
-                    <div className="mt-0.5 flex shrink-0 flex-wrap items-center gap-1 sm:flex-nowrap">
-                        <AvgChangeBadge
-                            percentage={item.avg_change_percentage}
-                            direction={item.avg_change_direction}
-                            monthlyAvg={item.monthly_avg}
-                        />
-                        <MonthChangeBadge
-                            percentage={item.month_change_percentage}
-                            direction={item.month_change_direction}
-                            lastMonth={item.last_month}
-                        />
+                    <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Bulan Ini</p>
+                    <div className="flex items-center gap-1.5 sm:contents">
+                        <p
+                            className="truncate text-xs sm:text-base leading-none font-bold tracking-tight text-slate-900 sm:my-auto sm:py-0.5 xl:text-lg 2xl:text-3xl"
+                            title={formatCurrency(item.this_month)}
+                        >
+                            {formatCurrency(item.this_month)}
+                        </p>
+                        <div className="flex shrink-0 flex-wrap items-center gap-1 sm:mt-0.5 sm:flex-nowrap">
+                            <AvgChangeBadge
+                                percentage={item.avg_change_percentage}
+                                direction={item.avg_change_direction}
+                                monthlyAvg={item.monthly_avg}
+                            />
+                            <MonthChangeBadge
+                                percentage={item.month_change_percentage}
+                                direction={item.month_change_direction}
+                                lastMonth={item.last_month}
+                            />
+                        </div>
                     </div>
                 </button>
 
                 <button
                     type="button"
                     onClick={() => onOpenDetail(item.key, 'day')}
-                    className="flex min-h-0 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 xl:p-2"
+                    className="flex min-h-0 min-w-0 flex-row items-center justify-between sm:flex-col sm:justify-between overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 text-left transition hover:cursor-pointer hover:border-sky-300 hover:bg-sky-50 sm:p-1.5 xl:p-2"
                 >
-                    <p className="mb-0.5 truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Hari Ini</p>
-                    <p
-                        className="my-auto truncate py-0.5 text-sm leading-none font-bold tracking-tight text-slate-900 sm:text-base xl:text-lg 2xl:text-3xl"
-                        title={formatCurrency(item.today)}
-                    >
-                        {formatCurrency(item.today)}
-                    </p>
-                    <div className="mt-0.5 flex shrink-0 items-center">
-                        <ChangeBadge
-                            percentage={item.day_change_percentage}
-                            direction={item.day_change_direction}
-                            yesterday={item.yesterday}
-                        />
+                    <p className="truncate text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-[11px]">Hari Ini</p>
+                    <div className="flex items-center gap-1.5 sm:contents">
+                        <p
+                            className="truncate text-xs sm:text-base leading-none font-bold tracking-tight text-slate-900 sm:my-auto sm:py-0.5 xl:text-lg 2xl:text-3xl"
+                            title={formatCurrency(item.today)}
+                        >
+                            {formatCurrency(item.today)}
+                        </p>
+                        <div className="flex shrink-0 items-center sm:mt-0.5">
+                            <ChangeBadge
+                                percentage={item.day_change_percentage}
+                                direction={item.day_change_direction}
+                                yesterday={item.yesterday}
+                            />
+                        </div>
                     </div>
                 </button>
             </div>

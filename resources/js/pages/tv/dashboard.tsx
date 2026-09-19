@@ -194,26 +194,42 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
     return (
         <>
             <Head title="Statistik TV" />
-            <div className="flex h-screen w-screen flex-col overflow-hidden bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center">
-                <div className="flex flex-1 flex-col overflow-hidden bg-slate-900/18 px-4 py-0 pt-3 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:py-4">
+            <div className="flex min-h-screen w-screen flex-col bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center lg:h-screen lg:overflow-hidden">
+                <div className="flex flex-1 flex-col overflow-y-auto bg-slate-900/18 px-3 py-2.5 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:overflow-hidden">
                     <Tabs value={viewMode} onValueChange={handleViewModeChange} className="flex flex-1 flex-col overflow-hidden">
-                        <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <p className="text-xs tracking-[0.28em] text-slate-100/90 uppercase">LIVE MONITORING BIINSPIRA GROUP</p>
-                                <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">
-                                    Pendapatan Tiap Platform
-                                </h1>
+                        <div className="mb-2.5 flex shrink-0 flex-col gap-2 sm:mb-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] tracking-[0.2em] text-slate-100/90 uppercase sm:text-xs sm:tracking-[0.28em]">
+                                        LIVE MONITORING BIINSPIRA GROUP
+                                    </p>
+                                    <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">
+                                        Pendapatan Tiap Platform
+                                    </h1>
+                                </div>
+                                {/* Mobile Quick Action Link to Omset TV */}
+                                <div className="flex items-center gap-1.5 sm:hidden">
+                                    <Link
+                                        href="/statistics-omset"
+                                        className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
+                                        title="Buka Statistik Omset"
+                                    >
+                                        <BarChart3 className="h-3.5 w-3.5 text-white" />
+                                        <span>Omset</span>
+                                    </Link>
+                                </div>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-1.5 xl:gap-2">
+                            {/* Responsive controls bar on mobile: scrollable without clipping */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:shrink-0 sm:overflow-visible sm:pb-0 xl:gap-2">
                                 {/* Keterangan / Legend Warna Perbandingan */}
-                                <div className="flex items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-2.5 py-1 text-xs text-white backdrop-blur-sm sm:gap-2 xl:px-3 xl:py-1.5">
+                                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-2 py-1 text-[11px] text-white backdrop-blur-sm sm:px-2.5 sm:text-xs xl:px-3 xl:py-1.5">
                                     <div className="flex items-center gap-1">
-                                        <span className="text-[11px] font-bold text-white/95 xl:text-xs">vs Rata-rata:</span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-indigo-400/80 bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-800">
+                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px] xl:text-xs">vs Rata-rata:</span>
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-indigo-400/80 bg-indigo-100 px-1.5 py-0.2 text-[9px] font-bold text-indigo-800 sm:text-[10px]">
                                             ↑ Naik
                                         </span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/80 bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/80 bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-800 sm:text-[10px]">
                                             ↓ Turun
                                         </span>
                                     </div>
@@ -221,17 +237,17 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     <span className="text-[10px] text-white/40">•</span>
 
                                     <div className="flex items-center gap-1">
-                                        <span className="text-[11px] font-bold text-white/95 xl:text-xs">vs Bulan Lalu:</span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-400/80 bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800">
+                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px] xl:text-xs">vs Bulan Lalu:</span>
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-400/80 bg-emerald-100 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 sm:text-[10px]">
                                             ↑ Naik
                                         </span>
-                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-rose-400/80 bg-rose-100 px-1.5 py-0.2 text-[10px] font-bold text-rose-800">
+                                        <span className="inline-flex items-center gap-0.5 rounded-full border border-rose-400/80 bg-rose-100 px-1.5 py-0.2 text-[9px] font-bold text-rose-800 sm:text-[10px]">
                                             ↓ Turun
                                         </span>
                                     </div>
                                 </div>
 
-                                <TabsList className="h-auto rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
+                                <TabsList className="h-auto shrink-0 rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
                                     <TabsTrigger
                                         value="grid"
                                         className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
@@ -248,14 +264,14 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                                 <Link
                                     href="/statistics-omset"
-                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
+                                    className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
                                     title="Buka Halaman Statistik Omset"
                                 >
                                     <BarChart3 className="h-3.5 w-3.5 text-white" />
                                     <span>Statistik Omset</span>
                                 </Link>
 
-                                <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
+                                <p className="flex h-7 sm:h-9 shrink-0 items-center rounded-full border border-white/45 bg-white/20 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
                                     Update: {new Date(generatedAt).toLocaleString('id-ID')}
                                 </p>
                             </div>
