@@ -23,7 +23,7 @@ import {
     VisibilityState,
 } from '@tanstack/react-table';
 import { format, subMonths } from 'date-fns';
-import { CalendarIcon, ListFilter } from 'lucide-react';
+import { BarChart3, CalendarIcon, ListFilter } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
@@ -318,7 +318,19 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
             <Head title="Transaksi" />
             <div className="p-4">
                 <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <h2 className="text-2xl font-semibold">Daftar Transaksi</h2>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-2xl font-semibold">Daftar Transaksi</h2>
+                        <a
+                            href="/statistics-omset"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-600 transition hover:bg-cyan-500/20 dark:text-cyan-400"
+                            title="Buka TV Statistik Grafik Perbandingan Omset 2025 vs 2026"
+                        >
+                            <BarChart3 className="h-4 w-4" />
+                            <span>Grafik Omset 2025 vs 2026 (TV)</span>
+                        </a>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-2">
                             <Label htmlFor="date-range" className="text-sm font-medium whitespace-nowrap">
