@@ -11,6 +11,7 @@ use App\Http\Controllers\AdResultPlatformController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\MasterAdGoalController;
 use App\Http\Controllers\TvDashboardController;
+use App\Http\Controllers\TvStatsAuthController;
 use App\Http\Controllers\StatisticsOmsetController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserTechController;
@@ -40,13 +41,32 @@ Route::get('/', function () {
     return redirect()->route('user.dashboard');
 })->name('home');
 
-Route::get('/statistics', [TvDashboardController::class, 'index'])->name('tv.statistics');
-Route::get('/statistics/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
+// ─────────────────────────────────────────────
+// TV STATS AUTHENTICATION ROUTES
+// ─────────────────────────────────────────────
+Route::get('/stats/auth', [TvStatsAuthController::class, 'show'])->name('tv.stats.auth');
+Route::post('/stats/auth', [TvStatsAuthController::class, 'authenticate'])->name('tv.stats.auth.submit');
+Route::post('/stats/lock', [TvStatsAuthController::class, 'lock'])->name('tv.stats.lock');
 
-// ✅ BARU: Halaman TV Statistik Grafik Omset 2025 vs 2026
-Route::get('/statistics-omset', [StatisticsOmsetController::class, 'index'])->name('tv.statistics.omset');
-Route::get('/statistics-omset/data', [StatisticsOmsetController::class, 'data'])->name('tv.statistics.omset.data');
-Route::post('/statistics-omset/refresh', [StatisticsOmsetController::class, 'refresh'])->name('tv.statistics.omset.refresh');
+// ─────────────────────────────────────────────
+// TV DASHBOARD & STATS (PROTECTED BY ADMIN PASSWORD)
+// ─────────────────────────────────────────────
+Route::middleware(['stats.auth'])->group(function () {
+    Route::get('/stats', [TvDashboardController::class, 'index'])->name('tv.statistics');
+    Route::get('/stats/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
+
+    // Halaman TV Statistik Grafik Omset 2025 vs 2026
+    Route::get('/stats-omset', [StatisticsOmsetController::class, 'index'])->name('tv.statistics.omset');
+    Route::get('/stats-omset/data', [StatisticsOmsetController::class, 'data'])->name('tv.statistics.omset.data');
+    Route::post('/stats-omset/refresh', [StatisticsOmsetController::class, 'refresh'])->name('tv.statistics.omset.refresh');
+});
+
+// Redirect rute lama ke rute baru yang lebih singkat
+Route::redirect('/statistics', '/stats');
+Route::redirect('/statistics/detail', '/stats/detail');
+Route::redirect('/statistics-omset', '/stats-omset');
+Route::redirect('/statistics-omset/data', '/stats-omset/data');
+Route::redirect('/statistics-omset/refresh', '/stats-omset/refresh');
 
 // ─────────────────────────────────────────────
 // ADMIN ROUTES

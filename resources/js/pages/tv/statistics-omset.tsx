@@ -7,6 +7,7 @@ import {
     CalendarIcon,
     Layers,
     LineChart as LineChartIcon,
+    Lock,
     Maximize2,
     Minimize2,
     Sparkles,
@@ -101,10 +102,10 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                     Perbandingan Omset 2025 vs 2026
                                 </h1>
                             </div>
-                            {/* Mobile Quick Action Link to Platform TV */}
+                            {/* Mobile Quick Action Link to Platform TV & Lock */}
                             <div className="flex items-center gap-1.5 sm:hidden">
                                 <Link
-                                    href="/statistics"
+                                    href="/stats"
                                     className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
                                     title="Buka Statistik Platform"
                                 >
@@ -118,6 +119,14 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                     title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
                                 >
                                     {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => router.post(route('tv.stats.lock'))}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30"
+                                    title="Kunci Layar Statistik"
+                                >
+                                    <Lock className="h-3.5 w-3.5 text-white" />
                                 </button>
                             </div>
                         </div>
@@ -167,7 +176,7 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                             {/* Desktop Navigation Actions */}
                             <div className="hidden sm:flex sm:items-center sm:gap-1.5 xl:gap-2">
                                 <Link
-                                    href="/statistics"
+                                    href="/stats"
                                     className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
                                     title="Buka Statistik Platform TV"
                                 >
@@ -182,6 +191,16 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                     title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
                                 >
                                     {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => router.post(route('tv.stats.lock'))}
+                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60"
+                                    title="Kunci Tampilan Statistik"
+                                >
+                                    <Lock className="h-3.5 w-3.5 text-white" />
+                                    <span>Kunci</span>
                                 </button>
 
                                 <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm">

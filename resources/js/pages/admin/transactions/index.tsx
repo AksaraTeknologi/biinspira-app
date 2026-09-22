@@ -321,7 +321,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                     <div className="flex flex-wrap items-center gap-3">
                         <h2 className="text-2xl font-semibold">Daftar Transaksi</h2>
                         <a
-                            href="/statistics-omset"
+                            href="/stats-omset"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-600 transition hover:bg-cyan-500/20 dark:text-cyan-400"
