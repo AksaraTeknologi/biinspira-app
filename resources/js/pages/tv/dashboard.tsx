@@ -1,7 +1,7 @@
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, Link, router } from '@inertiajs/react';
-import { BarChart3, CalendarIcon, Sparkles, TrendingUp } from 'lucide-react';
+import { BarChart3, CalendarIcon, Lock, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
@@ -131,7 +131,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                 metric,
             });
 
-            const response = await fetch(`/statistics/detail?${params.toString()}`, {
+            const response = await fetch(`/stats/detail?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',
@@ -164,7 +164,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                 metric,
             });
 
-            const response = await fetch(`/statistics/detail?${params.toString()}`, {
+            const response = await fetch(`/stats/detail?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',
@@ -207,16 +207,24 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         Pendapatan Tiap Platform
                                     </h1>
                                 </div>
-                                {/* Mobile Quick Action Link to Omset TV */}
+                                {/* Mobile Quick Action Link to Omset TV & Lock */}
                                 <div className="flex items-center gap-1.5 sm:hidden">
                                     <Link
-                                        href="/statistics-omset"
+                                        href="/stats-omset"
                                         className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
                                         title="Buka Statistik Omset"
                                     >
                                         <BarChart3 className="h-3.5 w-3.5 text-white" />
                                         <span>Omset</span>
                                     </Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.post(route('tv.stats.lock'))}
+                                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30"
+                                        title="Kunci Layar Statistik"
+                                    >
+                                        <Lock className="h-3.5 w-3.5 text-white" />
+                                    </button>
                                 </div>
                             </div>
 
@@ -263,13 +271,23 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                 </TabsList>
 
                                 <Link
-                                    href="/statistics-omset"
+                                    href="/stats-omset"
                                     className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
                                     title="Buka Halaman Statistik Omset"
                                 >
                                     <BarChart3 className="h-3.5 w-3.5 text-white" />
                                     <span>Statistik Omset</span>
                                 </Link>
+
+                                <button
+                                    type="button"
+                                    onClick={() => router.post(route('tv.stats.lock'))}
+                                    className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap"
+                                    title="Kunci Tampilan Statistik"
+                                >
+                                    <Lock className="h-3.5 w-3.5 text-white" />
+                                    <span>Kunci</span>
+                                </button>
 
                                 <p className="flex h-7 sm:h-9 shrink-0 items-center rounded-full border border-white/45 bg-white/20 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
                                     Update: {new Date(generatedAt).toLocaleString('id-ID')}

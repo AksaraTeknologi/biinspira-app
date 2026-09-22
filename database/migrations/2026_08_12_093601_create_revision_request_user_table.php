@@ -22,7 +22,7 @@ return new class extends Migration
         // Migrate existing assigned_to data to the pivot table
         DB::statement('
             INSERT INTO revision_request_user (revision_request_id, user_id, created_at, updated_at)
-            SELECT id, assigned_to, NOW(), NOW()
+            SELECT id, assigned_to, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             FROM revision_requests
             WHERE assigned_to IS NOT NULL
         ');
