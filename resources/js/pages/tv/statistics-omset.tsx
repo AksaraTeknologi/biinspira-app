@@ -16,7 +16,7 @@ import {
     Tv,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { ComparisonData, StatisticsOmsetProps } from './types';
 import { formatCompactCurrency, formatCurrency, getTimeBasedMessage } from './utils';
 
@@ -32,9 +32,11 @@ const PLATFORM_COLORS: Record<string, string> = {
     aksademy: '#8b5cf6', // Purple
 };
 
+type ActiveTab = 'monthly' | 'monthly_line' | 'cumulative' | 'platform' | 'table';
+
 export default function StatisticsOmset({ comparisonData, generatedAt }: StatisticsOmsetProps) {
     const [currentTime, setCurrentTime] = useState(() => new Date());
-    const [activeTab, setActiveTab] = useState<'monthly' | 'cumulative' | 'platform' | 'table'>('monthly');
+    const [activeTab, setActiveTab] = useState<ActiveTab>('monthly');
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Auto-reload data every 5 minutes (matching /statistics)
@@ -134,7 +136,7 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                         {/* Top Controls & Navigation */}
                         <div className="flex shrink-0 items-center justify-between gap-1.5 sm:justify-end xl:gap-2">
                             {/* Tab Switcher */}
-                            <div className="grid w-full grid-cols-4 items-center rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm sm:inline-flex sm:w-auto">
+                            <div className="grid w-full grid-cols-5 items-center rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm sm:inline-flex sm:w-auto">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('monthly')}
@@ -143,6 +145,15 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                     }`}
                                 >
                                     <span className="hidden sm:inline">Per </span>Bulan
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('monthly_line')}
+                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
+                                        activeTab === 'monthly_line' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
+                                    }`}
+                                >
+                                    <span className="hidden sm:inline">Grafik </span>Garis
                                 </button>
                                 <button
                                     type="button"
@@ -224,7 +235,7 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                             </div>
                         }
                     >
-                        <ComparisonView data={comparisonData!} activeTab={activeTab} />
+                        <ComparisonView data={comparisonData!} activeTab={activeTab} setActiveTab={setActiveTab} />
                     </Deferred>
                 </div>
 
@@ -272,8 +283,23 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPARISON VIEW (LIGHT FROSTED GLASS THEME)
 // ─────────────────────────────────────────────────────────────
-function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 'monthly' | 'cumulative' | 'platform' | 'table' }) {
+function ComparisonView({
+    data,
+    activeTab,
+    setActiveTab,
+}: {
+    data: ComparisonData;
+    activeTab: ActiveTab;
+    setActiveTab: (tab: ActiveTab) => void;
+}) {
     const summary = data.summary;
+
+    const monthlyChartData = useMemo(() => {
+        return data.monthly_comparison.map((item) => ({
+            ...item,
+            omset_2026_val: item.is_current_or_past ? item.omset_2026 : null,
+        }));
+    }, [data.monthly_comparison]);
 
     return (
         <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
@@ -404,6 +430,7 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                     <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-8 sm:w-8">
                             {activeTab === 'monthly' && <BarChart3 className="h-4 w-4" />}
+                            {activeTab === 'monthly_line' && <LineChartIcon className="h-4 w-4" />}
                             {activeTab === 'cumulative' && <LineChartIcon className="h-4 w-4" />}
                             {activeTab === 'platform' && <Layers className="h-4 w-4" />}
                             {activeTab === 'table' && <TableIcon className="h-4 w-4" />}
@@ -411,12 +438,14 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                         <div>
                             <h2 className="text-xs font-bold text-slate-900 sm:text-sm xl:text-base">
                                 {activeTab === 'monthly' && 'Grafik Perbandingan Omset Bulanan'}
+                                {activeTab === 'monthly_line' && 'Grafik Garis Perbandingan Omset Bulanan'}
                                 {activeTab === 'cumulative' && 'Kurva Pertumbuhan Akumulatif (YTD)'}
                                 {activeTab === 'platform' && 'Rincian Performa Tiap Platform'}
                                 {activeTab === 'table' && 'Matriks Data Omset Bulanan 2025 vs 2026'}
                             </h2>
                             <p className="text-[10px] text-slate-500 sm:text-[11px]">
-                                {activeTab === 'monthly' && 'Perbandingan omset aktual bulan demi bulan antara 2025 dan 2026'}
+                                {activeTab === 'monthly' && 'Perbandingan omset aktual bulan demi bulan antara 2025 dan 2026 (Diagram Batang)'}
+                                {activeTab === 'monthly_line' && 'Tren kurva omset aktual bulan demi bulan antara 2025 dan 2026 (Grafik Garis)'}
                                 {activeTab === 'cumulative' && 'Progres akumulasi pendapatan group sepanjang tahun berjalan'}
                                 {activeTab === 'platform' && 'Kontribusi omset platform Biinspira Group'}
                                 {activeTab === 'table' && 'Rincian angka nominal, selisih dan persentase pertumbuhan'}
@@ -424,16 +453,51 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                         </div>
                     </div>
 
-                    {/* Chart Legend Badges */}
-                    <div className="flex items-center self-start sm:self-auto gap-3 rounded-full border border-slate-200 bg-white/80 px-2.5 py-0.5 text-[11px] shadow-2xs sm:px-3 sm:py-1 sm:text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-sm bg-slate-400 sm:h-3 sm:w-3" />
-                            <span className="font-semibold text-slate-600">2025</span>
-                        </div>
-                        <span className="text-slate-300">•</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-sm bg-primary sm:h-3 sm:w-3" />
-                            <span className="font-bold text-primary">2026</span>
+                    {/* Chart Controls & Legend */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        {/* Tab Switcher Batang vs Garis untuk Perbandingan Bulanan */}
+                        {(activeTab === 'monthly' || activeTab === 'monthly_line') && (
+                            <div className="flex items-center rounded-full border border-slate-300/80 bg-slate-100 p-0.5 text-xs shadow-2xs">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('monthly')}
+                                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition sm:px-3 ${
+                                        activeTab === 'monthly'
+                                            ? 'bg-white text-primary shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                    title="Tampilkan Diagram Batang"
+                                >
+                                    <BarChart3 className="h-3.5 w-3.5" />
+                                    <span>Batang</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('monthly_line')}
+                                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition sm:px-3 ${
+                                        activeTab === 'monthly_line'
+                                            ? 'bg-white text-primary shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                    title="Tampilkan Grafik Garis"
+                                >
+                                    <LineChartIcon className="h-3.5 w-3.5" />
+                                    <span>Garis</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Chart Legend Badges */}
+                        <div className="flex items-center self-start sm:self-auto gap-3 rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] shadow-2xs sm:px-3 sm:text-xs">
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-2.5 w-2.5 rounded-sm bg-slate-400 sm:h-3 sm:w-3" />
+                                <span className="font-semibold text-slate-600">2025</span>
+                            </div>
+                            <span className="text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-2.5 w-2.5 rounded-sm bg-primary sm:h-3 sm:w-3" />
+                                <span className="font-bold text-primary">2026</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -516,6 +580,112 @@ function ComparisonView({ data, activeTab }: { data: ComparisonData; activeTab: 
                                     <Bar dataKey="omset_2025" name="2025" fill="#94a3b8" radius={[6, 6, 0, 0]} maxBarSize={42} />
                                     <Bar dataKey="omset_2026" name="2026" fill="var(--primary)" radius={[6, 6, 0, 0]} maxBarSize={42} />
                                 </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tab 1B: Monthly Comparison Line Chart */}
+                {activeTab === 'monthly_line' && (
+                    <div className="flex min-h-0 flex-1 flex-col">
+                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={monthlyChartData} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="short_name"
+                                        stroke="#64748b"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={{ stroke: 'rgba(15,23,42,0.12)' }}
+                                    />
+                                    <YAxis
+                                        stroke="#64748b"
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={{ stroke: 'rgba(15,23,42,0.12)' }}
+                                        tickFormatter={(val) => formatCompactCurrency(val)}
+                                    />
+                                    <Tooltip
+                                        cursor={{ stroke: 'rgba(15,23,42,0.12)', strokeWidth: 1.5, strokeDasharray: '4 4' }}
+                                        content={({ active, payload }) => {
+                                            if (!active || !payload || !payload.length) return null;
+                                            const item = payload[0]?.payload;
+                                            if (!item) return null;
+
+                                            return (
+                                                <div className="min-w-64 rounded-2xl border border-slate-200 bg-white/95 p-3.5 text-xs text-slate-900 shadow-2xl backdrop-blur-xl">
+                                                    <p className="border-b border-slate-100 pb-1.5 text-sm font-extrabold text-primary">
+                                                        Bulan {item.month_name}
+                                                    </p>
+                                                    <div className="mt-2 space-y-1.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-medium text-slate-500">Omset 2025:</span>
+                                                            <span className="font-semibold text-slate-800">{formatCurrency(item.omset_2025)}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-bold text-primary">Omset 2026:</span>
+                                                            <span className="font-black text-primary">
+                                                                {item.is_current_or_past ? formatCurrency(item.omset_2026) : 'Belum Berjalan'}
+                                                            </span>
+                                                        </div>
+                                                        {item.is_current_or_past && (
+                                                            <>
+                                                                <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                                                                    <span className="font-medium text-slate-500">Selisih:</span>
+                                                                    <span
+                                                                        className={`font-bold ${item.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                                                                    >
+                                                                        {item.difference >= 0 ? '+' : ''}
+                                                                        {formatCurrency(item.difference)}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="font-medium text-slate-500">Pertumbuhan YoY:</span>
+                                                                    <span
+                                                                        className={`inline-flex items-center font-black ${
+                                                                            item.growth_direction === 'up'
+                                                                                ? 'text-emerald-600'
+                                                                                : item.growth_direction === 'down'
+                                                                                  ? 'text-rose-600'
+                                                                                  : 'text-slate-500'
+                                                                        }`}
+                                                                    >
+                                                                        {item.growth_direction === 'up' && <ArrowUpRight className="mr-0.5 h-3.5 w-3.5" />}
+                                                                        {item.growth_direction === 'down' && (
+                                                                            <ArrowDownRight className="mr-0.5 h-3.5 w-3.5" />
+                                                                        )}
+                                                                        {item.growth_direction === 'up' ? '+' : ''}
+                                                                        {item.growth_percentage}%
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="omset_2025"
+                                        name="2025"
+                                        stroke="#94a3b8"
+                                        strokeWidth={3}
+                                        dot={{ r: 5, fill: '#94a3b8', strokeWidth: 2, stroke: '#ffffff' }}
+                                        activeDot={{ r: 7, fill: '#64748b', strokeWidth: 2.5, stroke: '#ffffff' }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="omset_2026_val"
+                                        name="2026"
+                                        stroke="var(--primary)"
+                                        strokeWidth={3.5}
+                                        dot={{ r: 5, fill: 'var(--primary)', strokeWidth: 2, stroke: '#ffffff' }}
+                                        activeDot={{ r: 8, fill: 'var(--primary)', strokeWidth: 2.5, stroke: '#ffffff' }}
+                                        connectNulls={false}
+                                    />
+                                </LineChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
