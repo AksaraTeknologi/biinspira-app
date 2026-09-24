@@ -388,7 +388,7 @@ export default function BrevetStatsIndex() {
 
                     <div className="col-span-2 rounded-xl border border-amber-200/90 bg-white p-3.5 shadow-2xs sm:col-span-1 dark:border-amber-900/60 dark:bg-card">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Brevet Lain</span>
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Lainnya (CAP/CFTR)</span>
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 text-amber-600 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-400">
                                 <Package className="h-4 w-4" />
                             </div>
@@ -453,7 +453,7 @@ export default function BrevetStatsIndex() {
                                         Beasiswa
                                     </TableHead>
                                     <TableHead className="w-36 text-right text-xs font-bold text-amber-600 dark:text-amber-400">
-                                        Brevet Lain
+                                        Lainnya (CAP/CFTR)
                                     </TableHead>
                                     <TableHead className="w-28 text-right text-xs font-extrabold text-foreground">
                                         Total
@@ -775,7 +775,7 @@ export default function BrevetStatsIndex() {
 
                             <div>
                                 <Label htmlFor="other_brevet" className="text-xs text-amber-600 dark:text-amber-400">
-                                    Brevet Lain
+                                    Lainnya (CAP/CFTR)
                                 </Label>
                                 <Input
                                     id="other_brevet"
@@ -1009,7 +1009,7 @@ export default function BrevetStatsIndex() {
 
                             <div>
                                 <Label htmlFor="edit-other_brevet" className="text-xs text-amber-600 dark:text-amber-400">
-                                    Brevet Lain
+                                    Lainnya (CAP/CFTR)
                                 </Label>
                                 <Input
                                     id="edit-other_brevet"

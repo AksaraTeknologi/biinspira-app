@@ -34,6 +34,8 @@ interface BrevetChartPoint {
     name: string;
     label: string;
     batch_full?: string;
+    month?: string;
+    year?: number;
     weekend: number;
     weekday: number;
     scholarship: number;
@@ -387,7 +389,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                         </div>
                                     </div>
 
-                                    {/* Card 5: Brevet Lain */}
+                                    {/* Card 5: Lainnya (CAP/CFTR) */}
                                     <div className="col-span-2 flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:col-span-1 sm:gap-3 sm:p-3 xl:p-3.5">
                                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-amber-500 to-yellow-600 text-white shadow-xs sm:h-11 sm:w-11 xl:h-12 xl:w-12">
                                             <Package className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -395,7 +397,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between gap-1">
                                                 <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">
-                                                    Brevet Lain
+                                                    Lainnya (CAP/CFTR)
                                                 </p>
                                                 <span className="py-0.2 rounded-full border border-amber-300 bg-amber-50 px-1.5 text-[9px] font-bold text-amber-800 sm:px-2 sm:text-[10px]">
                                                     {activeData.summary.other_brevet_pct}%
@@ -429,7 +431,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                             <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-200/80 pb-2">
                                                 <div>
                                                     <h2 className="text-xs font-bold text-slate-900 sm:text-sm">
-                                                        Pendaftar Weekend vs Weekday vs Beasiswa vs Brevet Lain - {activeData.label}
+                                                        Pendaftar Weekend vs Weekday vs Beasiswa vs Lainnya (CAP/CFTR) - {activeData.label}
                                                     </h2>
                                                     <p className="text-[10px] text-slate-500">
                                                         Visualisasi perbandingan kategori peserta pendaftar brevet
@@ -448,7 +450,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                                         <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Beasiswa
                                                     </span>
                                                     <span className="flex items-center gap-1 font-semibold text-amber-700">
-                                                        <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Brevet Lain
+                                                        <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Lainnya (CAP/CFTR)
                                                     </span>
                                                 </div>
                                             </div>
@@ -482,7 +484,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                                                                 <span>{item.scholarship} peserta</span>
                                                                             </div>
                                                                             <div className="flex justify-between text-amber-700 font-semibold">
-                                                                                <span>Brevet Lain:</span>
+                                                                                <span>Lainnya (CAP/CFTR):</span>
                                                                                 <span>{item.other_brevet} peserta</span>
                                                                             </div>
                                                                             <div className="flex justify-between border-t border-slate-100 pt-1 font-black text-slate-900">
@@ -498,7 +500,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                                         <Bar dataKey="weekend" name="Weekend" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={32} />
                                                         <Bar dataKey="weekday" name="Weekday" fill="#e11d48" radius={[4, 4, 0, 0]} maxBarSize={32} />
                                                         <Bar dataKey="scholarship" name="Beasiswa" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                                                        <Bar dataKey="other_brevet" name="Brevet Lain" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                                                        <Bar dataKey="other_brevet" name="Lainnya (CAP/CFTR)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
                                                     </BarChart>
                                                 </ResponsiveContainer>
                                             </div>
@@ -536,7 +538,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                                                             <th className="p-2 text-right text-blue-700">Weekend</th>
                                                             <th className="p-2 text-right text-rose-700">Weekday</th>
                                                             <th className="p-2 text-right text-emerald-700">Beasiswa</th>
-                                                            <th className="p-2 text-right text-amber-700">Lain</th>
+                                                            <th className="p-2 text-right text-amber-700 whitespace-nowrap" title="Lainnya (CAP/CFTR)">Lain (CAP/CFTR)</th>
                                                             <th className="p-2 text-right font-black text-slate-900">Total</th>
                                                         </tr>
                                                     </thead>
@@ -611,7 +613,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                         <span className="text-sky-400">•</span>
                         <span>🎓 Data Pendaftar: Biinspira, Smartcounting, Sekolah Pajak, Kompeten, Talenta, LevelUp, Aksademy & Skill Grow</span>
                         <span className="text-sky-400">•</span>
-                        <span>📋 Kategori Kelas: Weekend, Weekday, Beasiswa, dan Brevet Lain / CFTR</span>
+                        <span>📋 Kategori Kelas: Weekend, Weekday, Beasiswa, dan Lainnya (CAP/CFTR)</span>
                         <span className="text-sky-400">•</span>
                         <span>📊 Data Diperbarui Secara Real-Time</span>
                         <span className="text-sky-400">•</span>
@@ -625,7 +627,7 @@ export default function TvBrevetStatsPage({ brevetData, generatedAt }: PageProps
                         <span className="text-sky-400">•</span>
                         <span>🎓 Data Pendaftar: Biinspira, Smartcounting, Sekolah Pajak, Kompeten, Talenta, LevelUp, Aksademy & Skill Grow</span>
                         <span className="text-sky-400">•</span>
-                        <span>📋 Kategori Kelas: Weekend, Weekday, Beasiswa, dan Brevet Lain / CFTR</span>
+                        <span>📋 Kategori Kelas: Weekend, Weekday, Beasiswa, dan Lainnya (CAP/CFTR)</span>
                         <span className="text-sky-400">•</span>
                         <span>📊 Data Diperbarui Secara Real-Time</span>
                         <span className="text-sky-400">•</span>

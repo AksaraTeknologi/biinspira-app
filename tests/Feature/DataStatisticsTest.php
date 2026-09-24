@@ -421,3 +421,62 @@ test('brevet stats are ordered by newest month then platform priority', function
     expect($records[4]['platform'])->toBe('biinspira');
 });
 
+test('tv brevet stats chart data is sorted chronologically with year displayed and same-month batches sorted by weekend batch ASC', function () {
+    BrevetStat::create([
+        'batch' => 'Batch 101 (weekend), 36 (weekday), 86 (beasiswa)',
+        'platform' => 'sekolahpajak',
+        'month' => 'Agustus',
+        'year' => 2026,
+        'weekend' => 12,
+        'weekday' => 18,
+        'scholarship' => 17,
+        'other_brevet' => 0,
+        'created_by' => $this->admin->id,
+    ]);
+
+    BrevetStat::create([
+        'batch' => 'Batch 100 (weekend), 35 (weekday), 85 (beasiswa)',
+        'platform' => 'sekolahpajak',
+        'month' => 'Agustus',
+        'year' => 2026,
+        'weekend' => 8,
+        'weekday' => 22,
+        'scholarship' => 27,
+        'other_brevet' => 0,
+        'created_by' => $this->admin->id,
+    ]);
+
+    BrevetStat::create([
+        'batch' => 'Batch 102 (weekend), 37 (weekday), 87 (beasiswa)',
+        'platform' => 'sekolahpajak',
+        'month' => 'September',
+        'year' => 2026,
+        'weekend' => 15,
+        'weekday' => 6,
+        'scholarship' => 23,
+        'other_brevet' => 1,
+        'created_by' => $this->admin->id,
+    ]);
+
+    $response = $this->withSession(['stats_authenticated' => true])
+        ->getJson('/stats-brevet/data')
+        ->assertOk();
+
+    $platforms = $response->json('platforms');
+
+    // 1. Akumulasi Group ('all')
+    $allChart = $platforms['all']['chart_data'];
+    expect($allChart)->toHaveCount(2);
+    // Oldest (Agustus 2026) must be first (on the left), newest (September 2026) last (on the right)
+    expect($allChart[0]['name'])->toBe('Agustus 2026');
+    expect($allChart[1]['name'])->toBe('September 2026');
+
+    // 2. Sekolah Pajak ('sekolahpajak')
+    $spChart = $platforms['sekolahpajak']['chart_data'];
+    expect($spChart)->toHaveCount(3);
+    // In Agustus: Batch 100 is smaller than Batch 101, so Batch 100 on the left, Batch 101 next, Batch 102 (Sep) on the far right
+    expect($spChart[0]['name'])->toBe('Batch 100 (Agu 2026)');
+    expect($spChart[1]['name'])->toBe('Batch 101 (Agu 2026)');
+    expect($spChart[2]['name'])->toBe('Batch 102 (Sep 2026)');
+});
+
