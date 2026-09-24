@@ -44,7 +44,7 @@ export default function TvStatsAuth() {
                     <div className="relative z-20 flex flex-col items-start text-left">
                         <h1 className="text-2xl font-bold tracking-tight text-black">Akses Statistik</h1>
                         <p className="mt-1 text-sm font-medium text-black/80 leading-relaxed">
-                            Masukkan Password Admin untuk membuka tampilan statistik & omset
+                            Masukkan Password Admin untuk membuka tampilan statistik
                         </p>
                     </div>
 

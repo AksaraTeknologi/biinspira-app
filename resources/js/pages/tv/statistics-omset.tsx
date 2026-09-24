@@ -1,10 +1,19 @@
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Deferred, Head, Link, router } from '@inertiajs/react';
 import {
     ArrowDownRight,
     ArrowUpRight,
+    Banknote,
     BarChart3,
     CalendarIcon,
+    GraduationCap,
     Layers,
     LineChart as LineChartIcon,
     Lock,
@@ -16,9 +25,19 @@ import {
     Tv,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { ComparisonData, StatisticsOmsetProps } from './types';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { ComparisonData, PlatformComparisonItem, StatisticsOmsetProps } from './types';
 import { formatCompactCurrency, formatCurrency, getTimeBasedMessage } from './utils';
+
+function getPlatformInitials(label?: string) {
+    if (!label) return 'NA';
+    return label
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 // Platform color mapping for distinct visual presentation
 const PLATFORM_COLORS: Record<string, string> = {
@@ -133,92 +152,89 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                             </div>
                         </div>
 
-                        {/* Top Controls & Navigation */}
-                        <div className="flex shrink-0 items-center justify-between gap-1.5 sm:justify-end xl:gap-2">
-                            {/* Tab Switcher */}
-                            <div className="grid w-full grid-cols-5 items-center rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm sm:inline-flex sm:w-auto">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('monthly')}
-                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
-                                        activeTab === 'monthly' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="hidden sm:inline">Per </span>Bulan
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('monthly_line')}
-                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
-                                        activeTab === 'monthly_line' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="hidden sm:inline">Grafik </span>Garis
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('cumulative')}
-                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
-                                        activeTab === 'cumulative' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="hidden sm:inline">Tren </span>Kumulatif
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('platform')}
-                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
-                                        activeTab === 'platform' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="hidden sm:inline">Per </span>Platform
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('table')}
-                                    className={`h-7 rounded-full px-1.5 text-[11px] font-medium transition sm:px-2.5 sm:text-xs xl:px-3 ${
-                                        activeTab === 'table' ? 'bg-white/35 font-bold text-white shadow-xs' : 'text-white/85 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="hidden sm:inline">Tabel </span>Rincian
-                                </button>
-                            </div>
+                        {/* Desktop Navigation Actions */}
+                        <div className="hidden sm:flex sm:items-center sm:gap-1.5 xl:gap-2">
+                            <Link
+                                href="/stats"
+                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                title="Buka Statistik Platform TV"
+                            >
+                                <Tv className="h-3.5 w-3.5 text-sky-200" />
+                                <span>Platform</span>
+                            </Link>
 
-                            {/* Desktop Navigation Actions */}
-                            <div className="hidden sm:flex sm:items-center sm:gap-1.5 xl:gap-2">
-                                <Link
-                                    href="/stats"
-                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                    title="Buka Statistik Platform TV"
-                                >
-                                    <Tv className="h-3.5 w-3.5 text-sky-200" />
-                                    <span>Statistik Platform</span>
-                                </Link>
+                            <Link
+                                href="/stats-iklan"
+                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                title="Buka Halaman Statistik Biaya Iklan"
+                            >
+                                <Banknote className="h-3.5 w-3.5 text-blue-200" />
+                                <span>Biaya Iklan</span>
+                            </Link>
 
-                                <button
-                                    type="button"
-                                    onClick={toggleFullscreen}
-                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                    title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
-                                >
-                                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                                </button>
+                            <Link
+                                href="/stats-brevet"
+                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                title="Buka Halaman Total Peserta Brevet"
+                            >
+                                <GraduationCap className="h-3.5 w-3.5 text-amber-200" />
+                                <span>Peserta Brevet</span>
+                            </Link>
 
-                                <button
-                                    type="button"
-                                    onClick={() => router.post(route('tv.stats.lock'))}
-                                    className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60"
-                                    title="Kunci Tampilan Statistik"
-                                >
-                                    <Lock className="h-3.5 w-3.5 text-white" />
-                                    <span>Kunci</span>
-                                </button>
+                            <button
+                                type="button"
+                                onClick={toggleFullscreen}
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
+                            >
+                                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                            </button>
 
-                                <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm">
-                                    Update: {new Date(generatedAt).toLocaleString('id-ID')}
-                                </p>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => router.post(route('tv.stats.lock'))}
+                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60"
+                                title="Kunci Tampilan Statistik"
+                            >
+                                <Lock className="h-3.5 w-3.5 text-white" />
+                                <span>Kunci</span>
+                            </button>
+
+                            <p className="flex h-9 items-center rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm">
+                                Update: {new Date(generatedAt).toLocaleTimeString('id-ID')}
+                            </p>
                         </div>
+                    </div>
+
+                    {/* Secondary Navigation Tabs matching stats-brevet */}
+                    <div className="mb-2.5 flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-white/45 bg-white/20 p-1.5 backdrop-blur-sm sm:gap-2">
+                        {[
+                            { id: 'monthly', label: 'Per Bulan', icon: CalendarIcon },
+                            { id: 'cumulative', label: 'Tren Kumulatif', icon: TrendingUp },
+                            { id: 'platform', label: 'Per Platform', icon: Layers },
+                            { id: 'table', label: 'Tabel Rincian', icon: TableIcon },
+                        ].map((tab) => {
+                            const Icon = tab.icon;
+                            const isActive =
+                                tab.id === 'monthly'
+                                    ? activeTab === 'monthly' || activeTab === 'monthly_line'
+                                    : activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab.id as ActiveTab)}
+                                    className={`flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition sm:px-4 ${
+                                        isActive
+                                            ? 'bg-white text-primary shadow-md'
+                                            : 'text-white hover:bg-white/25'
+                                    }`}
+                                >
+                                    <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-primary' : 'text-white/80'}`} />
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Deferred Content */}
@@ -293,6 +309,8 @@ function ComparisonView({
     setActiveTab: (tab: ActiveTab) => void;
 }) {
     const summary = data.summary;
+    const [selectedPlatform, setSelectedPlatform] = useState<PlatformComparisonItem | null>(null);
+    const [modalChartType, setModalChartType] = useState<'bar' | 'line'>('bar');
 
     const monthlyChartData = useMemo(() => {
         return data.monthly_comparison.map((item) => ({
@@ -300,6 +318,37 @@ function ComparisonView({
             omset_2026_val: item.is_current_or_past ? item.omset_2026 : null,
         }));
     }, [data.monthly_comparison]);
+
+    const platformMonthlyData = useMemo(() => {
+        if (!selectedPlatform) return [];
+        return data.monthly_comparison.map((m) => {
+            const v2025 = m.platforms_2025?.[selectedPlatform.key] ?? 0;
+            const v2026 = m.platforms_2026?.[selectedPlatform.key] ?? 0;
+            const diff = v2026 - v2025;
+            let growthPct = 0;
+            let growthDir: 'up' | 'down' | 'flat' = 'flat';
+            if (v2025 > 0) {
+                growthPct = Number((((v2026 - v2025) / v2025) * 100).toFixed(1));
+                growthDir = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+            } else if (v2026 > 0) {
+                growthPct = 100;
+                growthDir = 'up';
+            }
+
+            return {
+                month_num: m.month,
+                month: m.short_name,
+                month_name: m.month_name,
+                omset_2025: v2025,
+                omset_2026: v2026,
+                omset_2026_val: m.is_current_or_past ? v2026 : null,
+                difference: diff,
+                growth_percentage: Math.abs(growthPct),
+                growth_direction: growthDir,
+                is_current_or_past: m.is_current_or_past,
+            };
+        });
+    }, [selectedPlatform, data.monthly_comparison]);
 
     return (
         <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
@@ -313,7 +362,7 @@ function ComparisonView({
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
                             <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">
-                                2026 (YTD)
+                                Omset 2026
                             </p>
                             <span
                                 className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-1.5 text-[9px] font-bold sm:px-2 sm:text-[10px] ${
@@ -362,35 +411,36 @@ function ComparisonView({
                     </div>
                 </div>
 
-                {/* Card 3: Periode Setara (Jan - Bulan Berjalan) */}
+                {/* Card 3: Selisih Omset (Pertumbuhan 2026 vs 2025) */}
                 <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/88 p-2 text-left shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur sm:gap-3.5 sm:p-3 xl:p-3.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-sky-500 to-cyan-600 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
-                        <CalendarIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-indigo-600 text-white shadow-xs sm:h-11 sm:w-11 sm:rounded-xl xl:h-12 xl:w-12">
+                        <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
                             <p className="truncate text-[9px] font-bold tracking-wider text-slate-500 uppercase sm:text-[10px] xl:text-xs">
-                                Setara (Jan-{summary.current_month_name.slice(0, 3)})
+                                Selisih Omset
                             </p>
                             <span
                                 className={`py-0.2 inline-flex items-center gap-0.5 rounded-full px-1.5 text-[9px] font-bold sm:px-2 sm:text-[10px] ${
-                                    summary.ytd_growth_direction === 'up'
+                                    summary.difference >= 0
                                         ? 'border border-emerald-400/80 bg-emerald-100 text-emerald-800'
                                         : 'border border-rose-400/80 bg-rose-100 text-rose-800'
                                 }`}
                             >
-                                {summary.ytd_growth_direction === 'up' ? '↑ +' : '↓ -'}
-                                {summary.ytd_growth_percentage}%
+                                {summary.difference >= 0 ? 'Surplus' : 'Defisit'}
                             </span>
                         </div>
                         <p
-                            className="mt-0.5 truncate text-xs leading-tight font-black text-slate-900 sm:text-lg xl:text-xl 2xl:text-2xl"
-                            title={formatCurrency(summary.ytd_2026)}
+                            className={`mt-0.5 truncate text-xs leading-tight font-black sm:text-lg xl:text-xl 2xl:text-2xl ${
+                                summary.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}
+                            title={formatCurrency(summary.difference)}
                         >
-                            {formatCurrency(summary.ytd_2026)}
+                            {summary.difference >= 0 ? '+' : ''}{formatCurrency(summary.difference)}
                         </p>
                         <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 sm:text-[11px]">
-                            2025: <span className="font-semibold text-slate-700">{formatCompactCurrency(summary.ytd_2025)}</span>
+                            YoY: <span className="font-semibold text-slate-700">{summary.difference >= 0 ? '+' : ''}{summary.growth_percentage}%</span> • vs 2025 Full
                         </p>
                     </div>
                 </div>
@@ -424,7 +474,7 @@ function ComparisonView({
             </div>
 
             {/* Main Chart Container in White Glassmorphism matching Dialog/Cards */}
-            <div className="flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-3xl border border-white/55 bg-white/88 p-3 shadow-[0_14px_36px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:p-3.5 xl:p-4 lg:min-h-0">
+            <div className="flex min-h-110 flex-1 flex-col overflow-hidden rounded-3xl border border-white/55 bg-white/88 p-3 shadow-[0_14px_36px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:p-3.5 xl:p-4 lg:min-h-0">
                 {/* Toolbar inside card */}
                 <div className="mb-2 flex shrink-0 flex-col gap-2 border-b border-slate-200/80 pb-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
@@ -447,7 +497,7 @@ function ComparisonView({
                                 {activeTab === 'monthly' && 'Perbandingan omset aktual bulan demi bulan antara 2025 dan 2026 (Diagram Batang)'}
                                 {activeTab === 'monthly_line' && 'Tren kurva omset aktual bulan demi bulan antara 2025 dan 2026 (Grafik Garis)'}
                                 {activeTab === 'cumulative' && 'Progres akumulasi pendapatan group sepanjang tahun berjalan'}
-                                {activeTab === 'platform' && 'Kontribusi omset platform Biinspira Group'}
+                                {activeTab === 'platform' && 'Kontribusi omset platform Biinspira Group • Klik kartu untuk lihat grafik rincian'}
                                 {activeTab === 'table' && 'Rincian angka nominal, selisih dan persentase pertumbuhan'}
                             </p>
                         </div>
@@ -505,7 +555,7 @@ function ComparisonView({
                 {/* Tab 1: Monthly Comparison Bar Chart */}
                 {activeTab === 'monthly' && (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
+                        <div className="h-85 min-h-75 w-full sm:h-full sm:min-h-0 sm:flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthly_comparison} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
                                     <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
@@ -588,7 +638,7 @@ function ComparisonView({
                 {/* Tab 1B: Monthly Comparison Line Chart */}
                 {activeTab === 'monthly_line' && (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
+                        <div className="h-85 min-h-75 w-full sm:h-full sm:min-h-0 sm:flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={monthlyChartData} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
                                     <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
@@ -694,7 +744,7 @@ function ComparisonView({
                 {/* Tab 2: Cumulative Area / Line Chart */}
                 {activeTab === 'cumulative' && (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="h-[340px] min-h-[300px] w-full sm:h-full sm:min-h-0 sm:flex-1">
+                        <div className="h-85 min-h-75 w-full sm:h-full sm:min-h-0 sm:flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={data.monthly_comparison} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
                                     <defs>
@@ -788,10 +838,12 @@ function ComparisonView({
                                 return (
                                     <div
                                         key={platform.key}
-                                        className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+                                        onClick={() => setSelectedPlatform(platform)}
+                                        className="group flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm transition hover:scale-[1.01] hover:border-primary/60 hover:shadow-md"
+                                        title={`Klik untuk melihat grafik perbandingan ${platform.label}`}
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <h2 className="truncate text-base font-bold text-slate-800" title={platform.label}>
+                                            <h2 className="truncate text-base font-bold text-slate-800 transition group-hover:text-primary" title={platform.label}>
                                                 {platform.label}
                                             </h2>
                                             <div className="flex min-h-7 shrink-0 items-center justify-end">
@@ -843,6 +895,10 @@ function ComparisonView({
                                                     {formatCurrency(platform.difference)}
                                                 </span>
                                             </div>
+                                            <div className="flex items-center justify-between border-t border-slate-100 pt-1 text-[10px] text-slate-400 transition-colors group-hover:text-primary">
+                                                <span className="font-medium">Lihat grafik rincian</span>
+                                                <span className="font-bold">→</span>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -854,7 +910,7 @@ function ComparisonView({
                 {/* Tab 4: Tabular Details Matrix */}
                 {activeTab === 'table' && (
                     <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto">
-                        <table className="min-w-[540px] sm:min-w-full text-left text-xs">
+                        <table className="min-w-135 sm:min-w-full text-left text-xs">
                             <thead className="sticky top-0 border-b border-slate-200 bg-slate-100 text-[11px] font-bold tracking-wider text-slate-600 uppercase">
                                 <tr>
                                     <th className="px-3 py-2.5">Bulan</th>
@@ -924,6 +980,374 @@ function ComparisonView({
                     </div>
                 )}
             </div>
+
+            {/* Platform Drilldown Dialog (Perbandingan Omset 2025 vs 2026: Batang & Garis) */}
+            <Dialog open={!!selectedPlatform} onOpenChange={(open) => !open && setSelectedPlatform(null)}>
+                <DialogContent className="max-h-[92vh] w-[95vw] overflow-y-auto overflow-x-hidden p-5 sm:max-w-4xl sm:p-6">
+                    {selectedPlatform && (
+                        <div className="space-y-4">
+                            <DialogHeader>
+                                <DialogTitle className="text-lg font-bold text-slate-900">
+                                    Perbandingan Omset: {selectedPlatform.label}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-slate-500">
+                                    Perbandingan tren omset bulanan 2025 vs 2026 • Periode Januari - Desember
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            {/* Platform Badge & Info */}
+                            <div className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
+                                        {selectedPlatform.logo ? (
+                                            <img
+                                                src={selectedPlatform.logo}
+                                                alt={selectedPlatform.label}
+                                                className="max-h-8 w-auto max-w-16 object-contain"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold text-slate-700">
+                                                {getPlatformInitials(selectedPlatform.label)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h3 className="text-sm font-bold text-slate-900 sm:text-base">{selectedPlatform.label}</h3>
+                                            <span
+                                                className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                                    selectedPlatform.growth_direction === 'up'
+                                                        ? 'border border-emerald-300 bg-emerald-100 text-emerald-800'
+                                                        : selectedPlatform.growth_direction === 'down'
+                                                          ? 'border border-rose-300 bg-rose-100 text-rose-800'
+                                                          : 'border border-slate-200 bg-slate-100 text-slate-700'
+                                                }`}
+                                            >
+                                                {selectedPlatform.growth_direction === 'up' && <ArrowUpRight className="h-3 w-3" />}
+                                                {selectedPlatform.growth_direction === 'down' && <ArrowDownRight className="h-3 w-3" />}
+                                                {selectedPlatform.growth_direction === 'up' ? '+' : selectedPlatform.growth_direction === 'down' ? '-' : ''}
+                                                {selectedPlatform.growth_percentage}% YoY
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500">
+                                            Kontribusi: <span className="font-semibold text-slate-700">{selectedPlatform.share_2026}%</span> dari total omset group 2026
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 4 Summary Mini Cards */}
+                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                                <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">Omset 2026</p>
+                                    <p className="mt-1 truncate text-xs font-black text-primary sm:text-sm" title={formatCurrency(selectedPlatform.total_2026)}>
+                                        {formatCurrency(selectedPlatform.total_2026)}
+                                    </p>
+                                    <p className="mt-0.5 text-[10px] text-slate-500">Tahun berjalan</p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">Omset 2025 (Full)</p>
+                                    <p className="mt-1 truncate text-xs font-bold text-slate-700 sm:text-sm" title={formatCurrency(selectedPlatform.total_2025)}>
+                                        {formatCurrency(selectedPlatform.total_2025)}
+                                    </p>
+                                    <p className="mt-0.5 text-[10px] text-slate-500">12 Bulan penuh</p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">Selisih Nominal</p>
+                                    <p className={`mt-1 truncate text-xs font-black sm:text-sm ${selectedPlatform.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`} title={formatCurrency(selectedPlatform.difference)}>
+                                        {selectedPlatform.difference >= 0 ? '+' : ''}{formatCurrency(selectedPlatform.difference)}
+                                    </p>
+                                    <p className="mt-0.5 text-[10px] text-slate-500">2026 vs 2025</p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">Pertumbuhan</p>
+                                    <p className={`mt-1 truncate text-xs font-black sm:text-sm ${selectedPlatform.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {selectedPlatform.difference >= 0 ? '↑ +' : '↓ -'}{selectedPlatform.growth_percentage}%
+                                    </p>
+                                    <p className="mt-0.5 text-[10px] text-slate-500">YoY Growth</p>
+                                </div>
+                            </div>
+
+                            {/* Toolbar: Legends & Toggle Batang/Garis */}
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-3 text-xs">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="h-3 w-3 rounded-xs bg-slate-400"></span>
+                                        <span className="font-semibold text-slate-600">Omset 2025</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="h-3 w-3 rounded-xs bg-primary"></span>
+                                        <span className="font-bold text-primary">Omset 2026</span>
+                                    </div>
+                                </div>
+
+                                {/* Toggle Batang dan Garis */}
+                                <div className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setModalChartType('bar')}
+                                        className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${
+                                            modalChartType === 'bar' ? 'bg-white text-primary shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <BarChart3 className="h-3.5 w-3.5" />
+                                        <span>Batang</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setModalChartType('line')}
+                                        className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${
+                                            modalChartType === 'line' ? 'bg-white text-primary shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <LineChartIcon className="h-3.5 w-3.5" />
+                                        <span>Garis</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Chart Container */}
+                            <div className="w-full rounded-2xl border border-slate-200 bg-white p-3">
+                                <div className="h-72 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        {modalChartType === 'bar' ? (
+                                            <BarChart data={platformMonthlyData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
+                                                <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
+                                                <YAxis
+                                                    stroke="#64748b"
+                                                    fontSize={11}
+                                                    tickLine={false}
+                                                    tickFormatter={(v) => formatCompactCurrency(v)}
+                                                />
+                                                <Tooltip
+                                                    content={({ active, payload }) => {
+                                                        if (!active || !payload?.length) return null;
+                                                        const item = payload[0]?.payload as any;
+                                                        if (!item) return null;
+                                                        return (
+                                                            <div className="min-w-56 rounded-xl border border-slate-200 bg-white/95 p-3 text-xs text-slate-900 shadow-xl backdrop-blur">
+                                                                <p className="border-b border-slate-100 pb-1 font-bold text-slate-900">
+                                                                    {item.month_name} • {selectedPlatform.label}
+                                                                </p>
+                                                                <div className="mt-2 space-y-1.5">
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <span className="font-medium text-slate-500">Omset 2026:</span>
+                                                                        <span className="font-black text-primary">
+                                                                            {item.is_current_or_past
+                                                                                ? formatCurrency(item.omset_2026)
+                                                                                : 'Akan Datang'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <span className="font-medium text-slate-500">Omset 2025:</span>
+                                                                        <span className="font-semibold text-slate-700">
+                                                                            {formatCurrency(item.omset_2025)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {item.is_current_or_past && (
+                                                                        <>
+                                                                            <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-1">
+                                                                                <span className="font-medium text-slate-500">Selisih:</span>
+                                                                                <span
+                                                                                    className={`font-bold ${
+                                                                                        item.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    {item.difference >= 0 ? '+' : ''}
+                                                                                    {formatCurrency(item.difference)}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between gap-4">
+                                                                                <span className="font-medium text-slate-500">Pertumbuhan:</span>
+                                                                                <span
+                                                                                    className={`font-bold ${
+                                                                                        item.growth_direction === 'up'
+                                                                                            ? 'text-emerald-600'
+                                                                                            : item.growth_direction === 'down'
+                                                                                              ? 'text-rose-600'
+                                                                                              : 'text-slate-500'
+                                                                                    }`}
+                                                                                >
+                                                                                    {item.growth_direction === 'up' ? '+' : item.growth_direction === 'down' ? '-' : ''}
+                                                                                    {item.growth_percentage}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }}
+                                                />
+                                                <Bar dataKey="omset_2025" name="Omset 2025" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                                                <Bar
+                                                    dataKey="omset_2026"
+                                                    name="Omset 2026"
+                                                    fill="var(--primary)"
+                                                    radius={[4, 4, 0, 0]}
+                                                />
+                                            </BarChart>
+                                        ) : (
+                                            <LineChart data={platformMonthlyData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
+                                                <CartesianGrid vertical={false} stroke="rgba(15,23,42,0.06)" strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
+                                                <YAxis
+                                                    stroke="#64748b"
+                                                    fontSize={11}
+                                                    tickLine={false}
+                                                    tickFormatter={(v) => formatCompactCurrency(v)}
+                                                />
+                                                <Tooltip
+                                                    content={({ active, payload }) => {
+                                                        if (!active || !payload?.length) return null;
+                                                        const item = payload[0]?.payload as any;
+                                                        if (!item) return null;
+                                                        return (
+                                                            <div className="min-w-56 rounded-xl border border-slate-200 bg-white/95 p-3 text-xs text-slate-900 shadow-xl backdrop-blur">
+                                                                <p className="border-b border-slate-100 pb-1 font-bold text-slate-900">
+                                                                    {item.month_name} • {selectedPlatform.label}
+                                                                </p>
+                                                                <div className="mt-2 space-y-1.5">
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <span className="font-medium text-slate-500">Omset 2026:</span>
+                                                                        <span className="font-black text-primary">
+                                                                            {item.is_current_or_past
+                                                                                ? formatCurrency(item.omset_2026)
+                                                                                : 'Akan Datang'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <span className="font-medium text-slate-500">Omset 2025:</span>
+                                                                        <span className="font-semibold text-slate-700">
+                                                                            {formatCurrency(item.omset_2025)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {item.is_current_or_past && (
+                                                                        <>
+                                                                            <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-1">
+                                                                                <span className="font-medium text-slate-500">Selisih:</span>
+                                                                                <span
+                                                                                    className={`font-bold ${
+                                                                                        item.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    {item.difference >= 0 ? '+' : ''}
+                                                                                    {formatCurrency(item.difference)}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between gap-4">
+                                                                                <span className="font-medium text-slate-500">Pertumbuhan:</span>
+                                                                                <span
+                                                                                    className={`font-bold ${
+                                                                                        item.growth_direction === 'up'
+                                                                                            ? 'text-emerald-600'
+                                                                                            : item.growth_direction === 'down'
+                                                                                              ? 'text-rose-600'
+                                                                                              : 'text-slate-500'
+                                                                                    }`}
+                                                                                >
+                                                                                    {item.growth_direction === 'up' ? '+' : item.growth_direction === 'down' ? '-' : ''}
+                                                                                    {item.growth_percentage}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="omset_2025"
+                                                    name="Omset 2025"
+                                                    stroke="#94a3b8"
+                                                    strokeWidth={2.5}
+                                                    dot={{ r: 4, fill: '#94a3b8', strokeWidth: 1.5, stroke: '#ffffff' }}
+                                                    activeDot={{ r: 6, fill: '#64748b', strokeWidth: 2, stroke: '#ffffff' }}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="omset_2026_val"
+                                                    name="Omset 2026"
+                                                    stroke="var(--primary)"
+                                                    strokeWidth={3}
+                                                    dot={{ r: 4.5, fill: 'var(--primary)', strokeWidth: 1.5, stroke: '#ffffff' }}
+                                                    activeDot={{ r: 7, fill: 'var(--primary)', strokeWidth: 2, stroke: '#ffffff' }}
+                                                    connectNulls={false}
+                                                />
+                                            </LineChart>
+                                        )}
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Monthly Details Table Matrix */}
+                            <div className="overflow-hidden rounded-xl border border-slate-200">
+                                <div className="max-h-48 overflow-y-auto">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="sticky top-0 bg-slate-100 text-[10px] font-bold text-slate-600 uppercase">
+                                            <tr>
+                                                <th className="px-3 py-2">Bulan</th>
+                                                <th className="px-3 py-2 text-right">Omset 2025</th>
+                                                <th className="px-3 py-2 text-right">Omset 2026</th>
+                                                <th className="px-3 py-2 text-right">Selisih</th>
+                                                <th className="px-3 py-2 text-right">YoY</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {platformMonthlyData.map((row) => (
+                                                <tr key={row.month_num} className="hover:bg-slate-50/80">
+                                                    <td className="px-3 py-1.5 font-medium text-slate-800">
+                                                        {row.month_name}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right text-slate-600">
+                                                        {formatCurrency(row.omset_2025)}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-bold text-primary">
+                                                        {row.is_current_or_past ? formatCurrency(row.omset_2026) : '-'}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        {row.is_current_or_past ? (
+                                                            <span className={`font-semibold ${row.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                                {row.difference >= 0 ? '+' : ''}{formatCurrency(row.difference)}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-slate-400">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        {row.is_current_or_past ? (
+                                                            <span
+                                                                className={`inline-flex items-center font-bold ${
+                                                                    row.growth_direction === 'up'
+                                                                        ? 'text-emerald-600'
+                                                                        : row.growth_direction === 'down'
+                                                                          ? 'text-rose-600'
+                                                                          : 'text-slate-500'
+                                                                }`}
+                                                            >
+                                                                {row.growth_direction === 'up' ? '+' : row.growth_direction === 'down' ? '-' : ''}
+                                                                {row.growth_percentage}%
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] text-slate-400">Akan datang</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
