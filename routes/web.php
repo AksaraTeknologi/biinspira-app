@@ -13,6 +13,10 @@ use App\Http\Controllers\MasterAdGoalController;
 use App\Http\Controllers\TvDashboardController;
 use App\Http\Controllers\TvStatsAuthController;
 use App\Http\Controllers\StatisticsOmsetController;
+use App\Http\Controllers\TvAdSpendStatsController;
+use App\Http\Controllers\TvBrevetStatsController;
+use App\Http\Controllers\Admin\AdSpendStatController;
+use App\Http\Controllers\Admin\BrevetStatController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserTechController;
 use App\Http\Controllers\RevisionRequestController;
@@ -59,6 +63,14 @@ Route::middleware(['stats.auth'])->group(function () {
     Route::get('/stats-omset', [StatisticsOmsetController::class, 'index'])->name('tv.statistics.omset');
     Route::get('/stats-omset/data', [StatisticsOmsetController::class, 'data'])->name('tv.statistics.omset.data');
     Route::post('/stats-omset/refresh', [StatisticsOmsetController::class, 'refresh'])->name('tv.statistics.omset.refresh');
+
+    // Halaman TV Statistik Biaya Iklan
+    Route::get('/stats-iklan', [TvAdSpendStatsController::class, 'index'])->name('tv.statistics.ad_spend');
+    Route::get('/stats-iklan/data', [TvAdSpendStatsController::class, 'data'])->name('tv.statistics.ad_spend.data');
+
+    // Halaman TV Statistik Total Peserta Brevet
+    Route::get('/stats-brevet', [TvBrevetStatsController::class, 'index'])->name('tv.statistics.brevet');
+    Route::get('/stats-brevet/data', [TvBrevetStatsController::class, 'data'])->name('tv.statistics.brevet.data');
 });
 
 // Redirect rute lama ke rute baru yang lebih singkat
@@ -151,6 +163,27 @@ Route::middleware(['auth', 'verified', 'role:admin|technician'])->prefix('admin'
 
     // ✅ BARU: Halaman grafik peserta per event (admin)
     Route::get('/audience-chart', [DashboardController::class, 'audienceChart'])->name('admin.audience.chart');
+});
+
+// ─────────────────────────────────────────────
+// DATA STATISTIC ROUTES (Admin & User, excluding technician & technician-intern)
+// ─────────────────────────────────────────────
+Route::middleware(['auth', 'verified', 'role:admin|user'])->prefix('admin')->group(function () {
+    // Data Statistic - Biaya Iklan
+    Route::controller(AdSpendStatController::class)->prefix('statistics/ad-spend')->as('admin.ad-spend-stats.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Data Statistic - Total Peserta Brevet
+    Route::controller(BrevetStatController::class)->prefix('statistics/brevet')->as('admin.brevet-stats.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
 });
 
 // ─────────────────────────────────────────────

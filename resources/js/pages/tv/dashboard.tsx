@@ -1,7 +1,7 @@
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, Link, router } from '@inertiajs/react';
-import { BarChart3, CalendarIcon, Lock, Sparkles, TrendingUp } from 'lucide-react';
+import { Banknote, BarChart3, CalendarIcon, GraduationCap, Lock, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
@@ -228,12 +228,12 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                 </div>
                             </div>
 
-                            {/* Responsive controls bar on mobile: scrollable without clipping */}
-                            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:shrink-0 sm:overflow-visible sm:pb-0 xl:gap-2">
+                            {/* Responsive controls container: Legend positioned cleanly on top of action buttons */}
+                            <div className="flex flex-col items-start gap-1.5 sm:items-end">
                                 {/* Keterangan / Legend Warna Perbandingan */}
-                                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-2 py-1 text-[11px] text-white backdrop-blur-sm sm:px-2.5 sm:text-xs xl:px-3 xl:py-1.5">
+                                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm sm:px-3 sm:text-xs">
                                     <div className="flex items-center gap-1">
-                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px] xl:text-xs">vs Rata-rata:</span>
+                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px]">vs Rata-rata:</span>
                                         <span className="inline-flex items-center gap-0.5 rounded-full border border-indigo-400/80 bg-indigo-100 px-1.5 py-0.2 text-[9px] font-bold text-indigo-800 sm:text-[10px]">
                                             ↑ Naik
                                         </span>
@@ -245,7 +245,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     <span className="text-[10px] text-white/40">•</span>
 
                                     <div className="flex items-center gap-1">
-                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px] xl:text-xs">vs Bulan Lalu:</span>
+                                        <span className="text-[10px] font-bold text-white/95 sm:text-[11px]">vs Bulan Lalu:</span>
                                         <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-400/80 bg-emerald-100 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 sm:text-[10px]">
                                             ↑ Naik
                                         </span>
@@ -255,43 +255,64 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     </div>
                                 </div>
 
-                                <TabsList className="h-auto shrink-0 rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
-                                    <TabsTrigger
-                                        value="grid"
-                                        className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
+                                {/* Baris tombol navigasi & aksi */}
+                                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:shrink-0 sm:overflow-visible sm:pb-0 xl:gap-2">
+                                    <TabsList className="h-auto shrink-0 rounded-full border border-white/45 bg-white/20 p-1 text-white backdrop-blur-sm">
+                                        <TabsTrigger
+                                            value="grid"
+                                            className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
+                                        >
+                                            Grid
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="carousel"
+                                            className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
+                                        >
+                                            Carousel
+                                        </TabsTrigger>
+                                    </TabsList>
+
+                                    <Link
+                                        href="/stats-omset"
+                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
+                                        title="Buka Halaman Statistik Omset"
                                     >
-                                        Grid
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="carousel"
-                                        className="h-7 rounded-full px-2.5 text-xs font-medium text-white data-[state=active]:bg-white/30 data-[state=active]:text-white xl:px-3"
+                                        <BarChart3 className="h-3.5 w-3.5 text-emerald-200" />
+                                        <span>Omset '25 vs '26</span>
+                                    </Link>
+
+                                    <Link
+                                        href="/stats-iklan"
+                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
+                                        title="Buka Halaman Statistik Biaya Iklan"
                                     >
-                                        Carousel
-                                    </TabsTrigger>
-                                </TabsList>
+                                        <Banknote className="h-3.5 w-3.5 text-blue-200" />
+                                        <span>Biaya Iklan</span>
+                                    </Link>
 
-                                <Link
-                                    href="/stats-omset"
-                                    className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
-                                    title="Buka Halaman Statistik Omset"
-                                >
-                                    <BarChart3 className="h-3.5 w-3.5 text-white" />
-                                    <span>Statistik Omset</span>
-                                </Link>
+                                    <Link
+                                        href="/stats-brevet"
+                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
+                                        title="Buka Halaman Total Peserta Brevet"
+                                    >
+                                        <GraduationCap className="h-3.5 w-3.5 text-amber-200" />
+                                        <span>Peserta Brevet</span>
+                                    </Link>
 
-                                <button
-                                    type="button"
-                                    onClick={() => router.post(route('tv.stats.lock'))}
-                                    className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap"
-                                    title="Kunci Tampilan Statistik"
-                                >
-                                    <Lock className="h-3.5 w-3.5 text-white" />
-                                    <span>Kunci</span>
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.post(route('tv.stats.lock'))}
+                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap"
+                                        title="Kunci Tampilan Statistik"
+                                    >
+                                        <Lock className="h-3.5 w-3.5 text-white" />
+                                        <span>Kunci</span>
+                                    </button>
 
-                                <p className="flex h-7 sm:h-9 shrink-0 items-center rounded-full border border-white/45 bg-white/20 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
-                                    Update: {new Date(generatedAt).toLocaleString('id-ID')}
-                                </p>
+                                    <p className="flex h-7 sm:h-9 shrink-0 items-center rounded-full border border-white/45 bg-white/20 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
+                                        Update: {new Date(generatedAt).toLocaleString('id-ID')}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

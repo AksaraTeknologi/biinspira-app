@@ -16,10 +16,13 @@ import {
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Banknote,
+    BarChart3,
     CalendarSearch,
     ChevronRight,
     CircleUserRound,
     Drill,
+    GraduationCap,
     KanbanSquareIcon,
     Laptop,
     LaptopMinimal,
@@ -86,6 +89,16 @@ const allNavItems: (NavItem & { roles: string[]; children?: NavItem[] })[] = [
             { title: 'Daftar Iklan', href: route('user.marketing.index'), icon: List },
             { title: 'Event', href: route('user.events.index'), icon: CalendarSearch },
             { title: 'Transaksi', href: route('user.transactions.index'), icon: Receipt },
+        ],
+    },
+    {
+        title: 'Data Statistic',
+        href: '',
+        icon: BarChart3,
+        roles: ['admin', 'user'],
+        children: [
+            { title: 'Statistik Biaya Iklan', href: route('admin.ad-spend-stats.index'), icon: Banknote },
+            { title: 'Total Peserta Brevet', href: route('admin.brevet-stats.index'), icon: GraduationCap },
         ],
     },
     {
