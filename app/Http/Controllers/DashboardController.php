@@ -107,7 +107,7 @@ class DashboardController extends Controller
             ->values();
 
         return Inertia::render(
-            $isAdmin ? 'admin/audience-chart' : 'user/audience-chart',
+            'admin/audience-chart',
             [
                 'events'           => $events,
                 'audiencePerBatch' => $audiencePerBatch,
@@ -248,7 +248,8 @@ class DashboardController extends Controller
 private function getRawDataGraphic()
 {
     $query = AdResultPlatform::with([
-        'result:id,ad_plan_id,checkout_count,revenue',
+        'result:id,ad_plan_id,checkout_count,revenue,cost_month,revenue_month',
+        'result.plan:id,event_id,user_id,batch,cost_month,revenue_month',
         'result.plan.user:id,name',
         'result.plan.planPlatforms:id,ad_plan_id,end_date,audience_target',
     ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
@@ -267,14 +268,21 @@ private function getRawDataGraphic()
         });
     }
 
-    $query->whereHas(
-        'result.plan.planPlatforms',
-        fn($q) =>
-        $q->whereBetween('end_date', [
-            now()->subMonths(11)->startOfMonth(),
-            now()->endOfMonth()
-        ])
-    );
+    $startMonth = now()->subMonths(11)->startOfMonth()->format('Y-m');
+    $endMonth = now()->endOfMonth()->format('Y-m');
+
+    $query->where(function ($q) use ($startMonth, $endMonth) {
+        $q->whereHas('result.plan', function ($qp) use ($startMonth, $endMonth) {
+            $qp->whereBetween('cost_month', [$startMonth, $endMonth])
+               ->orWhereBetween('revenue_month', [$startMonth, $endMonth]);
+        })
+        ->orWhereHas('result.plan.planPlatforms', function ($qpp) {
+            $qpp->whereBetween('end_date', [
+                now()->subMonths(11)->startOfMonth(),
+                now()->endOfMonth()
+            ]);
+        });
+    });
 
     $raw = $query->get()
         ->groupBy('ad_result_id') // ✅ FIX 1: cegah duplicate
@@ -291,6 +299,10 @@ private function getRawDataGraphic()
 
             // ✅ FIX 2: fallback date
             $dateSource = $platforms->first()?->end_date ?? $item->created_at;
+            $defaultMonthKey = optional($dateSource)->format('Y-m');
+
+            $costMonth = $item->result->cost_month ?: ($item->result->plan->cost_month ?: $defaultMonthKey);
+            $revenueMonth = $item->result->revenue_month ?: ($item->result->plan->revenue_month ?: $defaultMonthKey);
 
             // ✅ FIX 3: sanitize angka
             $revenue = is_numeric($item->result->revenue)
@@ -309,38 +321,67 @@ private function getRawDataGraphic()
             });
 
             return [
-                'id'          => $item->result->id,
-                'event_name'  => $item->result->plan->event?->name,
-                'event_label' => $key,
+                'id'            => $item->result->id,
+                'event_name'    => $item->result->plan->event?->name,
+                'event_label'   => $key,
 
-                'date'        => optional($dateSource)->toDateString(),
-                'month_key'   => optional($dateSource)->format('Y-m'),
-                'month_label' => optional($dateSource)->format('M'),
+                'date'          => optional($dateSource)->toDateString(),
+                'month_key'     => $defaultMonthKey,
+                'month_label'   => optional($dateSource)->format('M'),
 
-                'pendapatan'  => $revenue,
-                'pengeluaran' => $totalCost,
-                'audience'    => $audience,
+                'cost_month'    => $costMonth,
+                'revenue_month' => $revenueMonth,
 
-                'user'        => ucfirst(strtolower($item->result->plan->user?->name)),
+                'pendapatan'    => $revenue,
+                'pengeluaran'   => $totalCost,
+                'audience'      => $audience,
+
+                'user'          => ucfirst(strtolower($item->result->plan->user?->name)),
             ];
         })
         ->filter(fn($item) => $item && $item['month_key'] !== null) // ✅ buang data rusak
         ->values();
 
     // =============================
-    // BULANAN
+    // BULANAN (Sinkron dengan Alokasi Pelaporan)
     // =============================
-    $bulanan = $raw
-        ->groupBy('month_key')
-        ->map(fn($i) => [
-            'user'        => $i->first()['user'],
-            'month'       => $i->first()['month_label'],
-            'pendapatan'  => $i->sum('pendapatan'),
-            'pengeluaran' => $i->sum('pengeluaran'),
-            'audience'    => $i->sum('audience'),
-        ])
-        ->sortKeys()
-        ->values();
+    $monthlyBuckets = [];
+
+    foreach ($raw as $item) {
+        $costKey = $item['cost_month'] ?: $item['month_key'];
+        $revKey  = $item['revenue_month'] ?: $item['month_key'];
+
+        if (!isset($monthlyBuckets[$costKey])) {
+            $costDate = Carbon::parse($costKey . '-01');
+            $monthlyBuckets[$costKey] = [
+                'user'        => $item['user'],
+                'month'       => $costDate->format('M'),
+                'month_key'   => $costKey,
+                'pendapatan'  => 0,
+                'pengeluaran' => 0,
+                'audience'    => 0,
+            ];
+        }
+
+        if (!isset($monthlyBuckets[$revKey])) {
+            $revDate = Carbon::parse($revKey . '-01');
+            $monthlyBuckets[$revKey] = [
+                'user'        => $item['user'],
+                'month'       => $revDate->format('M'),
+                'month_key'   => $revKey,
+                'pendapatan'  => 0,
+                'pengeluaran' => 0,
+                'audience'    => 0,
+            ];
+        }
+
+        $monthlyBuckets[$costKey]['pengeluaran'] += $item['pengeluaran'];
+        $monthlyBuckets[$revKey]['pendapatan']   += $item['pendapatan'];
+        $monthlyBuckets[$revKey]['audience']     += $item['audience'];
+    }
+
+    ksort($monthlyBuckets);
+    $bulanan = array_values($monthlyBuckets);
 
     // =============================
     // MINGGUAN

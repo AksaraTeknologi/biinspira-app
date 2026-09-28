@@ -30,7 +30,7 @@ export default function TvStatsAuth() {
 
             <div className="relative flex min-h-screen w-full items-center justify-center bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center p-4 sm:p-8">
                 {/* Centered glassmorphic card */}
-                <div className="relative mx-auto flex w-full max-w-[450px] flex-col justify-center space-y-6 overflow-hidden rounded-3xl border border-white/40 bg-white/25 p-8 shadow-xl backdrop-blur-2xl">
+                <div className="relative mx-auto flex w-full max-w-112.5 flex-col justify-center space-y-6 overflow-hidden rounded-3xl border border-white/40 bg-white/25 p-8 shadow-xl backdrop-blur-2xl">
                     {/* Header Logo & Brand */}
                     <div className="relative z-20 mb-2 flex items-center gap-3">
                         <AppLogoIcon />

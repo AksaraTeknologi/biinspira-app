@@ -14,6 +14,8 @@ class AdResult extends Model
 
     protected $casts = [
         'revenue' => 'decimal:2',
+        'checkout_weekend' => 'integer',
+        'checkout_weekday' => 'integer',
     ];
 
     public function plan()

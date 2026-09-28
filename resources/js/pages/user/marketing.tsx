@@ -47,6 +47,7 @@ interface PlanPlatform {
 
 interface AdPlan {
     id: number;
+    batch?: string | number | null;
     ad_schedule_time: string;
     user: User;
     event: Event;
@@ -227,7 +228,7 @@ export default function Marketing() {
                                 <TableHead>Aksi</TableHead>
                                 <TableHead>Event</TableHead>
                                 <TableHead>Flayer Iklan</TableHead>
-                                {/* <TableHead>Batch</TableHead> */}
+                                <TableHead>Batch</TableHead>
                                 <TableHead>Jam Tayang Iklan</TableHead>
                                 <TableHead>Durasi (Hari)</TableHead>
                                 <TableHead>Total Biaya</TableHead>
@@ -294,7 +295,7 @@ export default function Marketing() {
                                                     '-'
                                                 )}
                                             </TableCell>
-                                            {/* <TableCell>{plan.event?.batch || '-'}</TableCell> */}
+                                            <TableCell>{plan.batch || plan.event?.batch || '-'}</TableCell>
                                             <TableCell>{plan.ad_schedule_time ? plan.ad_schedule_time.slice(0, 5) : '-'} WIB</TableCell>
                                             <TableCell>{plan.duration_days || '-'}</TableCell>
                                             <TableCell className="whitespace-nowrap">

@@ -1,5 +1,6 @@
 'use client';
 
+import { AudienceAutocompleteInput } from '@/components/ui/audienceautocompleteinput';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { format } from 'date-fns';
-import { ArrowLeft, ArrowRight, CalendarIcon, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
+import { ArrowLeft, ArrowRight, CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
 
@@ -24,13 +25,27 @@ import { toast } from 'sonner';
 interface Platform {
     id: number;
     name: string;
-    slug: string;
+    slug?: string;
 }
 
-type Event = {
-    id: number;
-    name: string;
-    batch: string;
+interface MonthOption {
+    value: string;
+    label: string;
+}
+
+type PlatformSetting = {
+    goals_id?: number | string;
+    start_date?: string;
+    end_date?: string;
+    daily_budget?: string | number;
+    audience_target?: string | number;
+    audience_type?: 'targeted' | 'broad' | 'combined';
+    age_targeted?: string;
+    location_targeted?: string;
+    audience_details?: Array<{ type: string; name: string }>;
+    age_broad?: string;
+    location_broad?: string;
+    user_id?: string | number;
 };
 
 // ============================================================
@@ -47,34 +62,68 @@ export default function PerencanaanIklan() {
         history: {
             location_targeted: string[];
             location_broad: string[];
-            // field lain tidak dipakai lagi untuk suggestion
+            audience_names: string[];
         };
     };
 
-    // ✅ Hanya suggestion lokasi yang dipakai
     const locationTargetedHistory = (history?.location_targeted || []).map(String);
     const locationBroadHistory = (history?.location_broad || []).map(String);
+    const audienceHistory = (history?.audience_names || []).map(String);
 
     const isAdmin = Array.isArray(auth?.user?.role) ? auth.user.role.includes('admin') : auth?.user?.role === 'admin';
-    const [formState, setFormState] = useState<Record<number, any>>(() =>
+
+    // State form menyimpan array setting per platform_id
+    const [formState, setFormState] = useState<Record<number, PlatformSetting[]>>(() =>
         platforms.reduce(
             (acc, platform) => {
-                acc[platform.id] = { audience_details: [] };
+                acc[platform.id] = [{ audience_details: [], audience_type: 'targeted' }];
                 return acc;
             },
-            {} as Record<number, any>,
+            {} as Record<number, PlatformSetting[]>,
         ),
     );
+
+    // Indeks setting yang aktif per platform
+    const [activeSettingIndex, setActiveSettingIndex] = useState<Record<number, number>>({});
 
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [filteredEvents, setFilteredEvents] = useState(events);
     const [adScheduleTime, setAdScheduleTime] = useState('00:00');
     const [imageFlayer, setImageFlayer] = useState<File | null>(null);
-    const [batchValue, setBatchValue] = useState(''); // State untuk batch
+    const [batchValue, setBatchValue] = useState('');
     const [selectedEvent, setSelectedEvent] = useState('');
     const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
     const [range, setRange] = useState<DateRange | undefined>(undefined);
-    const { post, processing } = useForm({});
+    const [costMonth, setCostMonth] = useState('');
+    const [revenueMonth, setRevenueMonth] = useState('');
+    const { processing } = useForm({});
+
+    const getMonthOptions = () => {
+        const options: { value: string; label: string }[] = [];
+        const date = new Date();
+        const start = new Date(date.getFullYear(), date.getMonth() - 12, 1);
+        for (let i = 0; i <= 24; i++) {
+            const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const val = `${y}-${m}`;
+            const label = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            options.push({ value: val, label });
+        }
+        return options;
+    };
+    const monthOptions = useMemo(() => getMonthOptions(), []);
+
+    const currentSettings = formState[tab] || [{ audience_details: [], audience_type: 'targeted' }];
+    const currentSettingIdx = activeSettingIndex[tab] ?? 0;
+    const currentSettingData = currentSettings[currentSettingIdx] || currentSettings[0];
+
+    // Sinkronisasi rentang tanggal dengan setting aktif saat ini
+    useEffect(() => {
+        const from = currentSettingData?.start_date ? parseISO(currentSettingData.start_date) : undefined;
+        const to = currentSettingData?.end_date ? parseISO(currentSettingData.end_date) : undefined;
+        setRange(from || to ? { from, to } : undefined);
+    }, [tab, currentSettingIdx, currentSettingData?.start_date, currentSettingData?.end_date]);
 
     const formatRupiah = (value: string | number) => {
         if (!value) return '';
@@ -90,7 +139,7 @@ export default function PerencanaanIklan() {
 
     const formatNol = (value: string | number) => {
         if (!value) return '';
-        let s = value.toString().replace(/[^0-9]/g, '');
+        const s = value.toString().replace(/[^0-9]/g, '');
         const r = s.length % 3;
         let f = s.substr(0, r);
         const t = s.substr(r).match(/\d{3}/g);
@@ -98,34 +147,88 @@ export default function PerencanaanIklan() {
         return f;
     };
 
-    const handleTabChange = (val: string) => setTab(Number(val));
+    const handleTabChange = (val: string) => {
+        setTab(Number(val));
+    };
 
     const handleInputChange = (field: string, value: any) => {
-        setFormState((prev) => ({
-            ...prev,
-            [tab]: { ...prev[tab], [field]: value },
-        }));
+        setFormState((prev) => {
+            const list = [...(prev[tab] || [{ audience_details: [], audience_type: 'targeted' }])];
+            const idx = activeSettingIndex[tab] || 0;
+            list[idx] = { ...list[idx], [field]: value };
+            return {
+                ...prev,
+                [tab]: list,
+            };
+        });
     };
 
     const handleDateChange = (rangeValue: DateRange | undefined) => {
         setRange(rangeValue || undefined);
-        if (rangeValue?.from) handleInputChange('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
+        if (rangeValue?.from) {
+            handleInputChange('start_date', format(rangeValue.from, 'yyyy-MM-dd'));
+            const defaultM = format(rangeValue.from, 'yyyy-MM');
+            if (!costMonth) setCostMonth(defaultM);
+            if (!revenueMonth) setRevenueMonth(defaultM);
+        }
         if (rangeValue?.to) handleInputChange('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
     };
 
+    // Tambah setting baru untuk platform aktif saat ini
+    const addSetting = () => {
+        setFormState((prev) => {
+            const list = [...(prev[tab] || [])];
+            const last = list[list.length - 1];
+            const newSetting: PlatformSetting = {
+                audience_details: [],
+                audience_type: 'targeted',
+                start_date: last?.start_date || '',
+                end_date: last?.end_date || '',
+            };
+            const nextList = [...list, newSetting];
+            setActiveSettingIndex((idxMap) => ({ ...idxMap, [tab]: nextList.length - 1 }));
+            return {
+                ...prev,
+                [tab]: nextList,
+            };
+        });
+        toast.success('Setting baru berhasil ditambahkan untuk platform ini');
+    };
+
+    // Hapus setting dari platform aktif
+    const removeSetting = (indexToRemove: number) => {
+        setFormState((prev) => {
+            const list = [...(prev[tab] || [])];
+            if (list.length <= 1) {
+                toast.error('Minimal harus ada 1 setting untuk platform ini');
+                return prev;
+            }
+            list.splice(indexToRemove, 1);
+            setActiveSettingIndex((idxMap) => ({
+                ...idxMap,
+                [tab]: Math.max(0, indexToRemove - 1),
+            }));
+            return {
+                ...prev,
+                [tab]: list,
+            };
+        });
+        toast.info('Setting berhasil dihapus');
+    };
+
     const addAudienceRow = () => {
-        const currentAudiences = formState[tab]?.audience_details || [];
+        const currentAudiences = currentSettingData?.audience_details || [];
         handleInputChange('audience_details', [...currentAudiences, { type: '', name: '' }]);
     };
 
     const handleAudienceRowChange = (index: number, field: 'type' | 'name', value: string) => {
-        const currentAudiences = [...(formState[tab]?.audience_details || [])];
+        const currentAudiences = [...(currentSettingData?.audience_details || [])];
         currentAudiences[index] = { ...currentAudiences[index], [field]: value };
         handleInputChange('audience_details', currentAudiences);
     };
 
     const removeAudienceRow = (index: number) => {
-        const currentAudiences = [...(formState[tab]?.audience_details || [])];
+        const currentAudiences = [...(currentSettingData?.audience_details || [])];
         currentAudiences.splice(index, 1);
         handleInputChange('audience_details', currentAudiences);
     };
@@ -133,64 +236,69 @@ export default function PerencanaanIklan() {
     const handleSubmit = (e: React.FormEvent, mode: 'draft' | 'next') => {
         e.preventDefault();
 
-        const current = formState[tab];
-        if (!current?.goals_id) {
-            toast.error('Tujuan iklan wajib dipilih!');
-            return;
-        }
-
-        const filteredData = Object.entries(formState)
-            .filter(([_, value]) => {
-                const entries = Object.entries(value || {});
-                const meaningfulFields = entries.filter(([key, val]) => {
-                    return val !== null && val !== '' && !['platform_id', 'event_id', 'user_id', 'audience_type', 'audience_details'].includes(key);
-                });
-                const hasAudienceDetails = value.audience_details && value.audience_details.length > 0;
-                return meaningfulFields.length > 0 || hasAudienceDetails;
-            })
-            .reduce(
-                (acc, [key, value]) => {
-                    const audienceDetails = value.audience_details || [];
-                    const type_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.type)
-                        .filter(Boolean)
-                        .join(';');
-                    const name_audience_targeted = audienceDetails
-                        .map((ad: any) => ad.name)
-                        .filter(Boolean)
-                        .join(';');
-                    const { audience_details, ...restOfValue } = value;
-                    acc[key] = {
-                        ...restOfValue,
-                        daily_budget: parseInt(value.daily_budget || 0),
-                        audience_type: value?.audience_type || 'targeted',
-                        event_id: selectedEvent || null,
-                        platform_id: Number(key),
-                        user_id: isAdmin ? value?.user_id : auth?.user?.id,
-                        type_audience_targeted,
-                        name_audience_targeted,
-                    };
-                    return acc;
-                },
-                {} as Record<string, any>,
-            );
-
         if (!selectedEvent) {
             toast.error('Pilih event terlebih dahulu!');
             return;
         }
-        if (Object.keys(filteredData).length === 0) {
-            toast.error('Isi minimal satu tab sebelum menyimpan!');
+
+        const allPlatformSettings: any[] = [];
+
+        Object.entries(formState).forEach(([platformIdStr, settingsList]) => {
+            const platformId = Number(platformIdStr);
+            settingsList.forEach((setting) => {
+                const audienceDetails = setting.audience_details || [];
+                const type_audience_targeted = audienceDetails
+                    .map((ad: any) => ad.type)
+                    .filter(Boolean)
+                    .join(';');
+                const name_audience_targeted = audienceDetails
+                    .map((ad: any) => ad.name)
+                    .filter(Boolean)
+                    .join(';');
+                const { audience_details, ...restOfValue } = setting;
+
+                const hasGoals = Boolean(setting.goals_id);
+                const hasBudget = setting.daily_budget !== '' && setting.daily_budget !== null && setting.daily_budget !== undefined;
+                const hasDates = Boolean(setting.start_date && setting.end_date);
+
+                if (hasGoals || hasBudget || hasDates || audienceDetails.length > 0) {
+                    allPlatformSettings.push({
+                        ...restOfValue,
+                        platform_id: platformId,
+                        event_id: selectedEvent,
+                        user_id: isAdmin ? setting.user_id : auth?.user?.id,
+                        daily_budget: parseInt(String(setting.daily_budget || 0)),
+                        audience_target: parseInt(String(setting.audience_target || 0)),
+                        audience_type: setting?.audience_type || 'targeted',
+                        type_audience_targeted,
+                        name_audience_targeted,
+                    });
+                }
+            });
+        });
+
+        if (allPlatformSettings.length === 0) {
+            toast.error('Isi minimal satu setting platform sebelum menyimpan!');
             return;
+        }
+
+        if (mode !== 'draft') {
+            const missingGoal = allPlatformSettings.find((s) => !s.goals_id);
+            if (missingGoal) {
+                toast.error('Tujuan iklan wajib dipilih untuk setiap setting yang diisi!');
+                return;
+            }
         }
 
         const routeName = isAdmin ? 'admin.marketing.store' : 'user.marketing.store';
         router.post(
             route(routeName),
             {
-                ...filteredData,
+                platforms: allPlatformSettings,
                 ad_schedule_time: adScheduleTime,
                 batch: batchValue,
+                cost_month: costMonth,
+                revenue_month: revenueMonth,
                 image_flayer: imageFlayer,
                 mode,
             },
@@ -204,12 +312,10 @@ export default function PerencanaanIklan() {
         );
     };
 
-    const selectedEventData = filteredEvents.find((event) => String(event.id) === selectedEvent);
-
     // ============================================================
-    // RENDER TARGETING — hanya lokasi pakai LocationAutocompleteInput
+    // RENDER TARGETING
     // ============================================================
-    const renderTargetingFields = (platformData: any) => {
+    const renderTargetingFields = (platformData: PlatformSetting) => {
         const targetType = platformData?.audience_type || 'targeted';
         const showTargeted = targetType === 'targeted' || targetType === 'combined';
         const showBroad = targetType === 'broad' || targetType === 'combined';
@@ -250,7 +356,7 @@ export default function PerencanaanIklan() {
                                 </div>
                             </div>
 
-                            {/* ✅ Lokasi Targeted — dengan history suggestion */}
+                            {/* Lokasi Targeted — dengan history suggestion */}
                             <div>
                                 <Label>Lokasi (Targeted)</Label>
                                 <LocationAutocompleteInput
@@ -261,7 +367,7 @@ export default function PerencanaanIklan() {
                             </div>
 
                             <div>
-                                <Label>Detail Peserta</Label>
+                                <Label>Detail Target Peserta</Label>
                                 <div className="space-y-3">
                                     {(platformData?.audience_details || []).map((audience: any, index: number) => (
                                         <div key={index} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr,1fr,auto]">
@@ -280,11 +386,11 @@ export default function PerencanaanIklan() {
                                                 </SelectContent>
                                             </Select>
 
-                                            {/* ✅ Detail audiens — Input biasa (tidak ada suggestion) */}
-                                            <Input
-                                                placeholder="Detail audiens"
-                                                value={audience.name}
-                                                onChange={(e) => handleAudienceRowChange(index, 'name', e.target.value)}
+                                            {/* Detail audiens — dengan autocomplete history */}
+                                            <AudienceAutocompleteInput
+                                                value={audience.name || ''}
+                                                onChange={(val) => handleAudienceRowChange(index, 'name', val)}
+                                                historySuggestions={audienceHistory}
                                             />
 
                                             <Button type="button" variant="destructive" size="icon" onClick={() => removeAudienceRow(index)}>
@@ -338,7 +444,7 @@ export default function PerencanaanIklan() {
                                 </div>
                             </div>
 
-                            {/* ✅ Lokasi Broad — dengan history suggestion */}
+                            {/* Lokasi Broad — dengan history suggestion */}
                             <div>
                                 <Label>Lokasi (Broad)</Label>
                                 <LocationAutocompleteInput
@@ -355,13 +461,58 @@ export default function PerencanaanIklan() {
     };
 
     // ============================================================
-    // RENDER FORM CONTENT — budget & target pakai Input biasa
+    // RENDER FORM CONTENT PER PLATFORM
     // ============================================================
     const renderFormContent = () => {
-        const currentData = formState[tab] || {};
-
         return (
-            <div className="mt-6">
+            <div className="mt-4">
+                {/* Setting Switcher Tabs (Multiple Settings per Platform) */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3 mb-4">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-semibold text-muted-foreground mr-1">Setting Iklan:</span>
+                        {currentSettings.map((s, idx) => {
+                            const goalName = goals.find((g) => Number(g.id) === Number(s.goals_id))?.name;
+                            return (
+                                <Button
+                                    key={idx}
+                                    type="button"
+                                    size="sm"
+                                    variant={idx === currentSettingIdx ? 'default' : 'outline'}
+                                    className={cn(
+                                        'h-7 px-3 text-xs',
+                                        idx === currentSettingIdx ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                    onClick={() => setActiveSettingIndex((prev) => ({ ...prev, [tab]: idx }))}
+                                >
+                                    Setting {idx + 1}
+                                    {goalName ? ` (${goalName})` : ''}
+                                </Button>
+                            );
+                        })}
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-zinc-800"
+                            onClick={addSetting}
+                        >
+                            <Plus className="h-3 w-3 mr-1" /> Tambah Setting
+                        </Button>
+                    </div>
+
+                    {currentSettings.length > 1 && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            onClick={() => removeSetting(currentSettingIdx)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Hapus Setting {currentSettingIdx + 1}
+                        </Button>
+                    )}
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-6">
                         <div className="space-y-3">
@@ -370,8 +521,8 @@ export default function PerencanaanIklan() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn('w-full justify-start', !range?.from && 'text-muted-foreground')}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {currentData.start_date && currentData.end_date
-                                            ? `${format(new Date(currentData.start_date), 'dd MMM yyyy')} - ${format(new Date(currentData.end_date), 'dd MMM yyyy')}`
+                                        {currentSettingData.start_date && currentSettingData.end_date
+                                            ? `${format(new Date(currentSettingData.start_date), 'dd MMM yyyy')} - ${format(new Date(currentSettingData.end_date), 'dd MMM yyyy')}`
                                             : 'Pilih tanggal mulai dan selesai'}
                                     </Button>
                                 </PopoverTrigger>
@@ -395,9 +546,66 @@ export default function PerencanaanIklan() {
                             </Popover>
                         </div>
 
+                        {/* ALOKASI BULAN PELAPORAN */}
+                        <div className="rounded-lg border p-4 space-y-3 bg-card">
+                            <div className="flex items-center gap-2 font-medium text-sm">
+                                <CalendarIcon className="h-4 w-4 text-primary" />
+                                <span>Alokasi bulan pelaporan</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                        <span>Biaya iklan masuk bulan</span>
+                                    </Label>
+                                    <Select value={costMonth} onValueChange={setCostMonth}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih bulan biaya iklan" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {monthOptions.map((opt: MonthOption) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                        <span>Omset masuk bulan</span>
+                                    </Label>
+                                    <Select value={revenueMonth} onValueChange={setRevenueMonth}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih bulan omset" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {monthOptions.map((opt: MonthOption) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            {costMonth && revenueMonth && costMonth === revenueMonth ? (
+                                <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
+                                    <span>✓</span> Biaya iklan dan omset sinkron di bulan yang sama.
+                                </p>
+                            ) : costMonth && revenueMonth ? (
+                                <p className="text-xs text-amber-500 flex items-center gap-1 font-medium">
+                                    <span>ℹ</span> Biaya iklan dan omset dialokasikan pada bulan yang berbeda.
+                                </p>
+                            ) : null}
+                        </div>
+
                         <div className="space-y-3">
                             <Label>Tujuan Iklan</Label>
-                            <Select required value={currentData.goals_id || ''} onValueChange={(val) => handleInputChange('goals_id', val)}>
+                            <Select
+                                required
+                                value={currentSettingData.goals_id ? String(currentSettingData.goals_id) : ''}
+                                onValueChange={(val) => handleInputChange('goals_id', Number(val))}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Pilih tujuan iklan" />
                                 </SelectTrigger>
@@ -415,7 +623,7 @@ export default function PerencanaanIklan() {
                             <Label>Jenis Target Peserta</Label>
                             <Select
                                 required
-                                value={currentData.audience_type || 'targeted'}
+                                value={currentSettingData.audience_type || 'targeted'}
                                 onValueChange={(val) => handleInputChange('audience_type', val)}
                             >
                                 <SelectTrigger>
@@ -431,33 +639,31 @@ export default function PerencanaanIklan() {
                     </div>
 
                     <div className="space-y-6">
-                        {/* ✅ Budget Harian — Input biasa */}
                         <div className="space-y-3">
                             <Label>Budget Harian</Label>
                             <Input
                                 placeholder="Rp. 0"
                                 inputMode="numeric"
                                 maxLength={13}
-                                value={formatRupiah(currentData.daily_budget) || ''}
+                                value={formatRupiah(currentSettingData.daily_budget || '')}
                                 onChange={(e) => handleInputChange('daily_budget', toPlainNumber(e.target.value))}
                             />
                         </div>
 
-                        {/* ✅ Target Peserta — Input biasa */}
                         <div className="space-y-3">
                             <Label>Target Peserta (jumlah)</Label>
                             <Input
                                 placeholder="Masukkan jumlah target audiens"
                                 inputMode="numeric"
                                 maxLength={10}
-                                value={formatNol(currentData.audience_target) || ''}
+                                value={formatNol(currentSettingData.audience_target || '')}
                                 onChange={(e) => handleInputChange('audience_target', toPlainNumber(e.target.value))}
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="col-span-2">{renderTargetingFields(currentData)}</div>
+                <div className="col-span-2">{renderTargetingFields(currentSettingData)}</div>
             </div>
         );
     };
@@ -466,6 +672,10 @@ export default function PerencanaanIklan() {
         { title: 'Marketing', href: route('admin.marketing.index') },
         { title: 'Perencanaan Iklan', href: route('admin.marketing.create') },
     ];
+
+    const hasAnyValidSetting = Object.values(formState).some((settings) =>
+        settings.some((s) => Boolean(s.goals_id)),
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -484,12 +694,15 @@ export default function PerencanaanIklan() {
                                         <div className="mb-4">
                                             <Label>User</Label>
                                             <Select
-                                                value={formState[tab]?.user_id || ''}
+                                                value={selectedUser || ''}
                                                 onValueChange={(val) => {
                                                     setFormState((prev) => {
                                                         const updated = { ...prev };
                                                         Object.keys(updated).forEach((key) => {
-                                                            updated[Number(key)] = { ...updated[Number(key)], user_id: val };
+                                                            updated[Number(key)] = (updated[Number(key)] || []).map((s) => ({
+                                                                ...s,
+                                                                user_id: val,
+                                                            }));
                                                         });
                                                         return updated;
                                                     });
@@ -540,8 +753,8 @@ export default function PerencanaanIklan() {
                                             <Input
                                                 type="text"
                                                 name="batch"
-                                                value={batchValue} // ← BENAR
-                                                onChange={(e) => setBatchValue(e.target.value)} // ← BENAR
+                                                value={batchValue}
+                                                onChange={(e) => setBatchValue(e.target.value)}
                                                 placeholder="Masukkan batch iklan"
                                                 required
                                             />
@@ -590,7 +803,7 @@ export default function PerencanaanIklan() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                                        className="border-gray-400 text-gray-700 hover:bg-gray-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                                         onClick={() => window.history.back()}
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
@@ -598,7 +811,7 @@ export default function PerencanaanIklan() {
                                     <div className="flex flex-row justify-between gap-2 md:justify-end">
                                         <Button
                                             type="submit"
-                                            disabled={processing || !formState[tab]?.goals_id}
+                                            disabled={processing || !hasAnyValidSetting}
                                             className="bg-gray-500 text-white hover:bg-gray-600"
                                             onClick={(e) => handleSubmit(e, 'draft')}
                                         >
@@ -606,7 +819,7 @@ export default function PerencanaanIklan() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            disabled={processing || !formState[tab]?.goals_id}
+                                            disabled={processing || !hasAnyValidSetting}
                                             className="bg-primary text-white hover:bg-blue-700"
                                             onClick={(e) => handleSubmit(e, 'next')}
                                         >

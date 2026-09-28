@@ -135,6 +135,8 @@ class FormController extends Controller
                 'event_batch' => $plan->event?->batch ?? null,
                 'status'       => $plan->status ?? null,
                 'ad_schedule_time' => $plan->ad_schedule_time ?? null,
+                'cost_month'   => $plan->cost_month ?? null,
+                'revenue_month'=> $plan->revenue_month ?? null,
                 'title_flayer' => $plan->title_flayer ?? null,
                 'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
 
@@ -162,9 +164,12 @@ class FormController extends Controller
 
                 'result' => $plan->results->map(function ($r) {
                     return [
-                        
-                        'checkout_count' => $r->checkout_count !== null ? number_format((float)$r->checkout_count, 0, ',', '.') : null,
-                        'revenue'        => $r->revenue !== null ? number_format((float)$r->revenue, 0, ',', '.') : null,
+                        'checkout_count'   => $r->checkout_count !== null ? number_format((float)$r->checkout_count, 0, ',', '.') : null,
+                        'checkout_weekend' => $r->checkout_weekend !== null ? number_format((float)$r->checkout_weekend, 0, ',', '.') : null,
+                        'checkout_weekday' => $r->checkout_weekday !== null ? number_format((float)$r->checkout_weekday, 0, ',', '.') : null,
+                        'cost_month'       => $r->cost_month,
+                        'revenue_month'    => $r->revenue_month,
+                        'revenue'          => $r->revenue !== null ? number_format((float)$r->revenue, 0, ',', '.') : null,
 
                         'result_platforms' => $r->resultPlatforms->map(function ($rp) {
                             return [

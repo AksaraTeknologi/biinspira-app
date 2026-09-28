@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained('master_events')->cascadeOnDelete();
             $table->string('batch')->nullable();
             $table->time('ad_schedule_time')->nullable();
+            $table->string('cost_month', 20)->nullable();
+            $table->string('revenue_month', 20)->nullable();
             $table->string('title_flayer')->nullable();
             $table->string('image_flayer')->nullable();
             $table->enum('status', ['draft', 'completed'])->default('draft');
