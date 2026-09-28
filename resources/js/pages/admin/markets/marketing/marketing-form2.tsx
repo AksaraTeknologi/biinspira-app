@@ -4,12 +4,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+interface MonthOption {
+    value: string;
+    label: string;
+}
+
+interface Form2Payload {
+    ad_result_id: string;
+    ad_plan_id: string;
+    event_id: string;
+    platforms: any[];
+    checkout_count: number | string;
+    checkout_weekend: number | string;
+    checkout_weekday: number | string;
+    revenue: string;
+    cost_month: string;
+    revenue_month: string;
+}
 
 export default function MarketingForm2() {
     const { props } = usePage();
@@ -41,6 +60,23 @@ export default function MarketingForm2() {
     };
     const event = events || {};
     const platformList = Array.isArray(platforms) ? platforms : [];
+    const isBrevet = Boolean(event?.name && /brevet/i.test(event.name));
+
+    const getMonthOptions = (): MonthOption[] => {
+        const options: MonthOption[] = [];
+        const date = new Date();
+        const start = new Date(date.getFullYear(), date.getMonth() - 12, 1);
+        for (let i = 0; i <= 24; i++) {
+            const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const val = `${y}-${m}`;
+            const label = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            options.push({ value: val, label });
+        }
+        return options;
+    };
+    const monthOptions = useMemo(() => getMonthOptions(), []);
 
     const getPlatformKey = (name: string) => {
         const lower = name.toLowerCase();
@@ -52,13 +88,17 @@ export default function MarketingForm2() {
         return lower;
     };
     const [tab, setTab] = useState(getPlatformKey(platformList[0]?.name || ''));
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, transform } = useForm<Form2Payload>({
         ad_result_id: adResultData?.adResult?.id || '',
         ad_plan_id: adPlan?.id || '',
         event_id: event?.id || '',
         platforms: [],
         checkout_count: adResultData?.adResult?.checkout_count || 0,
+        checkout_weekend: adResultData?.adResult?.checkout_weekend ?? '',
+        checkout_weekday: adResultData?.adResult?.checkout_weekday ?? '',
         revenue: toNumberOnly(adResultData?.adResult?.revenue?.toString() || ''),
+        cost_month: adResultData?.adResult?.cost_month || adPlan?.cost_month || '',
+        revenue_month: adResultData?.adResult?.revenue_month || adPlan?.revenue_month || '',
     });
 
     const [platformData, setPlatformData] = useState<Record<number, any>>({});
@@ -125,7 +165,7 @@ export default function MarketingForm2() {
         if (Object.keys(platformData).length > 0) {
             const mapped = Object.keys(platformData).map((pid) => ({
                 platform_id: Number(pid),
-                ...platformData[pid],
+                ...platformData[Number(pid)],
             }));
 
             setData('platforms', mapped);
@@ -142,13 +182,23 @@ export default function MarketingForm2() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const mergedPlatforms = data.platforms.map((p) => ({
-            ...p,
-            ...platformData[p.platform_id],
+        const mergedPlatforms = platformList.map((p) => ({
+            platform_id: p.id,
+            ...(platformData[p.id] || {}),
         }));
-        setData('platforms', mergedPlatforms);
+
+        const finalCheckout = isBrevet
+            ? (Number(data.checkout_weekend) || 0) + (Number(data.checkout_weekday) || 0)
+            : Number(data.checkout_count) || 0;
+
+        transform((curr) => ({
+            ...curr,
+            checkout_count: finalCheckout,
+            platforms: mergedPlatforms,
+        }));
+
         const submitRoute = isAdmin ? route('admin.marketing.result.store') : route('user.marketing.result.store');
         post(submitRoute);
     };
@@ -172,31 +222,154 @@ export default function MarketingForm2() {
                             </div>
 
                             {/* CHECKOUT & REVENUE */}
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <Label>Omset per Event</Label>
-                                    <Input
-                                        type="text"
-                                        inputMode="numeric"
-                                        maxLength={13}
-                                        required
-                                        placeholder="Rp 0"
-                                        value={formatRupiah1(data.revenue)}
-                                        onChange={(e) => setData('revenue', toPlainNumber(e.target.value))}
-                                    />
+                            {isBrevet ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <div>
+                                            <Label>Omset per Event</Label>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                maxLength={13}
+                                                required
+                                                placeholder="Rp 0"
+                                                value={formatRupiah1(data.revenue)}
+                                                onChange={(e) => setData('revenue', toPlainNumber(e.target.value))}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label>Total Checkout</Label>
+                                            <Input
+                                                type="text"
+                                                readOnly
+                                                className="bg-muted cursor-not-allowed font-semibold"
+                                                value={formatNol(data.checkout_count) || '0'}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <div>
+                                            <Label>Hasil Brevet Weekend</Label>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                maxLength={10}
+                                                placeholder="Masukkan hasil checkout weekend"
+                                                value={formatNol(data.checkout_weekend) || ''}
+                                                onChange={(e) => {
+                                                    const val = toPlainNumber(e.target.value);
+                                                    const weekendNum = Number(val) || 0;
+                                                    const weekdayNum = Number(data.checkout_weekday) || 0;
+                                                    setData((prev) => ({
+                                                        ...prev,
+                                                        checkout_weekend: val,
+                                                        checkout_count: weekendNum + weekdayNum,
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label>Hasil Brevet Weekday</Label>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                maxLength={10}
+                                                placeholder="Masukkan hasil checkout weekday"
+                                                value={formatNol(data.checkout_weekday) || ''}
+                                                onChange={(e) => {
+                                                    const val = toPlainNumber(e.target.value);
+                                                    const weekdayNum = Number(val) || 0;
+                                                    const weekendNum = Number(data.checkout_weekend) || 0;
+                                                    setData((prev) => ({
+                                                        ...prev,
+                                                        checkout_weekday: val,
+                                                        checkout_count: weekendNum + weekdayNum,
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label>Jumlah Checkout</Label>
-                                    <Input
-                                        type="text"
-                                        required
-                                        inputMode="numeric"
-                                        maxLength={10}
-                                        placeholder="Masukkan jumlah checkout"
-                                        value={formatNol(data.checkout_count) || ''}
-                                        onChange={(e) => setData('checkout_count', toPlainNumber(e.target.value))}
-                                    />
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <Label>Omset per Event</Label>
+                                        <Input
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={13}
+                                            required
+                                            placeholder="Rp 0"
+                                            value={formatRupiah1(data.revenue)}
+                                            onChange={(e) => setData('revenue', toPlainNumber(e.target.value))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Jumlah Checkout</Label>
+                                        <Input
+                                            type="text"
+                                            required
+                                            inputMode="numeric"
+                                            maxLength={10}
+                                            placeholder="Masukkan jumlah checkout"
+                                            value={formatNol(data.checkout_count) || ''}
+                                            onChange={(e) => setData('checkout_count', toPlainNumber(e.target.value))}
+                                        />
+                                    </div>
                                 </div>
+                            )}
+
+                            {/* ALOKASI BULAN PELAPORAN */}
+                            <div className="rounded-lg border p-4 space-y-3 bg-card">
+                                <div className="flex items-center gap-2 font-medium text-sm">
+                                    <Calendar className="h-4 w-4 text-primary" />
+                                    <span>Alokasi bulan pelaporan</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                            <span>Biaya iklan masuk bulan</span>
+                                        </Label>
+                                        <Select value={data.cost_month || ''} onValueChange={(val) => setData('cost_month', val)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih bulan biaya iklan" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {monthOptions.map((opt: MonthOption) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                            <span>Omset masuk bulan</span>
+                                        </Label>
+                                        <Select value={data.revenue_month || ''} onValueChange={(val) => setData('revenue_month', val)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih bulan omset" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {monthOptions.map((opt: MonthOption) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                {data.cost_month && data.revenue_month && data.cost_month === data.revenue_month ? (
+                                    <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
+                                        <span>✓</span> Biaya iklan dan omset sinkron di bulan yang sama.
+                                    </p>
+                                ) : data.cost_month && data.revenue_month ? (
+                                    <p className="text-xs text-amber-500 flex items-center gap-1 font-medium">
+                                        <span>ℹ</span> Biaya iklan dan omset dialokasikan pada bulan yang berbeda.
+                                    </p>
+                                ) : null}
                             </div>
 
                             {/* PLATFORM TABS */}

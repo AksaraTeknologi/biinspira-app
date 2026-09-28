@@ -16,6 +16,8 @@ class AdPlan extends Model
         'batch',
         'status',
         "ad_schedule_time",
+        "cost_month",
+        "revenue_month",
         "title_flayer",
         "image_flayer"
     ];

@@ -21,7 +21,7 @@ class AdResultPlatformController extends Controller
         $user = auth()->user();
         $event = MasterEvent::select('id', 'name', 'batch')->findOrFail($id_event);
         $adPlan = AdPlan::with('planPlatforms.platform')->findOrFail($id_ad_plan);
-        $platforms = $adPlan->planPlatforms->pluck('platform');
+        $platforms = $adPlan->planPlatforms->pluck('platform')->filter()->unique('id')->values();
         $adResult = AdResult::where('ad_plan_id', $adPlan->id)->first();
         $adResultsByPlatform = [];
 
@@ -53,10 +53,14 @@ class AdResultPlatformController extends Controller
         $validator = Validator::make($request->all(), [
             'ad_result_id'    => 'nullable|exists:ad_results,id',
             'ad_plan_id'      => 'required|exists:ad_plans,id',
-            'checkout_count'  => 'required|numeric|min:0',
-            'revenue'         => 'required|numeric|min:0',
-            'media_partner'   => 'nullable|string',
-            'platforms'       => 'required|array',
+            'checkout_count'   => 'required|numeric|min:0',
+            'checkout_weekend' => 'nullable|numeric|min:0',
+            'checkout_weekday' => 'nullable|numeric|min:0',
+            'revenue'          => 'required|numeric|min:0',
+            'cost_month'       => 'nullable|string',
+            'revenue_month'    => 'nullable|string',
+            'media_partner'    => 'nullable|string',
+            'platforms'        => 'required|array',
             'platforms.*.platform_id'       => 'required|exists:master_platforms,id',
             'platforms.*.total_cost'      => 'required|numeric|min:0',
             'platforms.*.reach'           => 'required|integer|min:0',
@@ -79,13 +83,28 @@ class AdResultPlatformController extends Controller
         }
         $data = $validator->validated();
         $adResult = AdResult::updateOrCreate(
-           ['ad_plan_id' => $data['ad_plan_id']], // 🔥 pakai ini
-    [
-        'checkout_count' => $data['checkout_count'],
-        'revenue'        => $data['revenue'],
-        'media_partner'  => $data['media_partner'] ?? null,
-    ]
+            ['ad_plan_id' => $data['ad_plan_id']],
+            [
+                'checkout_count'   => $data['checkout_count'],
+                'checkout_weekend' => $data['checkout_weekend'] ?? null,
+                'checkout_weekday' => $data['checkout_weekday'] ?? null,
+                'revenue'          => $data['revenue'],
+                'cost_month'       => $data['cost_month'] ?? null,
+                'revenue_month'    => $data['revenue_month'] ?? null,
+                'media_partner'    => $data['media_partner'] ?? null,
+            ]
         );
+
+        $planUpdate = [];
+        if (array_key_exists('cost_month', $data)) {
+            $planUpdate['cost_month'] = $data['cost_month'];
+        }
+        if (array_key_exists('revenue_month', $data)) {
+            $planUpdate['revenue_month'] = $data['revenue_month'];
+        }
+        if (!empty($planUpdate)) {
+            AdPlan::where('id', $data['ad_plan_id'])->update($planUpdate);
+        }
         foreach ($data['platforms'] as $platformData) {
             $adResultPlatform = AdResultPlatform::updateOrCreate(
                 [

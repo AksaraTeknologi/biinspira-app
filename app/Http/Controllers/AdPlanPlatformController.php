@@ -53,6 +53,8 @@ class AdPlanPlatformController extends Controller
             return [
                 ...$plan->toArray(),
                 'batch' => $plan->batch,
+                'cost_month' => $plan->cost_month,
+                'revenue_month' => $plan->revenue_month,
                 'avatar' => $plan->user->avatar
                 ? asset('storage/' . $plan->user->avatar)
                 : null,
@@ -80,78 +82,112 @@ class AdPlanPlatformController extends Controller
     }
 
 
+    private function getHistoryData(): array
+    {
+        $rawAudiences = AdPlanPlatform::whereNotNull('name_audience_targeted')
+            ->distinct()
+            ->pluck('name_audience_targeted');
+
+        $audienceList = [];
+        foreach ($rawAudiences as $raw) {
+            $rows = array_filter(array_map('trim', explode(';', $raw)));
+            foreach ($rows as $row) {
+                if (!empty($row)) {
+                    $audienceList[] = $row;
+                    $tags = array_filter(array_map('trim', explode(',', $row)));
+                    foreach ($tags as $tag) {
+                        if (!empty($tag)) {
+                            $audienceList[] = $tag;
+                        }
+                    }
+                }
+            }
+        }
+        $audienceList = array_values(array_unique($audienceList));
+
+        return [
+            'location_targeted' => AdPlanPlatform::whereNotNull('location_targeted')
+                ->distinct()
+                ->pluck('location_targeted')
+                ->filter()
+                ->values(),
+
+            'location_broad' => AdPlanPlatform::whereNotNull('location_broad')
+                ->distinct()
+                ->pluck('location_broad')
+                ->filter()
+                ->values(),
+
+            'audience_names' => $audienceList,
+
+            'audience_target' => AdPlanPlatform::whereNotNull('audience_target')
+                ->distinct()
+                ->pluck('audience_target')
+                ->map(fn($v) => (string) $v)
+                ->values(),
+
+            'daily_budget' => AdPlanPlatform::whereNotNull('daily_budget')
+                ->distinct()
+                ->pluck('daily_budget')
+                ->map(fn($v) => (string) $v)
+                ->values(),
+        ];
+    }
+
     public function create()
-{
-    $user = auth()->user();
-    $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
-    if (!$user->hasRole('admin') && !$hasEvent) {
-        return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
+    {
+        $user = auth()->user();
+        $hasEvent = MasterEvent::where('user_id', $user->id)->exists();
+        if (!$user->hasRole('admin') && !$hasEvent) {
+            return redirect()->route('user.marketing.index')->with('error', 'Harus membuat event terlebih dahulu sebelum membuat iklan.');
+        }
+        $eventQuery = MasterEvent::with('user');
+        if (!auth()->user()->hasRole('admin')) {
+            $eventQuery->where('user_id', auth()->id());
+        }
+        $events = $eventQuery->get();
+        $goals = MasterAdGoal::all();
+        $platforms = MasterPlatform::all();
+        $users = User::select('id', 'name')
+            ->whereDoesntHave('roles', function ($q) {
+                $q->whereIn('name', ['admin', 'technician']);
+            })
+            ->whereHas('events')
+            ->get();
+
+        $history = $this->getHistoryData();
+
+        return Inertia::render('admin/markets/components/marketing-create', [
+            'dashboard_item' => 'Buat Market Iklan',
+            'events' => $events,
+            'batch' => $events->map(fn($event) => $event->masterEvent)->unique('batch')->pluck('batch'),
+            'goals' => $goals,
+            'platforms' => $platforms,
+            'users' => $users,
+            'history' => $history,
+        ]);
     }
-    $eventQuery = MasterEvent::with('user');
-    if (!auth()->user()->hasRole('admin')) {
-        $eventQuery->where('user_id', auth()->id());
-    }
-    $events = $eventQuery->get();
-    $goals = MasterAdGoal::all();
-    $platforms = MasterPlatform::all();
-    $users = User::select('id', 'name')
-        ->whereDoesntHave('roles', function ($q) {
-            $q->whereIn('name', ['admin', 'technician']);
-        })
-        ->whereHas('events')
-        ->get();
 
-    // ✅ TAMBAHKAN INI — query history dari AdPlanPlatform
-    $history = [
-        'location_targeted' => AdPlanPlatform::whereNotNull('location_targeted')
-            ->distinct()
-            ->pluck('location_targeted'),
-
-        'location_broad' => AdPlanPlatform::whereNotNull('location_broad')
-            ->distinct()
-            ->pluck('location_broad'),
-
-        'audience_names' => AdPlanPlatform::whereNotNull('name_audience_targeted')
-            ->distinct()
-            ->pluck('name_audience_targeted')
-            ->flatMap(fn($val) => explode(';', $val))
-            ->unique()
-            ->values(),
-
-        'audience_target' => AdPlanPlatform::whereNotNull('audience_target')
-            ->distinct()
-            ->pluck('audience_target')
-            ->map(fn($v) => (string) $v),
-
-        'daily_budget' => AdPlanPlatform::whereNotNull('daily_budget')
-            ->distinct()
-            ->pluck('daily_budget')
-            ->map(fn($v) => (string) $v),
-    ];
-
-    return Inertia::render('admin/markets/components/marketing-create', [
-        'dashboard_item' => 'Buat Market Iklan',
-        'events' => $events,
-        'batch' => $events->map(fn($event) => $event->masterEvent)->unique('batch')->pluck('batch'),
-        'goals' => $goals,
-        'platforms' => $platforms,
-        'users' => $users,
-        'history' => $history, // ✅ TAMBAHKAN INI
-    ]);
-}
     public function store(Request $request)
     {
         $mode = $request->input('mode', 'next');
-        $platformDataList = collect($request->all())
-            ->except(['_token', 'mode', 'ad_schedule_time', 'image_flayer'])
-            ->filter(fn($data) => is_array($data))
-            ->toArray();
+        $platformsInput = $request->input('platforms');
+        if (is_array($platformsInput)) {
+            $platformDataList = $platformsInput;
+        } else {
+            $platformDataList = collect($request->all())
+                ->except(['_token', 'mode', 'ad_schedule_time', 'image_flayer', 'batch'])
+                ->filter(fn($data) => is_array($data))
+                ->values()
+                ->toArray();
+        }
         $platformDataList = array_filter($platformDataList, fn($data) => is_array($data));
 
         if (empty($platformDataList)) {
             return back()->withErrors(['message' => 'Tidak ada data platform yang diisi.']);
         }
         $firstPlatform = reset($platformDataList);
+        $validatedData = [];
         foreach ($platformDataList as $platformKey => $platformData) {
             $rules = [
                 'user_id' => 'required|exists:users,id',
@@ -178,7 +214,6 @@ class AdPlanPlatformController extends Controller
             $validator = Validator::make($platformData, $rules);
 
             if ($validator->fails()) {
-                // dd($validator->errors());
                 return back()
                     ->withErrors($validator)
                     ->withInput()
@@ -196,6 +231,8 @@ class AdPlanPlatformController extends Controller
         $adPlan = AdPlan::create([
             'event_id' => $event->id,
             'batch' => $request->input('batch'),
+            'cost_month' => $request->input('cost_month'),
+            'revenue_month' => $request->input('revenue_month'),
             'title_flayer' => $titleFlayer ?? null,
             'image_flayer' => $imageFlayerPath ?? null,
             'ad_schedule_time' => $request->input('ad_schedule_time'),
@@ -205,15 +242,12 @@ class AdPlanPlatformController extends Controller
 
         if ($adPlan->wasRecentlyCreated) {
             $event->increment('batch'); 
-         }
+        }
+
         foreach ($validatedData as $data) {
-            AdPlanPlatform::updateOrCreate(
-                [
-                    'ad_plan_id' => $adPlan->id,
-                    'platform_id' => $data['platform_id'],
-                ],
-                $data
-            );
+            AdPlanPlatform::create(array_merge($data, [
+                'ad_plan_id' => $adPlan->id,
+            ]));
         }
         $isAdmin = auth()->user()->hasRole('admin');
 
@@ -258,12 +292,15 @@ class AdPlanPlatformController extends Controller
         $users = User::select('id', 'name')->whereDoesntHave('roles', function ($q) {
             $q->whereIn('name', ['admin', 'technician']);
         })->get();
+        $history = $this->getHistoryData();
+
         return Inertia::render('admin/markets/components/marketing-edit', [
             'adPlan' => $adPlan,
             'events' => $events,
             'goals' => $goals,
             'platforms' => $platforms,
             'users' => $users,
+            'history' => $history,
             'dashboard_item' => 'Edit Perencanaan Iklan',
             'isAdmin' => $user->hasRole('admin'),
         ]);
@@ -288,6 +325,8 @@ class AdPlanPlatformController extends Controller
             'event_id' => 'required|exists:master_events,id',
             'ad_plan_id' => 'required|exists:ad_plans,id',
             'batch' => 'nullable|string',
+            'cost_month' => 'nullable|string',
+            'revenue_month' => 'nullable|string',
             'platforms' => 'nullable|array',
             'platforms.*.id' => 'nullable|exists:ad_plan_platforms,id',
             'platforms.*.platform_id' => 'required|exists:master_platforms,id',
@@ -327,9 +366,13 @@ class AdPlanPlatformController extends Controller
             'ad_schedule_time' => $validated['ad_schedule_time'],
             'event_id' => $validated['event_id'],
             'user_id'  => $validated['user_id'],
+            'batch'    => $validated['batch'] ?? null,
+            'cost_month' => $validated['cost_month'] ?? null,
+            'revenue_month' => $validated['revenue_month'] ?? null,
         ]);
 
         $latestEndDate = null;
+        $updatedIds = [];
         foreach ($validated['platforms'] ?? [] as $platformData) {
             $platform = AdPlanPlatform::updateOrCreate(
                 [
@@ -352,10 +395,18 @@ class AdPlanPlatformController extends Controller
                     'location_broad' => $platformData['location_broad'] ?? null,
                 ]
             );
+            $updatedIds[] = $platform->id;
             $currentEndDate = Carbon::parse($platformData['end_date']);
             if (!$latestEndDate || $currentEndDate->greaterThan($latestEndDate)) {
                 $latestEndDate = $currentEndDate;
             }
+        }
+
+        // Hapus setting platform yang dibuang oleh user saat edit
+        if (!empty($updatedIds)) {
+            AdPlanPlatform::where('ad_plan_id', $adPlan->id)
+                ->whereNotIn('id', $updatedIds)
+                ->delete();
         }
         $user = auth()->user();
         if ($mode === 'draft') {

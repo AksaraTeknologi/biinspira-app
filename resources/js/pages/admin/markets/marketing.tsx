@@ -58,6 +58,7 @@ interface PlanPlatform {
 
 interface AdPlan {
     id: number;
+    batch?: string | number | null;
     ad_schedule_time: string;
     user: User;
     event: Event;
@@ -139,6 +140,11 @@ function MarketingTable({ adPlans, isAdmin }: { adPlans: AdPlan[]; isAdmin: bool
                     );
                 },
                 enableSorting: false,
+            },
+            {
+                accessorKey: 'batch',
+                header: 'Batch',
+                cell: ({ row }) => row.original.batch || row.original.event?.batch || '-',
             },
             {
                 accessorKey: 'ad_schedule_time',

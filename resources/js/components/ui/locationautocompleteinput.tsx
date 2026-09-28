@@ -141,7 +141,11 @@ export function LocationAutocompleteInput({
                     className={cn('pl-9 pr-8', error ? 'border-red-400' : '', className)}
                     placeholder={placeholder}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setSearchQuery(val);
+                        onChange(val);
+                    }}
                     onFocus={() => {
                         // Tampilkan semua history saat fokus dan field kosong
                         if (searchQuery.trim().length === 0 && historySuggestions.length > 0) {
@@ -157,7 +161,7 @@ export function LocationAutocompleteInput({
                 {!isSearching && searchQuery && (
                     <button
                         type="button"
-                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                         onClick={handleClear}
                     >
                         <X className="h-4 w-4" />
@@ -166,22 +170,22 @@ export function LocationAutocompleteInput({
 
                 {/* ── Dropdown gabungan history + Nominatim ── */}
                 {hasDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-[500] max-h-64 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-md shadow-lg z-500 max-h-64 overflow-y-auto">
 
                         {/* Section: History lokasi */}
                         {histFiltered.length > 0 && (
                             <>
-                                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b flex items-center gap-1">
+                                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide bg-gray-50 dark:bg-zinc-800/80 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-1">
                                     <History className="h-3 w-3" /> Lokasi sebelumnya
                                 </div>
                                 {histFiltered.map((s, i) => (
                                     <button
                                         key={`hist-${i}`}
                                         type="button"
-                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-50 last:border-0 flex items-start gap-2"
+                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800 hover:text-blue-700 dark:hover:text-blue-400 border-b border-gray-50 dark:border-zinc-800/50 last:border-0 flex items-start gap-2"
                                         onClick={() => handleSelectHistory(s)}
                                     >
-                                        <History className="h-3 w-3 mt-0.5 shrink-0 text-gray-300" />
+                                        <History className="h-3 w-3 mt-0.5 shrink-0 text-gray-400 dark:text-zinc-500" />
                                         <span className="line-clamp-2">{s}</span>
                                     </button>
                                 ))}
@@ -191,14 +195,14 @@ export function LocationAutocompleteInput({
                         {/* Section: Hasil pencarian Nominatim */}
                         {geoSuggestions.length > 0 && (
                             <>
-                                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b flex items-center gap-1">
+                                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide bg-gray-50 dark:bg-zinc-800/80 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-1">
                                     <MapPin className="h-3 w-3" /> Hasil pencarian
                                 </div>
                                 {geoSuggestions.map((s, i) => (
                                     <button
                                         key={`geo-${i}`}
                                         type="button"
-                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-50 last:border-0 flex items-start gap-2"
+                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800 hover:text-blue-700 dark:hover:text-blue-400 border-b border-gray-50 dark:border-zinc-800/50 last:border-0 flex items-start gap-2"
                                         onClick={() => handleSelectGeo(s)}
                                     >
                                         <MapPin className="h-3 w-3 mt-0.5 shrink-0 text-gray-400" />
@@ -213,7 +217,7 @@ export function LocationAutocompleteInput({
 
             {error && <p className="text-xs text-red-500">{error}</p>}
             {searchError && !hasDropdown && <p className="text-xs text-red-500">{searchError}</p>}
-            <p className="text-xs text-gray-400">Ketik alamat lalu pilih saran yang muncul.</p>
+            <p className="text-xs text-gray-400">Ketik alamat lalu pilih saran yang muncul atau gunakan teks bebas.</p>
         </div>
     );
 }

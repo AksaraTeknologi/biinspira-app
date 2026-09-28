@@ -22,6 +22,8 @@ export interface AdPlanData {
     batch?: number | string | null;
     previous_batch?: number | string | null;
     event_batch?: number | string | null;
+    cost_month?: string | null;
+    revenue_month?: string | null;
 
     platforms: PlatformData[] | PlatformData | null;
     result: ResultData[] | null;
@@ -53,8 +55,12 @@ export interface PlatformData {
 }
 
 export interface ResultData {
-    checkout_count: number;
-    revenue: number;
+    checkout_count: number | string;
+    checkout_weekend?: number | string | null;
+    checkout_weekday?: number | string | null;
+    cost_month?: string | null;
+    revenue_month?: string | null;
+    revenue: number | string;
     result_platforms: ResultPlatformData[] | ResultPlatformData | null;
 }
 
@@ -146,12 +152,12 @@ export default function MarketingShow({}: AdPlanProps) {
     const firstEvaluation = evaluationList[0];
 
     const getPlatformKey = (platformName: string | undefined | null, index = 0) => {
-        const name = platformName ?? `platform-${index + 1}`;
-        return name.toString().toLowerCase().replace(/\s+/g, '-');
+        const name = platformName ?? `platform`;
+        return `${name.toString().toLowerCase().replace(/\s+/g, '-')}-${index}`;
     };
 
     const [planTab, setPlanTab] = useState<string>(() => {
-        return platformList.length ? getPlatformKey(platformList[0].platform_name ?? platformList[0].name ?? undefined, 0) : 'platforms';
+        return platformList.length ? getPlatformKey(platformList[0].platform_name ?? platformList[0].name ?? undefined, 0) : 'platforms-0';
     });
 
     const [resultTab, setResultTab] = useState<string>(() => {
@@ -285,7 +291,7 @@ export default function MarketingShow({}: AdPlanProps) {
                                             <img
                                                 src={data.image_flayer}
                                                 alt={data.title_flayer ?? 'Flayer Image'}
-                                                className="max-h-[300px] w-auto rounded-md border border-zinc-300 object-contain shadow transition hover:opacity-90"
+                                                className="max-h-75 w-auto rounded-md border border-zinc-300 object-contain shadow transition hover:opacity-90"
                                             />
                                         </a>
 
@@ -316,11 +322,19 @@ export default function MarketingShow({}: AdPlanProps) {
                                             }}
                                         >
                                             {platformList.map((p, idx) => {
-                                                const name = p.platform_name ?? p.name ?? `Platform ${idx + 1}`;
-                                                const key = getPlatformKey(name, idx);
+                                                const baseName = p.platform_name ?? p.name ?? `Platform ${idx + 1}`;
+                                                const samePlatformSettings = platformList.filter(
+                                                    (item) => (item.platform_name ?? item.name) === baseName,
+                                                );
+                                                let displayName = baseName;
+                                                if (samePlatformSettings.length > 1) {
+                                                    const settingNum = samePlatformSettings.findIndex((item) => item === p) + 1;
+                                                    displayName = `${baseName} (Setting ${settingNum})`;
+                                                }
+                                                const key = getPlatformKey(baseName, idx);
                                                 return (
                                                     <TabsTrigger key={key} value={key}>
-                                                        {name}
+                                                        {displayName}
                                                     </TabsTrigger>
                                                 );
                                             })}
@@ -417,13 +431,32 @@ export default function MarketingShow({}: AdPlanProps) {
                                             </div>
                                             <div>
                                                 <Label>Jumlah Checkout</Label>
-                                                <div className="mt-1">{firstResult?.checkout_count ?? '-'}</div>
+                                                <div className="mt-1 font-semibold">{firstResult?.checkout_count ?? '-'}</div>
+                                                {(firstResult?.checkout_weekend != null || firstResult?.checkout_weekday != null) && (
+                                                    <div className="text-xs text-muted-foreground mt-1 space-x-2">
+                                                        <span>Weekend: <strong className="text-foreground">{firstResult?.checkout_weekend ?? 0}</strong></span>
+                                                        <span>•</span>
+                                                        <span>Weekday: <strong className="text-foreground">{firstResult?.checkout_weekday ?? 0}</strong></span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <Label>Omset Per Event</Label>
                                                 <div className="mt-1">Rp {firstResult?.revenue ?? '-'}</div>
                                             </div>
                                         </div>
+                                        {(data?.cost_month || data?.revenue_month || firstResult?.cost_month || firstResult?.revenue_month) && (
+                                            <div className="mt-4 pt-3 border-t grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
+                                                <div>
+                                                    <span className="text-muted-foreground">Alokasi Biaya Iklan Masuk Bulan:</span>{' '}
+                                                    <span className="font-semibold text-foreground">{firstResult?.cost_month || data?.cost_month || '-'}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-muted-foreground">Alokasi Omset Masuk Bulan:</span>{' '}
+                                                    <span className="font-semibold text-foreground">{firstResult?.revenue_month || data?.revenue_month || '-'}</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
 
@@ -642,7 +675,7 @@ export default function MarketingShow({}: AdPlanProps) {
                     </CardHeader>
                     <CardContent>
                         {graphData ? (
-                            <div className="h-[400px] w-full">
+                            <div className="h-100 w-full">
                                 <GraphShow RawData={graphData} />
                             </div>
                         ) : (
