@@ -49,6 +49,8 @@ const PLATFORM_COLORS: Record<string, string> = {
     talenta: '#f97316', // Orange
     skillgrow: '#ec4899', // Pink
     aksademy: '#8b5cf6', // Purple
+    value_edu: '#06b6d4', // Cyan
+    valueedu: '#06b6d4', // Cyan
 };
 
 type ActiveTab = 'monthly' | 'monthly_line' | 'cumulative' | 'platform' | 'table';

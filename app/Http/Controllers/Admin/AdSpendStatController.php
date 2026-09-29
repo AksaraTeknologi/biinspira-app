@@ -24,6 +24,9 @@ class AdSpendStatController extends Controller
         $this->authorizeAccess($request);
 
         $platform = $request->query('platform');
+        if ($platform === 'valueedu') {
+            $platform = 'value_edu';
+        }
         $channel = $request->query('channel');
         $year = (int) ($request->query('year') ?: now()->year);
         $month = $request->query('month') ? (int) $request->query('month') : null;
@@ -119,6 +122,10 @@ class AdSpendStatController extends Controller
     {
         $this->authorizeAccess($request);
 
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        }
+
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(AdSpendStat::PLATFORMS))],
             'date' => ['required', 'date'],
@@ -139,6 +146,10 @@ class AdSpendStatController extends Controller
         $this->authorizeAccess($request);
 
         $record = AdSpendStat::findOrFail($id);
+
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        }
 
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(AdSpendStat::PLATFORMS))],

@@ -480,3 +480,34 @@ test('tv brevet stats chart data is sorted chronologically with year displayed a
     expect($spChart[2]['name'])->toBe('Batch 102 (Sep 2026)');
 });
 
+test('admin can store and view ad spend stats for Value.Edu platform', function () {
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.ad-spend-stats.store'), [
+            'platform' => 'value_edu',
+            'date' => '2026-09-29',
+            'amount' => 7500000,
+            'ad_channel' => 'meta',
+            'notes' => 'Campaign Value.Edu launch',
+        ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('ad_spend_stats', [
+        'platform' => 'value_edu',
+        'amount' => 7500000,
+        'ad_channel' => 'meta',
+    ]);
+
+    // Check TV ad spend stats returns Value.Edu
+    $tvResponse = $this->withSession(['stats_authenticated' => true])
+        ->getJson('/stats-iklan/data')
+        ->assertOk();
+
+    $platforms = collect($tvResponse->json('platforms'));
+    $valueEdu = $platforms->firstWhere('key', 'value_edu');
+
+    expect($valueEdu)->not->toBeNull();
+    expect($valueEdu['label'])->toBe('Value.Edu');
+    expect($valueEdu['this_year'])->toBeGreaterThanOrEqual(7500000);
+});
+

@@ -26,6 +26,7 @@ class AdSpendStat extends Model
         'levelup' => 'LevelUp Accounting',
         'aksademy' => 'Aksademy',
         'skillgrow' => 'Skill Grow',
+        'value_edu' => 'Value.Edu',
     ];
 
     public const CHANNELS = [
