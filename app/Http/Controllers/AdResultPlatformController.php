@@ -9,6 +9,7 @@ use App\Models\MasterEvent;
 use App\Models\AdResult;
 use App\Models\AdResultPlatform;
 use App\Models\MasterPlatform;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;

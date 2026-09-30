@@ -348,17 +348,13 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
                         </div>
 
                         <div className="space-y-3">
-                            <Label htmlFor="attachments">Lampiran</Label>
+                            <Label htmlFor="attachments">Lampiran (Opsional)</Label>
                             <Input
                                 id="attachments"
                                 type="file"
                                 multiple
-                                required={mode === 'create' || existingAttachments.length === 0}
                                 onChange={handleFileChange}
                             />
-                            {(mode === 'create' || existingAttachments.length === 0) && (
-                                <p className="text-xs text-zinc-500">Minimal satu lampiran wajib diisi.</p>
-                            )}
                             {errors.attachments && <p className="text-sm text-red-500">{errors.attachments}</p>}
                         </div>
                     </div>
