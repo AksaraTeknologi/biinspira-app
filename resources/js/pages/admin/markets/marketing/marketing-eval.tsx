@@ -40,11 +40,12 @@ export default function MarketingEval() {
         const checkout = adResult.checkout_count ?? 0;
         const platforms = adResult.result_platforms ?? [];
 
-        const platformTotals: string[] = [];
+        const platformMap = new Map<string, { name: string; cost: number; reach: number; impression: number }>();
 
         platforms.forEach((platform: any) => {
+            const pKey = platform.platform_id || platform.platform?.name || Math.random().toString();
             const platformName = platform.platform?.name ?? '-';
-            const platformCost = platform.total_cost ?? 0;
+            const platformCost = Number(platform.total_cost ?? 0);
 
             let reach = 0;
             let impression = 0;
@@ -54,10 +55,27 @@ export default function MarketingEval() {
                 impression += Number(metric.impressions ?? 0);
             });
 
+            if (!platformMap.has(pKey)) {
+                platformMap.set(pKey, {
+                    name: platformName,
+                    cost: platformCost,
+                    reach,
+                    impression,
+                });
+            } else {
+                const item = platformMap.get(pKey)!;
+                item.cost += platformCost;
+                item.reach += reach;
+                item.impression += impression;
+            }
+        });
+
+        const platformTotals: string[] = [];
+        platformMap.forEach((item) => {
             platformTotals.push(
-                `Total Biaya Iklan (${platformName}) : ${formatNol(cleanNumberFromDB(platformCost))}
-Total Reach (${platformName}) : ${formatNol(cleanNumberFromDB(reach))}
-Total Impression (${platformName}) : ${formatNol(cleanNumberFromDB(impression))}`,
+                `Total Biaya Iklan (${item.name}) : ${formatNol(cleanNumberFromDB(item.cost))}
+Total Reach (${item.name}) : ${formatNol(cleanNumberFromDB(item.reach))}
+Total Impression (${item.name}) : ${formatNol(cleanNumberFromDB(item.impression))}`,
             );
         });
 

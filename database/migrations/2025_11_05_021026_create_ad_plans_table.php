@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('batch')->nullable();
             $table->time('ad_schedule_time')->nullable();
             $table->string('cost_month', 20)->nullable();
+            $table->string('cost_month_2', 20)->nullable();
             $table->string('revenue_month', 20)->nullable();
             $table->string('title_flayer')->nullable();
             $table->string('image_flayer')->nullable();

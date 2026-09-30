@@ -16,28 +16,32 @@ class EnsureStatsAuthenticated
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Jika pengguna saat ini sedang login di aplikasi dan memiliki role admin
-        if ($request->user() && $request->user()->hasRole('admin')) {
-            return $next($request);
-        }
+        $isLocked = $request->session()->get('stats_locked', false) === true;
 
-        // 2. Jika sesi browser sudah berhasil memasukkan kata sandi admin
-        if ($request->session()->get('stats_authenticated') === true) {
-            return $next($request);
-        }
+        if (! $isLocked) {
+            // 1. Jika pengguna saat ini sedang login di aplikasi dan memiliki role admin
+            if ($request->user() && $request->user()->hasRole('admin')) {
+                return $next($request);
+            }
 
-        // 3. Periksa cookie "Ingat Perangkat Ini" (stats_device_token)
-        $deviceToken = $request->cookie('stats_device_token');
-        if ($deviceToken && is_string($deviceToken) && str_contains($deviceToken, '|')) {
-            [$userId, $tokenHash] = explode('|', $deviceToken, 2);
+            // 2. Jika sesi browser sudah berhasil memasukkan kata sandi admin
+            if ($request->session()->get('stats_authenticated') === true) {
+                return $next($request);
+            }
 
-            /** @var User|null $adminUser */
-            $adminUser = User::role('admin')->where('id', $userId)->first();
-            if ($adminUser) {
-                $expectedHash = hash_hmac('sha256', $adminUser->id . $adminUser->password, (string) config('app.key'));
-                if (hash_equals($expectedHash, $tokenHash)) {
-                    $request->session()->put('stats_authenticated', true);
-                    return $next($request);
+            // 3. Periksa cookie "Ingat Perangkat Ini" (stats_device_token)
+            $deviceToken = $request->cookie('stats_device_token');
+            if ($deviceToken && is_string($deviceToken) && str_contains($deviceToken, '|')) {
+                [$userId, $tokenHash] = explode('|', $deviceToken, 2);
+
+                /** @var User|null $adminUser */
+                $adminUser = User::role('admin')->where('id', $userId)->first();
+                if ($adminUser) {
+                    $expectedHash = hash_hmac('sha256', $adminUser->id . $adminUser->password, (string) config('app.key'));
+                    if (hash_equals($expectedHash, $tokenHash)) {
+                        $request->session()->put('stats_authenticated', true);
+                        return $next($request);
+                    }
                 }
             }
         }

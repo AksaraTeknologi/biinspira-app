@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'role' => $request->user()?->getRoleNames() ?? [],
+                'unread_notifications_count' => fn() => $user ? \App\Models\TicketNotification::where('user_id', $user->id)->unread()->count() : 0,
             ],
             'ziggy' => fn(): array => [
                 ...(new Ziggy)->toArray(),

@@ -1,4 +1,4 @@
-import TaskModal from '@/components/TaskModal';
+import TaskModal, { ticketCommentsCache } from '@/components/TaskModal';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -11,17 +11,48 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { router } from '@inertiajs/react';
-import { AlertCircle, Check, ChevronLeft, ChevronRight, Inbox, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+    AlertCircle,
+    Calendar,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Hammer,
+    Inbox,
+    MessageSquare,
+    RotateCcw,
+    SlidersHorizontal,
+    Sparkles,
+    User as UserIcon,
+    Wrench,
+    X,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 type User = {
     id: number;
     name: string;
     role: string;
+};
+
+type Application = {
+    id: number | string;
+    name: string;
+    color?: string | null;
+};
+
+type Comment = {
+    id: number | string;
+    body: string;
+    user_id: number | string;
+    user_name: string;
+    created_at: string;
 };
 
 type Task = {
@@ -40,8 +71,12 @@ type Task = {
     actual_start?: string | null;
     actual_end?: string | null;
     attachment?: string;
-    created_by?: number;
+    created_by?: number | string;
     review_note?: string | null;
+    work_type?: 'pengerjaan' | 'penambahan_fitur' | 'maintenance' | null;
+    application_id?: number | string | null;
+    application?: Application | null;
+    comments?: Comment[];
 };
 
 type Board = {
@@ -101,9 +136,24 @@ const COLUMN_CONFIG = {
 };
 
 const URGENCY_CONFIG = {
-    high: { label: 'Urgensi Tinggi', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-    medium: { label: 'Urgensi Sedang', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
-    low: { label: 'Urgensi Rendah', className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+    high: {
+        label: 'Tinggi',
+        fullLabel: 'Urgensi Tinggi',
+        className: 'bg-red-50 text-red-700 border-red-200/80 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50',
+        dot: 'bg-red-500',
+    },
+    medium: {
+        label: 'Sedang',
+        fullLabel: 'Urgensi Sedang',
+        className: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50',
+        dot: 'bg-amber-500',
+    },
+    low: {
+        label: 'Rendah',
+        fullLabel: 'Urgensi Rendah',
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50',
+        dot: 'bg-emerald-500',
+    },
 };
 
 const AVATAR_COLORS = ['bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-teal-400', 'bg-orange-400', 'bg-green-400'];
@@ -133,12 +183,14 @@ export default function KanbanBoard({
     user_role,
     user_id,
     user_name,
+    applications = [],
 }: {
     tasks: Partial<Board>;
     users: User[];
     user_role: unknown;
     user_id?: number;
     user_name?: string;
+    applications?: Application[];
 }) {
     const columns: (keyof Board)[] = ['request', 'todo', 'in_progress', 'in_review', 'complete'];
 
@@ -161,8 +213,11 @@ export default function KanbanBoard({
     });
     const [urgencyFilter, setUrgencyFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
     const [targetRoleFilter, setTargetRoleFilter] = useState<'all' | 'technician' | 'technician-intern'>('all');
+    const [applicationFilter, setApplicationFilter] = useState<'all' | number | string>('all');
+    const [workTypeFilter, setWorkTypeFilter] = useState<'all' | 'pengerjaan' | 'penambahan_fitur' | 'maintenance'>('all');
 
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [openChatInitially, setOpenChatInitially] = useState(false);
     const [deleteTask, setDeleteTask] = useState<Task | null>(null);
     const [rejectDialog, setRejectDialog] = useState<RejectDialogState>(null);
     const [reviewProcessing, setReviewProcessing] = useState(false);
@@ -176,10 +231,71 @@ export default function KanbanBoard({
             in_review: tasks?.in_review ?? [],
             complete: tasks?.complete ?? [],
         });
+
+        if (selectedTask) {
+            const allTasks = Object.values(tasks ?? {}).flat();
+            const updated = allTasks.find((t) => t.id === selectedTask.id || String(t.id) === String(selectedTask.id));
+            if (updated) {
+                setSelectedTask(updated);
+            }
+        }
     }, [tasks]);
 
-    const openTask = (task: Task) => setSelectedTask(task);
-    const closeTask = () => setSelectedTask(null);
+    // Buka task dari event (misal klik notifikasi popover)
+    useEffect(() => {
+        const handleOpenTask = (e: any) => {
+            const taskId = e.detail?.taskId;
+            const openChat = e.detail?.openChat;
+            if (taskId && tasks) {
+                const allTasks = Object.values(tasks).flat();
+                const found = allTasks.find((t) => String(t.id) === String(taskId));
+                if (found) {
+                    setSelectedTask(found);
+                    if (openChat) {
+                        setOpenChatInitially(true);
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('open-ticket-task', handleOpenTask);
+        return () => window.removeEventListener('open-ticket-task', handleOpenTask);
+    }, [tasks]);
+
+    // Buka task dari query parameter (misal notifikasi: ?open_task=123&open_chat=1)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const openTaskId = params.get('open_task');
+        const openChat = params.get('open_chat');
+
+        if (openTaskId && tasks) {
+            const allTasks = Object.values(tasks).flat();
+            const found = allTasks.find((t) => String(t.id) === String(openTaskId));
+            if (found) {
+                setSelectedTask(found);
+                if (openChat === '1') {
+                    setOpenChatInitially(true);
+                }
+            }
+        }
+    }, [tasks]);
+
+    const openTask = (task: Task, openChat = false) => {
+        setOpenChatInitially(openChat);
+        setSelectedTask(task);
+    };
+
+    const closeTask = () => {
+        setSelectedTask(null);
+        setOpenChatInitially(false);
+        if (typeof window !== 'undefined' && window.location.search.includes('open_task')) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('open_task');
+            url.searchParams.delete('open_chat');
+            window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+        }
+    };
 
     const normalizeRole = (role: unknown) => {
         if (!role) return '';
@@ -219,6 +335,8 @@ export default function KanbanBoard({
         return list.filter((task) => {
             if (urgencyFilter !== 'all' && task.urgency !== urgencyFilter) return false;
             if (targetRoleFilter !== 'all' && task.target_role !== targetRoleFilter) return false;
+            if (applicationFilter !== 'all' && String(task.application_id) !== String(applicationFilter)) return false;
+            if (workTypeFilter !== 'all' && task.work_type !== workTypeFilter) return false;
             return true;
         });
     };
@@ -414,7 +532,6 @@ export default function KanbanBoard({
                 preserveScroll: true,
                 preserveState: false,
                 onSuccess: () => {
-                    toast.success('Tiket dikembalikan ke Sedang Dikerjakan');
                     setRejectDialog(null);
                     setReviewProcessing(false);
                 },
@@ -426,13 +543,25 @@ export default function KanbanBoard({
         );
     };
 
-    const hasActiveFilters = urgencyFilter !== 'all' || targetRoleFilter !== 'all';
+    const hasActiveFilters =
+        urgencyFilter !== 'all' ||
+        targetRoleFilter !== 'all' ||
+        applicationFilter !== 'all' ||
+        workTypeFilter !== 'all';
     const totalAllTasks = Object.values(board).reduce((acc, curr) => acc + (curr?.length || 0), 0);
 
     const renderTaskCard = (task: Task, col: keyof Board) => {
         const overdue = isOverdue(task);
         const showReviewActions = col === 'in_review' && isTaskOwner(task);
         const urgencyConfig = URGENCY_CONFIG[task.urgency] ?? URGENCY_CONFIG.low;
+        const commentCount = ticketCommentsCache.get(task.id)?.length ?? task.comments?.length ?? 0;
+        const isInternTask = task.target_role === 'technician-intern';
+        const assigneeList = task.assignees_name
+            ? task.assignees_name
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+            : [];
 
         return (
             <ContextMenu key={task.id}>
@@ -442,104 +571,177 @@ export default function KanbanBoard({
                             e.stopPropagation();
                             openTask(task);
                         }}
-                        className={`group relative mb-2.5 cursor-pointer rounded-xl border p-3.5 wrap-break-word shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                        className={`group relative mb-2.5 cursor-pointer rounded-2xl border p-3.5 wrap-break-word shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                             overdue
-                                ? 'border-red-300 bg-red-50/90 shadow-red-100 dark:border-red-900/60 dark:bg-red-950/40'
-                                : 'border-gray-200/80 bg-white hover:border-blue-200 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700'
+                                ? 'border-red-200/90 bg-red-50/60 border-l-[3.5px] border-l-red-500 hover:border-red-400 dark:border-red-900/60 dark:bg-red-950/25 dark:border-l-red-400 dark:hover:border-red-700'
+                                : isInternTask
+                                  ? 'border-amber-200/80 bg-amber-50/50 border-l-[3.5px] border-l-amber-600/90 hover:border-amber-400 dark:border-amber-900/50 dark:bg-amber-950/25 dark:border-l-amber-500 dark:hover:border-amber-600'
+                                  : 'border-blue-200/80 bg-blue-50/40 border-l-[3.5px] border-l-blue-500 hover:border-blue-400 dark:border-blue-900/50 dark:bg-blue-950/20 dark:border-l-blue-400 dark:hover:border-blue-600'
                         }`}
                     >
-                        {overdue && (
-                            <span className="absolute top-2.5 right-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-xs">
-                                !
-                            </span>
-                        )}
+                        {/* Baris 1: Aplikasi Badge & Urgensi Badge */}
+                        <div className="mb-2 flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                                {task.application ? (
+                                    <span
+                                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold border shadow-2xs min-w-0 max-w-32.5 whitespace-nowrap overflow-hidden"
+                                        style={{
+                                            backgroundColor: `${task.application.color ?? '#3b82f6'}15`,
+                                            borderColor: `${task.application.color ?? '#3b82f6'}35`,
+                                            color: task.application.color ?? '#3b82f6',
+                                        }}
+                                        title={`Aplikasi: ${task.application.name}`}
+                                    >
+                                        <span
+                                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                                            style={{ backgroundColor: task.application.color ?? '#3b82f6' }}
+                                        />
+                                        <span className="truncate whitespace-nowrap">{task.application.name}</span>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-400 whitespace-nowrap shrink-0">
+                                        Umum
+                                    </span>
+                                )}
+                            </div>
 
-                        <p
-                            className={`mb-1.5 pr-4 text-xs leading-relaxed font-semibold ${overdue ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-zinc-100'}`}
+                            {/* Urgency Badge */}
+                            <span
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold shrink-0 whitespace-nowrap ${urgencyConfig.className}`}
+                            >
+                                <span className={`h-1.5 w-1.5 rounded-full ${urgencyConfig.dot} shrink-0`} />
+                                <span className="whitespace-nowrap">{urgencyConfig.label}</span>
+                            </span>
+                        </div>
+
+                        {/* Baris 2: Judul Tiket (Satu-satunya elemen yang boleh turun ke bawah/panjang) */}
+                        <h3
+                            className={`mb-2 text-xs font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-primary ${
+                                overdue ? 'text-red-700 dark:text-red-300' : 'text-zinc-900 dark:text-zinc-100'
+                            }`}
                         >
                             {task.title}
-                        </p>
+                        </h3>
 
-                        <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                            {/* Urgency badge */}
-                            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${urgencyConfig.className}`}>
-                                {urgencyConfig.label}
-                            </span>
+                        {/* Baris 3: Tipe Pengerjaan (Kiri) & Komentar Diskusi (Kanan) - Semua single-line truncate */}
+                        <div className="mb-2 flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                                {task.work_type ? (
+                                    <span
+                                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold min-w-0 max-w-full whitespace-nowrap overflow-hidden ${
+                                            task.work_type === 'pengerjaan'
+                                                ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300'
+                                                : task.work_type === 'penambahan_fitur'
+                                                  ? 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-300'
+                                                  : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300'
+                                        }`}
+                                    >
+                                        {task.work_type === 'pengerjaan' && <Wrench className="h-3 w-3 shrink-0" />}
+                                        {task.work_type === 'penambahan_fitur' && <Sparkles className="h-3 w-3 shrink-0" />}
+                                        {task.work_type === 'maintenance' && <Hammer className="h-3 w-3 shrink-0" />}
+                                        <span className="truncate whitespace-nowrap">
+                                            {task.work_type === 'pengerjaan' && 'Pengerjaan'}
+                                            {task.work_type === 'penambahan_fitur' && 'Penambahan Fitur'}
+                                            {task.work_type === 'maintenance' && 'Maintenance'}
+                                        </span>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-400 whitespace-nowrap shrink-0">
+                                        <Wrench className="h-3 w-3 shrink-0 text-gray-400" /> Pengerjaan
+                                    </span>
+                                )}
 
-                            {(role === 'technician' || role === 'admin') && task.target_role === 'technician-intern' && (
-                                <span className="inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                                    Untuk Intern
-                                </span>
+                                {task.review_note && col === 'in_progress' && (
+                                    <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300 whitespace-nowrap shrink-0">
+                                        <AlertCircle className="h-3 w-3 shrink-0" /> Revisi
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Komentar Diskusi Badge (Rapi di kanan baris tipe, klik langsung fokus chat) */}
+                            {commentCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openTask(task, true);
+                                    }}
+                                    title={`${commentCount} pesan diskusi (klik untuk buka chat)`}
+                                    className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[10.5px] font-semibold text-primary dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-colors shadow-2xs whitespace-nowrap"
+                                >
+                                    <MessageSquare className="h-3 w-3 shrink-0 text-primary dark:text-blue-400" />
+                                    <span>{commentCount}</span>
+                                </button>
                             )}
                         </div>
 
-                        <p className={`mb-3 truncate text-[11px] font-medium ${overdue ? 'text-red-400' : 'text-gray-400 dark:text-zinc-500'}`}>
-                            {task.created_by_name || '-'}
-                        </p>
-
-                        {/* Review note preview */}
-                        {task.review_note && col === 'in_progress' && (
-                            <div className="mb-2.5">
-                                <span className="inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
-                                    <AlertCircle className="h-3 w-3" /> Ada Revisi
-                                </span>
-                            </div>
+                        {/* Baris 4: Programmer Penanggung Jawab (Dengan Shadcn Tooltip & truncate nama panjang) */}
+                        {assigneeList.length > 0 && (
+                            <TooltipProvider delayDuration={500}>
+                                <Tooltip delayDuration={500}>
+                                    <TooltipTrigger asChild>
+                                        <div
+                                            className="mb-2 flex items-center justify-between gap-1.5 rounded-lg border border-gray-100 bg-gray-50/80 px-2 py-1 text-[11px] text-gray-700 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300 max-w-full overflow-hidden"
+                                        >
+                                            <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                                                <UserIcon className="h-3 w-3 shrink-0 text-blue-500 dark:text-blue-400" />
+                                                <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">IT:</span>
+                                                <span className="truncate font-medium whitespace-nowrap">{assigneeList[0]}</span>
+                                            </div>
+                                            {assigneeList.length > 1 && (
+                                                <span
+                                                    className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.2 text-[9.5px] font-bold text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 shadow-2xs whitespace-nowrap"
+                                                >
+                                                    +{assigneeList.length - 1}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs max-w-xs shadow-md">
+                                        <p className="font-semibold text-[11px] mb-0.5">Penugasan Programmer:</p>
+                                        <p className="text-[11px] text-zinc-100">{task.assignees_name}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {/* Baris 5: Footer Pembuat Tiket (Kiri) dan Deadline (Kanan) */}
+                        <div className="border-t border-gray-100 dark:border-zinc-800/80 pt-2 flex items-center justify-between gap-1.5 text-xs">
+                            {/* Kiri: Avatar & Nama Pembuat */}
                             <div
-                                title={task.created_by_name || ''}
-                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white shadow-2xs ${getAvatarColor(task.created_by_name)}`}
+                                title={`Dibuat oleh: ${task.created_by_name || '-'}`}
+                                className="flex items-center gap-1.5 min-w-0 flex-1 pr-2 overflow-hidden"
                             >
-                                {getInitials(task.created_by_name)}
+                                <div
+                                    className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold text-white shadow-2xs ${getAvatarColor(task.created_by_name)}`}
+                                >
+                                    {getInitials(task.created_by_name)}
+                                </div>
+                                <span className="truncate text-[10.5px] text-gray-500 dark:text-zinc-400 font-medium whitespace-nowrap">
+                                    {task.created_by_name || '-'}
+                                </span>
                             </div>
 
+                            {/* Kanan: Deadline */}
                             {task.deadline && (
                                 <div
-                                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                    title={`Deadline: ${formatDate(task.deadline)}`}
+                                    className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium shrink-0 whitespace-nowrap ${
                                         overdue
                                             ? 'bg-red-500 font-semibold text-white'
                                             : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
                                     }`}
                                 >
-                                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                        />
-                                    </svg>
-                                    {formatDate(task.deadline)}
+                                    <Calendar className="h-3 w-3 shrink-0" />
+                                    <span className="whitespace-nowrap">{formatDate(task.deadline)}</span>
                                 </div>
-                            )}
-
-                            {task.assignees_name && (
-                                <span
-                                    title={task.assignees_name}
-                                    className={`inline-block max-w-[130px] truncate rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                        overdue
-                                            ? 'bg-red-500 text-white'
-                                            : col === 'todo'
-                                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200'
-                                              : col === 'in_progress'
-                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200'
-                                                : col === 'in_review'
-                                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200'
-                                                  : col === 'complete'
-                                                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200'
-                                                    : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300'
-                                    }`}
-                                >
-                                    {task.assignees_name}
-                                </span>
                             )}
                         </div>
 
                         {/* Review action buttons (only for ticket owner in in_review) */}
                         {showReviewActions && (
                             <div
-                                className="mt-3 flex items-center gap-2 border-t border-orange-200 pt-2.5 dark:border-orange-900/40"
+                                className="mt-2.5 flex items-center gap-2 border-t border-orange-200 pt-2 dark:border-orange-900/40"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <Button
@@ -690,12 +892,75 @@ export default function KanbanBoard({
                         </div>
                     )}
 
+                    {/* Filter Aplikasi */}
+                    {applications.length > 0 && (
+                        <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 shadow-2xs dark:border-zinc-700 dark:bg-zinc-800">
+                            <span className="text-xs text-gray-500 dark:text-zinc-400">Aplikasi:</span>
+                            <select
+                                value={applicationFilter}
+                                onChange={(e) => {
+                                    setApplicationFilter(e.target.value === 'all' ? 'all' : Number(e.target.value));
+                                    setColumnPages({ request: 1, todo: 1, in_progress: 1, in_review: 1, complete: 1 });
+                                }}
+                                className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none dark:text-zinc-200"
+                            >
+                                <option value="all">Semua Aplikasi</option>
+                                {applications.map((app) => (
+                                    <option key={app.id} value={app.id}>
+                                        {app.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Filter Work Type */}
+                    <div className="flex items-center gap-1.5">
+                        <Select
+                            value={workTypeFilter}
+                            onValueChange={(value) => {
+                                setWorkTypeFilter(value as any);
+                                setColumnPages({ request: 1, todo: 1, in_progress: 1, in_review: 1, complete: 1 });
+                            }}
+                        >
+                            <SelectTrigger className="h-7 w-auto min-w-32.5 rounded-lg border-gray-200 bg-white px-2.5 text-xs shadow-2xs dark:border-zinc-700 dark:bg-zinc-800">
+                                <span className="text-gray-400 dark:text-zinc-500 mr-0.5">Tipe:</span>
+                                <SelectValue placeholder="Semua Tipe" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    <span className="text-xs">Semua Tipe</span>
+                                </SelectItem>
+                                <SelectItem value="pengerjaan">
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                        <Wrench className="h-3.5 w-3.5 text-blue-500" />
+                                        <span>Pengerjaan</span>
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="penambahan_fitur">
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                        <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                                        <span>Penambahan Fitur</span>
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="maintenance">
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                        <Hammer className="h-3.5 w-3.5 text-amber-500" />
+                                        <span>Maintenance</span>
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     {hasActiveFilters && (
                         <button
                             type="button"
                             onClick={() => {
                                 setUrgencyFilter('all');
                                 setTargetRoleFilter('all');
+                                setApplicationFilter('all');
+                                setWorkTypeFilter('all');
                                 setColumnPages({ request: 1, todo: 1, in_progress: 1, in_review: 1, complete: 1 });
                             }}
                             className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
@@ -761,7 +1026,7 @@ export default function KanbanBoard({
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.droppableProps}
-                                                className={`max-h-[calc(100vh-320px)] min-h-[420px] flex-1 overflow-y-auto rounded-xl p-1 transition-colors duration-200 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-track]:bg-transparent ${
+                                                className={`max-h-[calc(100vh-320px)] min-h-105 flex-1 overflow-y-auto rounded-xl p-1 transition-colors duration-200 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-track]:bg-transparent ${
                                                     config.columnBg
                                                 } ${snapshot.isDraggingOver ? 'ring-2 ring-blue-400 ring-inset dark:ring-blue-500' : ''}`}
                                             >
@@ -852,7 +1117,13 @@ export default function KanbanBoard({
                 </div>
             </DragDropContext>
 
-            <TaskModal task={selectedTask} users={users} currentUserId={user_id ?? null} onClose={closeTask} />
+            <TaskModal
+                task={selectedTask}
+                users={users}
+                currentUserId={user_id ?? null}
+                onClose={closeTask}
+                initialOpenChat={openChatInitially}
+            />
 
             {/* Delete Confirmation */}
             <AlertDialog

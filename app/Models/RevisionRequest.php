@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-
 class RevisionRequest extends Model
 {
     use HasFactory;
@@ -26,12 +25,26 @@ class RevisionRequest extends Model
         'estimation_end',
         'actual_start',
         'actual_end',
+        'application_id',
+        'work_type',
     ];
 
     // Hubungan ke user yang bikin request
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // Hubungan ke aplikasi (opsional)
+    public function application(): BelongsTo
+    {
+        return $this->belongsTo(Application::class);
+    }
+
+    // Hubungan ke komentar diskusi
+    public function comments()
+    {
+        return $this->hasMany(RevisionComment::class)->latest();
     }
 
     // Scopes untuk filter status atau urgency
@@ -51,7 +64,7 @@ class RevisionRequest extends Model
         return $this->belongsToMany(User::class, 'revision_request_user');
     }
 
-        public function attachments()
+    public function attachments()
     {
         return $this->hasMany(RevisionAttachment::class);
     }

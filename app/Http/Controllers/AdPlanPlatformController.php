@@ -54,6 +54,7 @@ class AdPlanPlatformController extends Controller
                 ...$plan->toArray(),
                 'batch' => $plan->batch,
                 'cost_month' => $plan->cost_month,
+                'cost_month_2' => $plan->cost_month_2,
                 'revenue_month' => $plan->revenue_month,
                 'avatar' => $plan->user->avatar
                 ? asset('storage/' . $plan->user->avatar)
@@ -232,6 +233,7 @@ class AdPlanPlatformController extends Controller
             'event_id' => $event->id,
             'batch' => $request->input('batch'),
             'cost_month' => $request->input('cost_month'),
+            'cost_month_2' => $request->input('cost_month_2'),
             'revenue_month' => $request->input('revenue_month'),
             'title_flayer' => $titleFlayer ?? null,
             'image_flayer' => $imageFlayerPath ?? null,
@@ -326,6 +328,7 @@ class AdPlanPlatformController extends Controller
             'ad_plan_id' => 'required|exists:ad_plans,id',
             'batch' => 'nullable|string',
             'cost_month' => 'nullable|string',
+            'cost_month_2' => 'nullable|string',
             'revenue_month' => 'nullable|string',
             'platforms' => 'nullable|array',
             'platforms.*.id' => 'nullable|exists:ad_plan_platforms,id',
@@ -368,6 +371,7 @@ class AdPlanPlatformController extends Controller
             'user_id'  => $validated['user_id'],
             'batch'    => $validated['batch'] ?? null,
             'cost_month' => $validated['cost_month'] ?? null,
+            'cost_month_2' => $validated['cost_month_2'] ?? null,
             'revenue_month' => $validated['revenue_month'] ?? null,
         ]);
 

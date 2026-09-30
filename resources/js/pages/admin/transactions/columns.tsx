@@ -89,6 +89,8 @@ const platformConfig: Record<string, { label: string; className: string }> = {
         className: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300',
     },
     aksademy: { label: 'Aksademy', className: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-primary dark:bg-blue-950 dark:text-blue-300' },
+    value_edu: { label: 'Value.Edu', className: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-300' },
+    valueedu: { label: 'Value.Edu', className: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-300' },
 };
 
 export const columns: ColumnDef<Invoice>[] = [

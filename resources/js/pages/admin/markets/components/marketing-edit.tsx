@@ -185,6 +185,7 @@ export default function MarketingEdit() {
         event_id: adPlan.event?.id || '',
         batch: adPlan.batch ?? '',
         cost_month: adPlan.cost_month ?? '',
+        cost_month_2: adPlan.cost_month_2 ?? '',
         revenue_month: adPlan.revenue_month ?? '',
         title_flayer: adPlan.title_flayer,
         image_flayer: adPlan.image_flayer,
@@ -193,6 +194,8 @@ export default function MarketingEdit() {
         ad_schedule_time: adPlan.ad_schedule_time,
         platforms: initialPlatformSettings,
     });
+
+    const [showSecondCostMonth, setShowSecondCostMonth] = useState<boolean>(Boolean(adPlan.cost_month_2));
 
     const [filteredEvents, setFilteredEvents] = useState(events);
 
@@ -261,6 +264,18 @@ export default function MarketingEdit() {
             const defaultM = format(rangeValue.from, 'yyyy-MM');
             if (!data.cost_month) setData('cost_month', defaultM);
             if (!data.revenue_month) setData('revenue_month', defaultM);
+
+            if (rangeValue.to) {
+                const endM = format(rangeValue.to, 'yyyy-MM');
+                if (endM !== defaultM && !data.cost_month_2) {
+                    setData((prev: any) => ({
+                        ...prev,
+                        cost_month: prev.cost_month || defaultM,
+                        cost_month_2: endM,
+                    }));
+                    setShowSecondCostMonth(true);
+                }
+            }
         }
         if (!activeSetting) return;
         setData(
@@ -665,14 +680,32 @@ export default function MarketingEdit() {
 
                     {/* ALOKASI BULAN PELAPORAN */}
                     <div className="rounded-lg border p-4 space-y-3 bg-card">
-                        <div className="flex items-center gap-2 font-medium text-sm">
-                            <CalendarIcon className="h-4 w-4 text-primary" />
-                            <span>Alokasi bulan pelaporan</span>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-medium text-sm">
+                                <CalendarIcon className="h-4 w-4 text-primary" />
+                                <span>Alokasi bulan pelaporan</span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                onClick={() => {
+                                    if (showSecondCostMonth) {
+                                        setData('cost_month_2', '');
+                                        setShowSecondCostMonth(false);
+                                    } else {
+                                        setShowSecondCostMonth(true);
+                                    }
+                                }}
+                            >
+                                {showSecondCostMonth ? '- Hapus Bulan Biaya ke-2' : '+ Tambah Bulan Biaya Iklan (Spend 2 Bulan)'}
+                            </Button>
                         </div>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className={cn('grid grid-cols-1 gap-4', showSecondCostMonth ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
                             <div>
                                 <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                                    <span>Biaya iklan masuk bulan</span>
+                                    <span>Biaya iklan masuk bulan {showSecondCostMonth ? '(Bulan 1)' : ''}</span>
                                 </Label>
                                 <Select value={data.cost_month || ''} onValueChange={(val) => setData('cost_month', val)}>
                                     <SelectTrigger>
@@ -687,6 +720,25 @@ export default function MarketingEdit() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {showSecondCostMonth && (
+                                <div>
+                                    <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                        <span>Biaya iklan masuk bulan (Bulan 2)</span>
+                                    </Label>
+                                    <Select value={data.cost_month_2 || ''} onValueChange={(val) => setData('cost_month_2', val)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih bulan biaya iklan ke-2" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {monthOptions.map((opt: MonthOption) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div>
                                 <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
                                     <span>Omset masuk bulan</span>
@@ -705,7 +757,11 @@ export default function MarketingEdit() {
                                 </Select>
                             </div>
                         </div>
-                        {data.cost_month && data.revenue_month && data.cost_month === data.revenue_month ? (
+                        {showSecondCostMonth && data.cost_month && data.cost_month_2 ? (
+                            <p className="text-xs text-blue-500 flex items-center gap-1 font-medium">
+                                <span>ℹ</span> Biaya iklan dialokasikan ke 2 bulan: {monthOptions.find(o => o.value === data.cost_month)?.label || data.cost_month} & {monthOptions.find(o => o.value === data.cost_month_2)?.label || data.cost_month_2}.
+                            </p>
+                        ) : data.cost_month && data.revenue_month && data.cost_month === data.revenue_month ? (
                             <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
                                 <span>✓</span> Biaya iklan dan omset sinkron di bulan yang sama.
                             </p>

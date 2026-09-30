@@ -15,7 +15,7 @@ class AdSpendStatController extends Controller
     protected function authorizeAccess(Request $request): void
     {
         if ($request->user()?->hasAnyRole(['technician', 'technician-intern'])) {
-            abort(403, 'Akses ditolak: Teknisi dan teknisi magang tidak diperkenankan mengakses data statistik.');
+            abort(403, 'Akses ditolak: Programmer dan programmer magang tidak diperkenankan mengakses data statistik.');
         }
     }
 
@@ -24,6 +24,11 @@ class AdSpendStatController extends Controller
         $this->authorizeAccess($request);
 
         $platform = $request->query('platform');
+        if ($platform === 'valueedu') {
+            $platform = 'value_edu';
+        } elseif ($platform === 'smartcounting_academy') {
+            $platform = 'smartcountingacademy';
+        }
         $channel = $request->query('channel');
         $year = (int) ($request->query('year') ?: now()->year);
         $month = $request->query('month') ? (int) $request->query('month') : null;
@@ -119,6 +124,12 @@ class AdSpendStatController extends Controller
     {
         $this->authorizeAccess($request);
 
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        } elseif ($request->input('platform') === 'smartcounting_academy') {
+            $request->merge(['platform' => 'smartcountingacademy']);
+        }
+
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(AdSpendStat::PLATFORMS))],
             'date' => ['required', 'date'],
@@ -134,11 +145,17 @@ class AdSpendStatController extends Controller
         return back()->with('success', 'Data biaya iklan berhasil disimpan.');
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(Request $request, string $id): RedirectResponse
     {
         $this->authorizeAccess($request);
 
         $record = AdSpendStat::findOrFail($id);
+
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        } elseif ($request->input('platform') === 'smartcounting_academy') {
+            $request->merge(['platform' => 'smartcountingacademy']);
+        }
 
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(AdSpendStat::PLATFORMS))],
@@ -153,7 +170,7 @@ class AdSpendStatController extends Controller
         return back()->with('success', 'Data biaya iklan berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, int $id): RedirectResponse
+    public function destroy(Request $request, string $id): RedirectResponse
     {
         $this->authorizeAccess($request);
 

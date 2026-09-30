@@ -27,6 +27,8 @@ const PLATFORM_COLORS: Record<string, { bg: string; border: string }> = {
     talenta: { bg: '#f97316', border: '#c2410c' }, // Orange
     skillgrow: { bg: '#ec4899', border: '#be185d' }, // Pink
     aksademy: { bg: '#8b5cf6', border: '#6d28d9' }, // Purple
+    value_edu: { bg: '#06b6d4', border: '#0891b2' }, // Cyan
+    valueedu: { bg: '#06b6d4', border: '#0891b2' }, // Cyan
 };
 
 const DEFAULT_COLOR = { bg: '#64748b', border: '#475569' };

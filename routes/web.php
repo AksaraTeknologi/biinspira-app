@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\BrevetStatController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserTechController;
 use App\Http\Controllers\RevisionRequestController;
+use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\TvTicketStatsController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +59,9 @@ Route::post('/stats/lock', [TvStatsAuthController::class, 'lock'])->name('tv.sta
 // TV DASHBOARD & STATS (PROTECTED BY ADMIN PASSWORD)
 // ─────────────────────────────────────────────
 Route::middleware(['stats.auth'])->group(function () {
+    // Halaman Awal Dashboard Statistik TV
+    Route::get('/stats-dashboard', [TvDashboardController::class, 'statsDashboard'])->name('tv.statistics.dashboard');
+
     Route::get('/stats', [TvDashboardController::class, 'index'])->name('tv.statistics');
     Route::get('/stats/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
 
@@ -71,14 +77,21 @@ Route::middleware(['stats.auth'])->group(function () {
     // Halaman TV Statistik Total Peserta Brevet
     Route::get('/stats-brevet', [TvBrevetStatsController::class, 'index'])->name('tv.statistics.brevet');
     Route::get('/stats-brevet/data', [TvBrevetStatsController::class, 'data'])->name('tv.statistics.brevet.data');
+
+    // Halaman TV Live Monitoring Tiket & Progres Aplikasi
+    Route::get('/stats-ticket', [TvTicketStatsController::class, 'index'])->name('tv.statistics.ticket');
+    Route::get('/stats-ticket/data', [TvTicketStatsController::class, 'data'])->name('tv.statistics.ticket.data');
 });
 
 // Redirect rute lama ke rute baru yang lebih singkat
+Route::redirect('/statistics-dashboard', '/stats-dashboard');
 Route::redirect('/statistics', '/stats');
 Route::redirect('/statistics/detail', '/stats/detail');
 Route::redirect('/statistics-omset', '/stats-omset');
 Route::redirect('/statistics-omset/data', '/stats-omset/data');
 Route::redirect('/statistics-omset/refresh', '/stats-omset/refresh');
+Route::redirect('/statistics-ticket', '/stats-ticket');
+Route::redirect('/requests/statistics', '/stats-ticket');
 
 // ─────────────────────────────────────────────
 // ADMIN ROUTES
@@ -259,6 +272,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/requests', [RevisionRequestController::class, 'index'])
         ->name('requests.index');
 
+    // ⚠️ Harus sebelum route /requests/{id} agar tidak dianggap sebagai id
+    Route::redirect('/requests/statistics', '/stats-ticket')
+        ->name('requests.statistics');
+
     Route::post('/requests', [RevisionRequestController::class, 'store']);
 
     Route::patch(
@@ -285,6 +302,34 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/requests/{id}', [RevisionRequestController::class, 'destroy'])
         ->name('requests.destroy');
+
+    // Komentar tiket
+    Route::get('/requests/{id}/comments', [RevisionRequestController::class, 'getComments'])
+        ->name('requests.comments.index');
+    Route::post('/requests/{id}/comments', [RevisionRequestController::class, 'addComment'])
+        ->name('requests.comment.store');
+    Route::delete('/requests/{id}/comments/{commentId}', [RevisionRequestController::class, 'deleteComment'])
+        ->name('requests.comment.destroy');
+
+    // Notifikasi tiket
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.readAll');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.markAsRead');
+    Route::post('/notifications/ticket/{ticketId}/read', [NotificationController::class, 'markTicketAsRead'])
+        ->name('notifications.markTicketAsRead');
+
+    // Manajemen Aplikasi (admin only — validasi di controller)
+    Route::get('/applications', [ApplicationController::class, 'index'])
+        ->name('applications.index');
+    Route::post('/applications', [ApplicationController::class, 'store'])
+        ->name('applications.store');
+    Route::put('/applications/{id}', [ApplicationController::class, 'update'])
+        ->name('applications.update');
+    Route::delete('/applications/{id}', [ApplicationController::class, 'destroy'])
+        ->name('applications.destroy');
 });
 
 require __DIR__ . '/settings.php';

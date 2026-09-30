@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdSpendStat;
+use App\Models\BrevetStat;
+use App\Models\RevisionRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +38,51 @@ class TvDashboardController extends Controller
         'smartcounting',
         'smartcountingacademy',
     ];
+
+    public function statsDashboard(): Response
+    {
+        $platforms = config('services.platforms', []);
+        $availablePlatformKeys = [];
+        foreach ($this->platformLabels as $key => $_label) {
+            if ($this->hasPlatformCredentials($platforms[$key] ?? null)) {
+                $availablePlatformKeys[] = $key;
+            }
+        }
+
+        $activeTicketsCount = RevisionRequest::query()
+            ->whereIn('status', ['todo', 'in_progress', 'in_review'])
+            ->count();
+        $inProgressTicketsCount = RevisionRequest::query()
+            ->where('status', 'in_progress')
+            ->count();
+
+        $currentYear = (int) now()->year;
+        $brevetTotalThisYear = (int) BrevetStat::query()
+            ->where('year', $currentYear)
+            ->sum('total');
+
+        $adSpendThisMonth = (float) AdSpendStat::query()
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', (int) now()->month)
+            ->sum('amount');
+
+        $adSpendThisYear = (float) AdSpendStat::query()
+            ->whereYear('date', $currentYear)
+            ->sum('amount');
+
+        return Inertia::render('tv/stats-dashboard', [
+            'overview' => [
+                'active_platforms_count' => count($availablePlatformKeys),
+                'active_tickets_count' => $activeTicketsCount,
+                'in_progress_tickets_count' => $inProgressTicketsCount,
+                'brevet_total_year' => $brevetTotalThisYear,
+                'ad_spend_this_month' => $adSpendThisMonth,
+                'ad_spend_this_year' => $adSpendThisYear,
+                'year' => $currentYear,
+            ],
+            'generatedAt' => now()->toIso8601String(),
+        ]);
+    }
 
     public function index(): Response
     {

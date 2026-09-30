@@ -167,7 +167,7 @@ class DataStatisticsSeeder extends Seeder
 
         // 2. Seed Ad Spend Stats sample data for 2026
         if (AdSpendStat::count() === 0) {
-            $platforms = ['biinspira', 'smartcounting', 'sekolahpajak', 'kompeten', 'talenta', 'levelup', 'aksademy', 'skillgrow'];
+            $platforms = ['biinspira', 'smartcounting', 'smartcountingacademy', 'sekolahpajak', 'kompeten', 'talenta', 'levelup', 'aksademy', 'skillgrow', 'value_edu'];
             $channels = ['boost_post', 'meta', 'tiktok', 'google'];
 
             // Seed monthly records for 2026 up to current month (September)

@@ -50,7 +50,7 @@ import * as React from 'react';
 import { toast } from 'sonner';
 
 interface AdSpendRecord {
-    id: number;
+    id: number | string;
     platform: string;
     platform_label: string;
     date: string;
@@ -114,7 +114,7 @@ export default function AdSpendStatsIndex() {
 
     const [isAddOpen, setIsAddOpen] = React.useState(false);
     const [editItem, setEditItem] = React.useState<AdSpendRecord | null>(null);
-    const [deleteId, setDeleteId] = React.useState<number | null>(null);
+    const [deleteId, setDeleteId] = React.useState<number | string | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isAddDatePickerOpen, setIsAddDatePickerOpen] = React.useState(false);
     const [isEditDatePickerOpen, setIsEditDatePickerOpen] = React.useState(false);

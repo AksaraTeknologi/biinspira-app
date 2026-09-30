@@ -17,6 +17,7 @@ class AdPlan extends Model
         'status',
         "ad_schedule_time",
         "cost_month",
+        "cost_month_2",
         "revenue_month",
         "title_flayer",
         "image_flayer"

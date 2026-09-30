@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ad_spend_stats', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('platform', 60)->index();
             $table->date('date')->index();
             $table->decimal('amount', 15, 2);

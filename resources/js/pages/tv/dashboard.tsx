@@ -1,12 +1,13 @@
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, Link, router } from '@inertiajs/react';
-import { Banknote, BarChart3, CalendarIcon, GraduationCap, Lock, Sparkles, TrendingUp } from 'lucide-react';
+import { Banknote, BarChart3, CalendarIcon, GraduationCap, KanbanSquareIcon, Lock, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
 import { PlatformStatCardCarousel, PlatformStatCardGrid } from './components/platform-stat-cards';
 import StatsSkeletonGrid from './components/stats-skeleton-grid';
+import { TvNavMenu } from './components/tv-nav-menu';
 import type { DashboardViewMode, DrilldownData, DrilldownMetric, PlatformStat, TvDashboardProps } from './types';
 import { formatCurrency, getTimeBasedMessage } from './utils';
 
@@ -207,20 +208,13 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         Pendapatan Tiap Platform
                                     </h1>
                                 </div>
-                                {/* Mobile Quick Action Link to Omset TV & Lock */}
+                                {/* Mobile Quick Action Link to Navigation Popup & Lock */}
                                 <div className="flex items-center gap-1.5 sm:hidden">
-                                    <Link
-                                        href="/stats-omset"
-                                        className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
-                                        title="Buka Statistik Omset"
-                                    >
-                                        <BarChart3 className="h-3.5 w-3.5 text-white" />
-                                        <span>Omset</span>
-                                    </Link>
+                                    <TvNavMenu currentKey="platform" />
                                     <button
                                         type="button"
-                                        onClick={() => router.post(route('tv.stats.lock'))}
-                                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30"
+                                        onClick={() => router.post('/stats/lock')}
+                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30 shadow-xs"
                                         title="Kunci Layar Statistik"
                                     >
                                         <Lock className="h-3.5 w-3.5 text-white" />
@@ -272,37 +266,12 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         </TabsTrigger>
                                     </TabsList>
 
-                                    <Link
-                                        href="/stats-omset"
-                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
-                                        title="Buka Halaman Statistik Omset"
-                                    >
-                                        <BarChart3 className="h-3.5 w-3.5 text-emerald-200" />
-                                        <span>Omset '25 vs '26</span>
-                                    </Link>
-
-                                    <Link
-                                        href="/stats-iklan"
-                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
-                                        title="Buka Halaman Statistik Biaya Iklan"
-                                    >
-                                        <Banknote className="h-3.5 w-3.5 text-blue-200" />
-                                        <span>Biaya Iklan</span>
-                                    </Link>
-
-                                    <Link
-                                        href="/stats-brevet"
-                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap"
-                                        title="Buka Halaman Total Peserta Brevet"
-                                    >
-                                        <GraduationCap className="h-3.5 w-3.5 text-amber-200" />
-                                        <span>Peserta Brevet</span>
-                                    </Link>
+                                    <TvNavMenu currentKey="platform" className="hidden sm:flex" />
 
                                     <button
                                         type="button"
-                                        onClick={() => router.post(route('tv.stats.lock'))}
-                                        className="hidden sm:flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap"
+                                        onClick={() => router.post('/stats/lock')}
+                                        className="hidden sm:flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap active:scale-95 shadow-xs"
                                         title="Kunci Tampilan Statistik"
                                     >
                                         <Lock className="h-3.5 w-3.5 text-white" />

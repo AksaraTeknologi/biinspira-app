@@ -2,11 +2,9 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSidebar } from "@/components/app-sidebar-context";
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
-import { MessageSquareDot, Sun, MoonStar } from 'lucide-react';
-import { Link } from '@inertiajs/react';
-import { Button } from './ui/button';
 import { ThemeSwitcher } from './ui/theme-switcher';
-import { useEffect, useState } from 'react';
+import { NotificationPopover } from '@/components/notification-popover';
+import { useEffect } from 'react';
 import { useTheme } from './useTheme';
 
 interface AppSidebarHeaderProps {
@@ -45,11 +43,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
                         onChange={setTheme}
                         className="border border-pri"
                     />
-                    <Link href="#">
-                        <Button variant="outline" className="rounded-full !p-2">
-                            <MessageSquareDot />
-                        </Button>
-                    </Link>
+                    <NotificationPopover />
                 </div>
             </div>
         </header>

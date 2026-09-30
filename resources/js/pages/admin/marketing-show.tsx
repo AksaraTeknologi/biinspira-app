@@ -8,7 +8,8 @@ import { SharedData } from '@/types';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { usePage } from '@inertiajs/react';
 import { Minus, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export interface AdPlanData {
     id: string | null;
@@ -23,6 +24,7 @@ export interface AdPlanData {
     previous_batch?: number | string | null;
     event_batch?: number | string | null;
     cost_month?: string | null;
+    cost_month_2?: string | null;
     revenue_month?: string | null;
 
     platforms: PlatformData[] | PlatformData | null;
@@ -59,14 +61,20 @@ export interface ResultData {
     checkout_weekend?: number | string | null;
     checkout_weekday?: number | string | null;
     cost_month?: string | null;
+    cost_month_2?: string | null;
     revenue_month?: string | null;
     revenue: number | string;
     result_platforms: ResultPlatformData[] | ResultPlatformData | null;
 }
 
 export interface ResultPlatformData {
+    id?: string;
+    ad_plan_platform_id?: string | null;
+    setting_name?: string | null;
     result: number;
     total_cost: number;
+    cost_month_1_amount?: string | number | null;
+    cost_month_2_amount?: string | number | null;
     platform_name?: string | null;
     metrics: MetricsData[] | null;
 }
@@ -160,8 +168,21 @@ export default function MarketingShow({}: AdPlanProps) {
         return platformList.length ? getPlatformKey(platformList[0].platform_name ?? platformList[0].name ?? undefined, 0) : 'platforms-0';
     });
 
+    const platformGroupMap = useMemo(() => {
+        const map: Record<string, ResultPlatformData[]> = {};
+        resultPlatformList.forEach((rp, idx) => {
+            const pName = rp.platform_name || `Platform ${idx + 1}`;
+            if (!map[pName]) map[pName] = [];
+            map[pName].push(rp);
+        });
+        return map;
+    }, [resultPlatformList]);
+
+    const uniquePlatformNames = Object.keys(platformGroupMap);
+    const [selectedSettingByPlatform, setSelectedSettingByPlatform] = useState<Record<string, number>>({});
+
     const [resultTab, setResultTab] = useState<string>(() => {
-        return resultList.length ? getPlatformKey(resultPlatformList[0].platform_name ?? undefined, 0) : 'platforms';
+        return uniquePlatformNames.length ? uniquePlatformNames[0] : 'platforms';
     });
 
     function renderAlphabetList(value: string | null | undefined) {
@@ -449,7 +470,10 @@ export default function MarketingShow({}: AdPlanProps) {
                                             <div className="mt-4 pt-3 border-t grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
                                                 <div>
                                                     <span className="text-muted-foreground">Alokasi Biaya Iklan Masuk Bulan:</span>{' '}
-                                                    <span className="font-semibold text-foreground">{firstResult?.cost_month || data?.cost_month || '-'}</span>
+                                                    <span className="font-semibold text-foreground">
+                                                        {firstResult?.cost_month || data?.cost_month || '-'}
+                                                        {(firstResult?.cost_month_2 || data?.cost_month_2) ? ` & ${firstResult?.cost_month_2 || data?.cost_month_2}` : ''}
+                                                    </span>
                                                 </div>
                                                 <div>
                                                     <span className="text-muted-foreground">Alokasi Omset Masuk Bulan:</span>{' '}
@@ -466,111 +490,194 @@ export default function MarketingShow({}: AdPlanProps) {
                                             <TabsList
                                                 className="mb-4 grid w-full"
                                                 style={{
-                                                    gridTemplateColumns: `repeat(${Math.max(1, resultPlatformList.length)}, minmax(0, 1fr))`,
+                                                    gridTemplateColumns: `repeat(${Math.max(1, uniquePlatformNames.length)}, minmax(0, 1fr))`,
                                                 }}
                                             >
-                                                {resultPlatformList.map((p, idx) => {
-                                                    const name = p.platform_name ?? `Platform ${idx + 1}`;
-                                                    const key = getPlatformKey(name, idx);
-                                                    return (
-                                                        <TabsTrigger key={key} value={key}>
-                                                            {name}
-                                                        </TabsTrigger>
-                                                    );
-                                                })}
+                                                {uniquePlatformNames.map((name) => (
+                                                    <TabsTrigger key={name} value={name}>
+                                                        {name}
+                                                    </TabsTrigger>
+                                                ))}
                                             </TabsList>
 
-                                            {resultPlatformList.map((p, idx) => {
-                                                const name = p.platform_name ?? `Platform ${idx + 1}`;
-                                                const key = getPlatformKey(name, idx);
+                                            {uniquePlatformNames.map((pName) => {
+                                                const settingsForPlatform = platformGroupMap[pName] || [];
+                                                const currentSettingIdx = selectedSettingByPlatform[pName] ?? 0;
+                                                const isTotalView = currentSettingIdx === -1;
+                                                const activeSetting = !isTotalView
+                                                    ? settingsForPlatform[currentSettingIdx] || settingsForPlatform[0]
+                                                    : null;
 
-                                                // find the corresponding result platform by name, fallback to index
-                                                const rp =
-                                                    resultPlatformList.find(
-                                                        (r) =>
-                                                            (r.platform_name ?? '').toString().toLowerCase() ===
-                                                            (name ?? '').toString().toLowerCase(),
-                                                    ) ?? resultPlatformList?.[idx];
+                                                // Calculate platform total
+                                                let totalCost = 0;
+                                                let totalReach = 0;
+                                                let totalImpressions = 0;
+                                                let totalCPR = 0;
+                                                let totalClicks = 0;
+                                                let totalLikes = 0;
+                                                let totalSaves = 0;
+                                                let totalShares = 0;
+                                                let totalProfileVisits = 0;
+                                                let totalFollows = 0;
+                                                let totalDirectMessages = 0;
+                                                let totalExternalLinkClicks = 0;
+                                                let totalClickWhatsapp = 0;
+                                                let totalChatAdmin = 0;
+                                                let totalResultAds = 0;
 
-                                                // metrics can be an array; take first metrics entry if present
-                                                const metrics = rp?.metrics ? (Array.isArray(rp.metrics) ? rp.metrics[0] : rp.metrics) : undefined;
+                                                settingsForPlatform.forEach((item: ResultPlatformData) => {
+                                                    const m = item.metrics ? (Array.isArray(item.metrics) ? item.metrics[0] : item.metrics) : undefined;
+                                                    totalCost += Number(String(item.total_cost || 0).replace(/\D/g, '')) || 0;
+                                                    totalReach += Number(String(m?.reach || 0).replace(/\D/g, '')) || 0;
+                                                    totalImpressions += Number(String(m?.impressions || 0).replace(/\D/g, '')) || 0;
+                                                    totalClicks += Number(String(m?.clicks || 0).replace(/\D/g, '')) || 0;
+                                                    totalLikes += Number(String(m?.likes || 0).replace(/\D/g, '')) || 0;
+                                                    totalSaves += Number(String(m?.saves || 0).replace(/\D/g, '')) || 0;
+                                                    totalShares += Number(String(m?.shares || 0).replace(/\D/g, '')) || 0;
+                                                    totalProfileVisits += Number(String(m?.profile_visits || 0).replace(/\D/g, '')) || 0;
+                                                    totalFollows += Number(String(m?.follows || 0).replace(/\D/g, '')) || 0;
+                                                    totalDirectMessages += Number(String(m?.direct_messages || 0).replace(/\D/g, '')) || 0;
+                                                    totalExternalLinkClicks += Number(String(m?.external_link_clicks || 0).replace(/\D/g, '')) || 0;
+                                                    totalClickWhatsapp += Number(String(m?.click_whatsapp || 0).replace(/\D/g, '')) || 0;
+                                                    totalChatAdmin += Number(String(m?.chat_admin || 0).replace(/\D/g, '')) || 0;
+                                                    totalResultAds += Number(String(m?.result_ads || item.result || 0).replace(/\D/g, '')) || 0;
+                                                });
+                                                totalCPR = totalResultAds > 0 ? Math.round(totalCost / totalResultAds) : (settingsForPlatform.length > 0 ? Math.round(totalCost / settingsForPlatform.length) : 0);
+
+                                                const activeMetrics = activeSetting?.metrics
+                                                    ? (Array.isArray(activeSetting.metrics) ? activeSetting.metrics[0] : activeSetting.metrics)
+                                                    : undefined;
+
+                                                const isBoost = pName.toLowerCase().includes('boost post');
 
                                                 return (
-                                                    <TabsContent key={key} value={key}>
+                                                    <TabsContent key={pName} value={pName}>
+                                                        {/* Setting pills if platform has multiple settings */}
+                                                        {settingsForPlatform.length > 1 && (
+                                                            <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-muted/40 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                                                <span className="text-xs font-semibold text-muted-foreground mr-1">Setting Iklan:</span>
+                                                                {settingsForPlatform.map((s: ResultPlatformData, idx: number) => (
+                                                                    <button
+                                                                        key={s.id || idx}
+                                                                        type="button"
+                                                                        onClick={() => setSelectedSettingByPlatform((prev) => ({ ...prev, [pName]: idx }))}
+                                                                        className={cn(
+                                                                            'px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm',
+                                                                            currentSettingIdx === idx
+                                                                                ? 'bg-blue-600 text-white font-semibold'
+                                                                                : 'bg-background hover:bg-muted text-muted-foreground border border-zinc-200 dark:border-zinc-700',
+                                                                        )}
+                                                                    >
+                                                                        {s.setting_name || `Setting ${idx + 1}`}
+                                                                    </button>
+                                                                ))}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setSelectedSettingByPlatform((prev) => ({ ...prev, [pName]: -1 }))}
+                                                                    className={cn(
+                                                                        'px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm ml-auto',
+                                                                        isTotalView
+                                                                            ? 'bg-blue-600 text-white font-semibold'
+                                                                            : 'bg-background hover:bg-muted text-muted-foreground border border-zinc-200 dark:border-zinc-700',
+                                                                    )}
+                                                                >
+                                                                    Total ({pName})
+                                                                </button>
+                                                            </div>
+                                                        )}
+
                                                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                                            {(() => {
-                                                                const isBoost = (rp?.platform_name ?? '')
-                                                                    .toString()
-                                                                    .toLowerCase()
-                                                                    .includes('boost post');
-                                                                return (
-                                                                    <div className={isBoost ? 'hidden' : ''}>
-                                                                        <Label>Hasil Iklan</Label>
-                                                                        <div className="mt-1">{metrics?.result_ads ?? rp?.result ?? '-'}</div>
+                                                            {!isBoost && (
+                                                                <div>
+                                                                    <Label>Hasil Iklan {!isTotalView && activeSetting?.setting_name ? `(${activeSetting.setting_name})` : '(Total)'}</Label>
+                                                                    <div className="mt-1 font-medium">
+                                                                        {!isTotalView
+                                                                            ? (activeMetrics?.result_ads ?? activeSetting?.result ?? '-')
+                                                                            : totalResultAds.toLocaleString('id-ID')}
                                                                     </div>
-                                                                );
-                                                            })()}
+                                                                </div>
+                                                            )}
                                                             <div>
-                                                                <Label>Total Biaya Iklan</Label>
-                                                                <div className="mt-1">Rp {rp?.total_cost ?? '-'}</div>
+                                                                <Label>Total Biaya Iklan {!isTotalView && activeSetting?.setting_name ? `(${activeSetting.setting_name})` : '(Total)'}</Label>
+                                                                <div className="mt-1 font-medium">
+                                                                    Rp {!isTotalView
+                                                                        ? (activeSetting?.total_cost ?? '-')
+                                                                        : totalCost.toLocaleString('id-ID')}
+                                                                </div>
+                                                                {!isTotalView && (activeSetting?.cost_month_1_amount || activeSetting?.cost_month_2_amount) && (
+                                                                    <div className="text-xs text-muted-foreground mt-1 space-x-2">
+                                                                        {activeSetting.cost_month_1_amount && <span>Bulan 1: <strong>Rp {activeSetting.cost_month_1_amount}</strong></span>}
+                                                                        {activeSetting.cost_month_1_amount && activeSetting.cost_month_2_amount && <span>•</span>}
+                                                                        {activeSetting.cost_month_2_amount && <span>Bulan 2: <strong>Rp {activeSetting.cost_month_2_amount}</strong></span>}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
 
                                                         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                                             <div>
                                                                 <Label>Reach</Label>
-                                                                <div className="mt-1">{metrics?.reach ?? '-'}</div>
+                                                                <div className="mt-1">
+                                                                    {!isTotalView ? (activeMetrics?.reach ?? '-') : totalReach.toLocaleString('id-ID')}
+                                                                </div>
                                                             </div>
                                                             <div>
                                                                 <Label>Impression</Label>
-                                                                <div className="mt-1">{metrics?.impressions ?? '-'}</div>
+                                                                <div className="mt-1">
+                                                                    {!isTotalView ? (activeMetrics?.impressions ?? '-') : totalImpressions.toLocaleString('id-ID')}
+                                                                </div>
                                                             </div>
                                                             <div>
                                                                 <Label>CPR</Label>
-                                                                <div className="mt-1">{metrics?.cpr ?? '-'}</div>
+                                                                <div className="mt-1">
+                                                                    {!isTotalView ? (activeMetrics?.cpr ?? '-') : `Rp ${totalCPR.toLocaleString('id-ID')}`}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <h2 className="mt-3 text-lg font-semibold">Metrics tambahan</h2>
+
+                                                        <h2 className="mt-3 text-lg font-semibold">
+                                                            Metrics Tambahan {!isTotalView && activeSetting?.setting_name ? `(${activeSetting.setting_name})` : '(Total)'}
+                                                        </h2>
                                                         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                                             <div>
                                                                 <Label>Clicks</Label>
-                                                                <div className="mt-1">{metrics?.clicks ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.clicks ?? '-') : totalClicks.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Likes</Label>
-                                                                <div className="mt-1">{metrics?.likes ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.likes ?? '-') : totalLikes.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Saves</Label>
-                                                                <div className="mt-1">{metrics?.saves ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.saves ?? '-') : totalSaves.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Shares</Label>
-                                                                <div className="mt-1">{metrics?.shares ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.shares ?? '-') : totalShares.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Profile Visits</Label>
-                                                                <div className="mt-1">{metrics?.profile_visits ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.profile_visits ?? '-') : totalProfileVisits.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Follows</Label>
-                                                                <div className="mt-1">{metrics?.follows ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.follows ?? '-') : totalFollows.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Direct Messages</Label>
-                                                                <div className="mt-1">{metrics?.direct_messages ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.direct_messages ?? '-') : totalDirectMessages.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>External Link Clicks</Label>
-                                                                <div className="mt-1">{metrics?.external_link_clicks ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.external_link_clicks ?? '-') : totalExternalLinkClicks.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Click WhatsApp</Label>
-                                                                <div className="mt-1">{metrics?.click_whatsapp ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.click_whatsapp ?? '-') : totalClickWhatsapp.toLocaleString('id-ID')}</div>
                                                             </div>
                                                             <div>
                                                                 <Label>Chat Admin</Label>
-                                                                <div className="mt-1">{metrics?.chat_admin ?? '-'}</div>
+                                                                <div className="mt-1">{!isTotalView ? (activeMetrics?.chat_admin ?? '-') : totalChatAdmin.toLocaleString('id-ID')}</div>
                                                             </div>
                                                         </div>
                                                     </TabsContent>

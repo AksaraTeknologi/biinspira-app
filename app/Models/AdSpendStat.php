@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdSpendStat extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
@@ -20,12 +21,14 @@ class AdSpendStat extends Model
     public const PLATFORMS = [
         'biinspira' => 'Biinspira',
         'smartcounting' => 'Smartcounting',
+        'smartcountingacademy' => 'Smartcounting Academy',
         'sekolahpajak' => 'Sekolah Pajak',
         'kompeten' => 'Kompeten',
         'talenta' => 'Talenta',
         'levelup' => 'LevelUp Accounting',
         'aksademy' => 'Aksademy',
         'skillgrow' => 'Skill Grow',
+        'value_edu' => 'Value.Edu',
     ];
 
     public const CHANNELS = [

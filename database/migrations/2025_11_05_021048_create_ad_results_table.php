@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('checkout_weekday')->nullable();
             $table->decimal('revenue', 15, 2);
             $table->string('cost_month', 20)->nullable();
+            $table->string('cost_month_2', 20)->nullable();
             $table->string('revenue_month', 20)->nullable();
             $table->timestamps();
         });
