@@ -161,8 +161,8 @@ class RevisionRequestController extends Controller
             'deadline'       => 'required|date',
             'assignees'      => 'nullable|array',
             'assignees.*'    => 'exists:users,id',
-            'attachments'    => 'required|array|min:1',
-            'attachments.*'  => 'required|file|mimes:jpg,png,jpeg,pdf',
+            'attachments'    => 'nullable|array',
+            'attachments.*'  => 'nullable|file|mimes:jpg,png,jpeg,pdf',
             'application_id' => 'nullable|exists:applications,id',
             'work_type'      => 'nullable|in:pengerjaan,penambahan_fitur,maintenance',
         ]);
@@ -312,12 +312,6 @@ class RevisionRequestController extends Controller
             'application_id' => 'nullable|exists:applications,id',
             'work_type'      => 'nullable|in:pengerjaan,penambahan_fitur,maintenance',
         ]);
-
-        if (! $request->hasFile('attachments') && $task->attachments()->count() === 0) {
-            return back()
-                ->withErrors(['attachments' => 'Lampiran wajib diisi.'])
-                ->withInput();
-        }
 
         // ✅ UPDATE DATA
         $task->update([

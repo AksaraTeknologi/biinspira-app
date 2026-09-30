@@ -131,6 +131,56 @@ test('ticket can be created and updated with application_id and work_type', func
     ]);
 });
 
+test('ticket can be created and updated without attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $app = Application::create([
+        'name'      => 'Biinspira Portal',
+        'slug'      => 'biinspira-portal',
+        'is_active' => true,
+    ]);
+
+    // Create without attachments
+    $response = $this->actingAs($user)->post(route('requests.store'), [
+        'title'          => 'Tiket Tanpa Lampiran',
+        'description'    => 'Ini tiket tanpa lampiran file',
+        'related_url'    => 'https://example.com/no-attachment',
+        'urgency'        => 'low',
+        'target_role'    => 'technician',
+        'deadline'       => now()->addDays(3)->toDateString(),
+        'application_id' => $app->id,
+        'work_type'      => 'maintenance',
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    $response->assertRedirect(route('requests.index'));
+
+    $this->assertDatabaseHas('revision_requests', [
+        'title' => 'Tiket Tanpa Lampiran',
+    ]);
+
+    $ticket = RevisionRequest::where('title', 'Tiket Tanpa Lampiran')->first();
+
+    // Update without attachments
+    $updateResponse = $this->actingAs($user)->put(route('requests.update', $ticket->id), [
+        'title'          => 'Tiket Tanpa Lampiran Diperbarui',
+        'description'    => 'Deskripsi baru',
+        'related_url'    => 'https://example.com/no-attachment',
+        'urgency'        => 'medium',
+        'target_role'    => 'technician',
+        'deadline'       => now()->addDays(4)->toDateString(),
+        'application_id' => $app->id,
+        'work_type'      => 'maintenance',
+    ]);
+
+    $updateResponse->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('revision_requests', [
+        'id'    => $ticket->id,
+        'title' => 'Tiket Tanpa Lampiran Diperbarui',
+    ]);
+});
+
 test('role-based access control for technician and intern in index', function () {
     $techUser = User::factory()->create();
     $techUser->assignRole('technician');
