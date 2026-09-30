@@ -3,7 +3,7 @@
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { AppWindow, Plus, Search, X } from 'lucide-react';
+import { AppWindow, BarChart3, Plus, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import KanbanBoard from '../../components/KanbanBoard';
@@ -132,6 +132,14 @@ export default function Index({ tasks, users, applications = [] }: Props) {
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    <Link
+                                        href="/stats-ticket"
+                                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-2xs transition hover:bg-gray-50 hover:text-gray-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                                    >
+                                        <BarChart3 size={16} className="text-gray-500 dark:text-zinc-400" />
+                                        Statistik Tiket
+                                    </Link>
+
                                     {String(userRole ?? '').toLowerCase() === 'admin' && (
                                         <Link
                                             href="/applications"
