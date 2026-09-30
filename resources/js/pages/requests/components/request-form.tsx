@@ -11,9 +11,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, Trash2 } from 'lucide-react';
+import { CalendarIcon, Hammer, Sparkles, Trash2, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+
+type Application = {
+    id: number | string;
+    name: string;
+    color?: string | null;
+};
 
 type RequestTask = {
     id: number;
@@ -24,11 +30,14 @@ type RequestTask = {
     target_role?: 'technician' | 'technician-intern';
     deadline?: string | null;
     attachments?: Array<{ file_path: string }>;
+    application_id?: number | string | null;
+    work_type?: 'pengerjaan' | 'penambahan_fitur' | 'maintenance' | null;
 };
 
 type RequestFormProps = {
     mode: 'create' | 'edit';
     task?: RequestTask;
+    applications?: Application[];
 };
 
 type RequestPayload = {
@@ -39,6 +48,8 @@ type RequestPayload = {
     target_role: 'technician' | 'technician-intern';
     deadline: string;
     attachments: File[];
+    application_id: string;
+    work_type: string;
     _method?: 'PUT';
 };
 
@@ -62,7 +73,7 @@ function isImageFile(filePath: string) {
     return /\.(jpg|jpeg|png|webp|gif)$/i.test(filePath);
 }
 
-export default function RequestForm({ mode, task }: RequestFormProps) {
+export default function RequestForm({ mode, task, applications = [] }: RequestFormProps) {
     const [date, setDate] = useState<Date | undefined>(parseDeadline(task?.deadline));
     const [newFilePreviews, setNewFilePreviews] = useState<Array<string | null>>([]);
 
@@ -74,6 +85,8 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
         target_role: task?.target_role ?? 'technician',
         deadline: task?.deadline ? (task.deadline.includes(' ') ? task.deadline.split(' ')[0] : task.deadline) : '',
         attachments: [],
+        application_id: task?.application_id ? String(task.application_id) : '',
+        work_type: task?.work_type ?? '',
     });
 
     useEffect(() => {
@@ -90,6 +103,8 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
             target_role: task.target_role ?? 'technician',
             deadline: task.deadline ? (task.deadline.includes(' ') ? task.deadline.split(' ')[0] : task.deadline) : '',
             attachments: [],
+            application_id: task.application_id ? String(task.application_id) : '',
+            work_type: task.work_type ?? '',
         });
     }, [task, setData]);
 
@@ -145,6 +160,8 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
 
         transform((current) => ({
             ...current,
+            application_id: current.application_id && current.application_id !== 'none' ? current.application_id : null,
+            work_type: current.work_type && current.work_type !== 'none' ? current.work_type : null,
             ...(mode === 'edit' ? { _method: 'PUT' as const } : {}),
         }));
 
@@ -153,7 +170,7 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
             preserveScroll: true,
             onSuccess: () => {
                 if (mode === 'create') {
-                    reset('title', 'description', 'related_url', 'urgency', 'target_role', 'deadline', 'attachments');
+                    reset('title', 'description', 'related_url', 'urgency', 'target_role', 'deadline', 'attachments', 'application_id', 'work_type');
                     setDate(undefined);
                     setNewFilePreviews([]);
                 }
@@ -240,6 +257,65 @@ export default function RequestForm({ mode, task }: RequestFormProps) {
                                 </SelectContent>
                             </Select>
                             {errors.urgency && <p className="text-sm text-red-500">{errors.urgency}</p>}
+                        </div>
+
+                        {/* Aplikasi (opsional) */}
+                        {applications.length > 0 && (
+                            <div className="space-y-3">
+                                <Label>Aplikasi <span className="text-gray-400 text-xs">(opsional)</span></Label>
+                                <Select
+                                    value={data.application_id ? data.application_id : 'none'}
+                                    onValueChange={(value) => setData('application_id', value === 'none' ? '' : value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih aplikasi terkait" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">— Tidak ada —</SelectItem>
+                                        {applications.map((app) => (
+                                            <SelectItem key={app.id} value={String(app.id)}>
+                                                {app.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.application_id && <p className="text-sm text-red-500">{errors.application_id}</p>}
+                            </div>
+                        )}
+
+                        {/* Work Type (opsional) */}
+                        <div className="space-y-3">
+                            <Label>Jenis Pekerjaan <span className="text-gray-400 text-xs">(opsional)</span></Label>
+                            <Select
+                                value={data.work_type ? data.work_type : 'none'}
+                                onValueChange={(value) => setData('work_type', value === 'none' ? '' : value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih jenis pekerjaan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">— Tidak ada —</SelectItem>
+                                    <SelectItem value="pengerjaan">
+                                        <div className="flex items-center gap-2">
+                                            <Wrench className="h-4 w-4 text-blue-500" />
+                                            <span>Pengerjaan</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="penambahan_fitur">
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles className="h-4 w-4 text-violet-500" />
+                                            <span>Penambahan Fitur</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="maintenance">
+                                        <div className="flex items-center gap-2">
+                                            <Hammer className="h-4 w-4 text-amber-500" />
+                                            <span>Maintenance</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.work_type && <p className="text-sm text-red-500">{errors.work_type}</p>}
                         </div>
 
                         <div className="space-y-3">

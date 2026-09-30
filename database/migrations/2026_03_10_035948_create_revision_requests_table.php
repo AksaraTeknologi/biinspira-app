@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('description');
 
             $table->string('related_url')->nullable();
+            $table->foreignUuid('application_id')->nullable()->constrained('applications')->nullOnDelete();
+            $table->enum('work_type', ['pengerjaan', 'penambahan_fitur', 'maintenance'])->nullable();
             $table->text('review_note')->nullable();
 
             // user role 'unit' yang bikin request

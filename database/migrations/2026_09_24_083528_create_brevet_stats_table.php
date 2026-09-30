@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('brevet_stats', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('platform', 60)->index();
             $table->string('batch', 150);
             $table->string('month', 30)->index();

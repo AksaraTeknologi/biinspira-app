@@ -16,10 +16,14 @@ class TvStatsAuthController extends Controller
      */
     public function show(Request $request): Response|RedirectResponse
     {
-        // Jika sudah login sebagai admin atau sesi statistik sudah aktif, langsung alihkan
-        if (($request->user() && $request->user()->hasRole('admin')) || $request->session()->get('stats_authenticated') === true) {
-            $targetUrl = $request->session()->pull('stats_target_url', route('tv.statistics'));
-            return redirect()->to($targetUrl);
+        $isLocked = $request->session()->get('stats_locked', false) === true;
+
+        // Jika tidak sedang terkunci dan sudah login sebagai admin atau sesi statistik sudah aktif, langsung alihkan
+        if (! $isLocked) {
+            if (($request->user() && $request->user()->hasRole('admin')) || $request->session()->get('stats_authenticated') === true) {
+                $targetUrl = $request->session()->pull('stats_target_url', route('tv.statistics'));
+                return redirect()->to($targetUrl);
+            }
         }
 
         return Inertia::render('tv/stats-auth');
@@ -56,7 +60,8 @@ class TvStatsAuthController extends Controller
             ]);
         }
 
-        // Tandai sesi terotentikasi untuk statistik
+        // Buka kunci dan tandai sesi terotentikasi untuk statistik
+        $request->session()->forget('stats_locked');
         $request->session()->put('stats_authenticated', true);
         $targetUrl = $request->session()->pull('stats_target_url', route('tv.statistics'));
 
@@ -77,7 +82,13 @@ class TvStatsAuthController extends Controller
      */
     public function lock(Request $request): RedirectResponse
     {
-        $request->session()->forget(['stats_authenticated', 'stats_target_url']);
+        $referer = $request->headers->get('referer');
+        if ($referer && ! str_contains($referer, '/stats/auth')) {
+            $request->session()->put('stats_target_url', $referer);
+        }
+
+        $request->session()->put('stats_locked', true);
+        $request->session()->forget('stats_authenticated');
         $cookie = cookie()->forget('stats_device_token');
 
         return redirect()->route('tv.stats.auth')->withCookie($cookie);

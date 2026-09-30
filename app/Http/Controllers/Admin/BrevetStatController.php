@@ -14,7 +14,7 @@ class BrevetStatController extends Controller
     protected function authorizeAccess(Request $request): void
     {
         if ($request->user()?->hasAnyRole(['technician', 'technician-intern'])) {
-            abort(403, 'Akses ditolak: Teknisi dan teknisi magang tidak diperkenankan mengakses data statistik.');
+            abort(403, 'Akses ditolak: Programmer dan programmer magang tidak diperkenankan mengakses data statistik.');
         }
     }
 
@@ -140,7 +140,7 @@ class BrevetStatController extends Controller
         return back()->with('success', 'Data peserta brevet berhasil ditambahkan.');
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(Request $request, string $id): RedirectResponse
     {
         $this->authorizeAccess($request);
 
@@ -163,7 +163,7 @@ class BrevetStatController extends Controller
         return back()->with('success', 'Data peserta brevet berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, int $id): RedirectResponse
+    public function destroy(Request $request, string $id): RedirectResponse
     {
         $this->authorizeAccess($request);
 

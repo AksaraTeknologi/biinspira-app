@@ -14,6 +14,7 @@ import {
     BarChart3,
     CalendarIcon,
     GraduationCap,
+    KanbanSquareIcon,
     Layers,
     LineChart as LineChartIcon,
     Lock,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { TvNavMenu } from './components/tv-nav-menu';
 import type { ComparisonData, PlatformComparisonItem, StatisticsOmsetProps } from './types';
 import { formatCompactCurrency, formatCurrency, getTimeBasedMessage } from './utils';
 
@@ -125,16 +127,9 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                     Perbandingan Omset 2025 vs 2026
                                 </h1>
                             </div>
-                            {/* Mobile Quick Action Link to Platform TV & Lock */}
+                            {/* Mobile Quick Action Link to Navigation Popup & Lock */}
                             <div className="flex items-center gap-1.5 sm:hidden">
-                                <Link
-                                    href="/stats"
-                                    className="flex h-8 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2.5 text-[11px] font-medium text-white backdrop-blur-sm transition active:scale-95"
-                                    title="Buka Statistik Platform"
-                                >
-                                    <Tv className="h-3.5 w-3.5 text-sky-200" />
-                                    <span>Platform</span>
-                                </Link>
+                                <TvNavMenu currentKey="omset" />
                                 <button
                                     type="button"
                                     onClick={toggleFullscreen}
@@ -145,8 +140,8 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => router.post(route('tv.stats.lock'))}
-                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30"
+                                    onClick={() => router.post('/stats/lock')}
+                                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-rose-500/30 shadow-xs"
                                     title="Kunci Layar Statistik"
                                 >
                                     <Lock className="h-3.5 w-3.5 text-white" />
@@ -156,37 +151,12 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
 
                         {/* Desktop Navigation Actions */}
                         <div className="hidden sm:flex sm:items-center sm:gap-1.5 xl:gap-2">
-                            <Link
-                                href="/stats"
-                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                title="Buka Statistik Platform TV"
-                            >
-                                <Tv className="h-3.5 w-3.5 text-sky-200" />
-                                <span>Platform</span>
-                            </Link>
-
-                            <Link
-                                href="/stats-iklan"
-                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                title="Buka Halaman Statistik Biaya Iklan"
-                            >
-                                <Banknote className="h-3.5 w-3.5 text-blue-200" />
-                                <span>Biaya Iklan</span>
-                            </Link>
-
-                            <Link
-                                href="/stats-brevet"
-                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
-                                title="Buka Halaman Total Peserta Brevet"
-                            >
-                                <GraduationCap className="h-3.5 w-3.5 text-amber-200" />
-                                <span>Peserta Brevet</span>
-                            </Link>
+                            <TvNavMenu currentKey="omset" />
 
                             <button
                                 type="button"
                                 onClick={toggleFullscreen}
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30"
+                                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/30 active:scale-95 shadow-xs"
                                 title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh TV'}
                             >
                                 {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -194,8 +164,8 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
 
                             <button
                                 type="button"
-                                onClick={() => router.post(route('tv.stats.lock'))}
-                                className="flex h-9 items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60"
+                                onClick={() => router.post('/stats/lock')}
+                                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 active:scale-95 shadow-xs"
                                 title="Kunci Tampilan Statistik"
                             >
                                 <Lock className="h-3.5 w-3.5 text-white" />

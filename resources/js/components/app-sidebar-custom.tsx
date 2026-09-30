@@ -17,6 +17,7 @@ import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Banknote,
+    BarChart2,
     BarChart3,
     CalendarSearch,
     ChevronRight,
@@ -28,6 +29,7 @@ import {
     LaptopMinimal,
     LayoutGrid,
     List,
+    AppWindow,
     PartyPopper,
     Receipt,
     Target,
@@ -160,6 +162,11 @@ export function AppSidebar() {
                 return currentPath === childPath || currentPath.startsWith(childPath + '/');
             });
         }
+        if (item.title === 'Ticketing Website') {
+            if (currentPath === '/applications' || currentPath.startsWith('/applications/')) {
+                return true;
+            }
+        }
         const parentPath = getParentPath(item);
         if (!parentPath) return false;
         return currentPath.startsWith(parentPath + '/') || currentPath === parentPath;
@@ -217,6 +224,13 @@ export function AppSidebar() {
 
                                 const isGroupOpen = (() => {
                                     let open = checkIsSubMenuOpen(navItem);
+
+                                    if (navItem.title === 'Ticketing Website') {
+                                        const currentPath = new URL(page.url, window.location.origin).pathname;
+                                        if (currentPath === '/applications' || currentPath.startsWith('/applications/')) {
+                                            open = true;
+                                        }
+                                    }
 
                                     if (navItem.title === 'Marketing') {
                                         // ✅ Tetap buka saat di halaman turunan Dashboard
