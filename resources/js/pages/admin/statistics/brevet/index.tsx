@@ -47,7 +47,7 @@ import * as React from 'react';
 import { toast } from 'sonner';
 
 interface BrevetRecord {
-    id: number;
+    id: number | string;
     platform: string;
     platform_label: string;
     batch: string;
@@ -139,7 +139,7 @@ export default function BrevetStatsIndex() {
 
     const [isAddOpen, setIsAddOpen] = React.useState(false);
     const [editItem, setEditItem] = React.useState<BrevetRecord | null>(null);
-    const [deleteId, setDeleteId] = React.useState<number | null>(null);
+    const [deleteId, setDeleteId] = React.useState<number | string | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     // Segmented batch state for modal

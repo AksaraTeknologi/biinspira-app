@@ -21,6 +21,7 @@ class AdSpendStat extends Model
     public const PLATFORMS = [
         'biinspira' => 'Biinspira',
         'smartcounting' => 'Smartcounting',
+        'smartcountingacademy' => 'Smartcounting Academy',
         'sekolahpajak' => 'Sekolah Pajak',
         'kompeten' => 'Kompeten',
         'talenta' => 'Talenta',

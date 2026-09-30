@@ -511,3 +511,54 @@ test('admin can store and view ad spend stats for Value.Edu platform', function 
     expect($valueEdu['this_year'])->toBeGreaterThanOrEqual(7500000);
 });
 
+test('admin can store and view ad spend stats for Smartcounting and Smartcounting Academy platforms', function () {
+    // 1. Store Smartcounting
+    $responseSc = $this->actingAs($this->admin)
+        ->post(route('admin.ad-spend-stats.store'), [
+            'platform' => 'smartcounting',
+            'date' => '2026-09-30',
+            'amount' => 4500000,
+            'ad_channel' => 'meta',
+            'notes' => 'Campaign Smartcounting Ads',
+        ]);
+    $responseSc->assertRedirect();
+
+    // 2. Store Smartcounting Academy
+    $responseSca = $this->actingAs($this->admin)
+        ->post(route('admin.ad-spend-stats.store'), [
+            'platform' => 'smartcountingacademy',
+            'date' => '2026-09-30',
+            'amount' => 6500000,
+            'ad_channel' => 'google',
+            'notes' => 'Campaign Smartcounting Academy Ads',
+        ]);
+    $responseSca->assertRedirect();
+
+    $this->assertDatabaseHas('ad_spend_stats', [
+        'platform' => 'smartcounting',
+        'amount' => 4500000,
+    ]);
+
+    $this->assertDatabaseHas('ad_spend_stats', [
+        'platform' => 'smartcountingacademy',
+        'amount' => 6500000,
+    ]);
+
+    // Check TV ad spend stats returns both Smartcounting and Smartcounting Academy
+    $tvResponse = $this->withSession(['stats_authenticated' => true])
+        ->getJson('/stats-iklan/data')
+        ->assertOk();
+
+    $platforms = collect($tvResponse->json('platforms'));
+    $smartcounting = $platforms->firstWhere('key', 'smartcounting');
+    $smartcountingAcademy = $platforms->firstWhere('key', 'smartcountingacademy');
+
+    expect($smartcounting)->not->toBeNull();
+    expect($smartcounting['label'])->toBe('Smartcounting');
+    expect($smartcounting['this_year'])->toBeGreaterThanOrEqual(4500000);
+
+    expect($smartcountingAcademy)->not->toBeNull();
+    expect($smartcountingAcademy['label'])->toBe('Smartcounting Academy');
+    expect($smartcountingAcademy['this_year'])->toBeGreaterThanOrEqual(6500000);
+});
+
