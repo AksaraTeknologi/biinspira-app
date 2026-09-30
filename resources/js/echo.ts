@@ -27,10 +27,21 @@ export function getEcho(): Echo<'reverb'> | null {
     if (typeof window === 'undefined') return null;
     if (echoInstance) return echoInstance;
 
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
     const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-    const reverbHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
-    const reverbPort = import.meta.env.VITE_REVERB_PORT || '8080';
-    const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+    const envHost = import.meta.env.VITE_REVERB_HOST;
+    const reverbHost = (!isLocal && (!envHost || envHost === 'localhost' || envHost === '127.0.0.1'))
+        ? window.location.hostname
+        : (envHost || window.location.hostname);
+
+    const envPort = import.meta.env.VITE_REVERB_PORT;
+    const reverbPort = isHttps
+        ? (envPort && envPort !== '8080' ? envPort : '443')
+        : (envPort || '8080');
+
+    const reverbScheme = isHttps ? 'https' : (import.meta.env.VITE_REVERB_SCHEME || 'http');
 
     if (!reverbKey) {
         return null;
@@ -43,7 +54,7 @@ export function getEcho(): Echo<'reverb'> | null {
             wsHost: reverbHost,
             wsPort: Number(reverbPort),
             wssPort: Number(reverbPort),
-            forceTLS: reverbScheme === 'https',
+            forceTLS: reverbScheme === 'https' || isHttps,
             enabledTransports: ['ws', 'wss'],
             authEndpoint: '/broadcasting/auth',
             auth: {
