@@ -248,11 +248,11 @@ class DashboardController extends Controller
 private function getRawDataGraphic()
 {
     $query = AdResultPlatform::with([
-        'result:id,ad_plan_id,checkout_count,revenue,cost_month,revenue_month',
-        'result.plan:id,event_id,user_id,batch,cost_month,revenue_month',
+        'result:id,ad_plan_id,checkout_count,revenue,cost_month,cost_month_2,revenue_month',
+        'result.plan:id,event_id,user_id,batch,cost_month,cost_month_2,revenue_month',
         'result.plan.user:id,name',
         'result.plan.planPlatforms:id,ad_plan_id,end_date,audience_target',
-    ])->select('id', 'ad_result_id', 'total_cost', 'created_at');
+    ])->select('id', 'ad_result_id', 'ad_plan_platform_id', 'total_cost', 'cost_month_1_amount', 'cost_month_2_amount', 'created_at');
 
     $user = Auth::user();
     $userName = null;
@@ -274,6 +274,7 @@ private function getRawDataGraphic()
     $query->where(function ($q) use ($startMonth, $endMonth) {
         $q->whereHas('result.plan', function ($qp) use ($startMonth, $endMonth) {
             $qp->whereBetween('cost_month', [$startMonth, $endMonth])
+               ->orWhereBetween('cost_month_2', [$startMonth, $endMonth])
                ->orWhereBetween('revenue_month', [$startMonth, $endMonth]);
         })
         ->orWhereHas('result.plan.planPlatforms', function ($qpp) {
@@ -302,6 +303,7 @@ private function getRawDataGraphic()
             $defaultMonthKey = optional($dateSource)->format('Y-m');
 
             $costMonth = $item->result->cost_month ?: ($item->result->plan->cost_month ?: $defaultMonthKey);
+            $costMonth2 = $item->result->cost_month_2 ?: ($item->result->plan->cost_month_2 ?: null);
             $revenueMonth = $item->result->revenue_month ?: ($item->result->plan->revenue_month ?: $defaultMonthKey);
 
             // ✅ FIX 3: sanitize angka
@@ -313,12 +315,35 @@ private function getRawDataGraphic()
                 ? (int) $item->result->checkout_count
                 : 0;
 
-            // ✅ FIX 4: SUM cost (bukan ambil 1)
-            $totalCost = $items->sum(function ($row) {
-                return is_numeric($row->total_cost)
-                    ? (int) $row->total_cost
-                    : (int) preg_replace('/[^\d]/', '', $row->total_cost ?? 0);
-            });
+            // ✅ FIX 4: SUM cost per setting & month breakdown
+            $hasCostMonth2 = !empty($costMonth2) && $costMonth2 !== $costMonth;
+            $costMonth1Total = 0;
+            $costMonth2Total = 0;
+            $totalCost = 0;
+
+            foreach ($items as $row) {
+                $rowCost = is_numeric($row->total_cost)
+                    ? (float) $row->total_cost
+                    : (float) preg_replace('/[^\d]/', '', $row->total_cost ?? 0);
+                $totalCost += $rowCost;
+
+                if ($hasCostMonth2) {
+                    $c1 = $row->cost_month_1_amount !== null ? (float) $row->cost_month_1_amount : null;
+                    $c2 = $row->cost_month_2_amount !== null ? (float) $row->cost_month_2_amount : null;
+
+                    if ($c1 !== null || $c2 !== null) {
+                        $costMonth1Total += ($c1 ?? 0);
+                        $costMonth2Total += ($c2 ?? 0);
+                    } else {
+                        $costMonth1Total += $rowCost;
+                    }
+                }
+            }
+
+            if (!$hasCostMonth2) {
+                $costMonth1Total = $totalCost;
+                $costMonth2Total = 0;
+            }
 
             return [
                 'id'            => $item->result->id,
@@ -330,6 +355,9 @@ private function getRawDataGraphic()
                 'month_label'   => optional($dateSource)->format('M'),
 
                 'cost_month'    => $costMonth,
+                'cost_month_2'  => $costMonth2,
+                'cost_month_1_total' => $costMonth1Total,
+                'cost_month_2_total' => $costMonth2Total,
                 'revenue_month' => $revenueMonth,
 
                 'pendapatan'    => $revenue,
@@ -348,34 +376,37 @@ private function getRawDataGraphic()
     $monthlyBuckets = [];
 
     foreach ($raw as $item) {
-        $costKey = $item['cost_month'] ?: $item['month_key'];
-        $revKey  = $item['revenue_month'] ?: $item['month_key'];
+        $costKey  = $item['cost_month'] ?: $item['month_key'];
+        $costKey2 = $item['cost_month_2'];
+        $revKey   = $item['revenue_month'] ?: $item['month_key'];
 
-        if (!isset($monthlyBuckets[$costKey])) {
-            $costDate = Carbon::parse($costKey . '-01');
-            $monthlyBuckets[$costKey] = [
-                'user'        => $item['user'],
-                'month'       => $costDate->format('M'),
-                'month_key'   => $costKey,
-                'pendapatan'  => 0,
-                'pengeluaran' => 0,
-                'audience'    => 0,
-            ];
+        $initBucket = function ($key) use (&$monthlyBuckets, $item) {
+            if (!isset($monthlyBuckets[$key])) {
+                $date = Carbon::parse($key . '-01');
+                $monthlyBuckets[$key] = [
+                    'user'        => $item['user'],
+                    'month'       => $date->format('M'),
+                    'month_key'   => $key,
+                    'pendapatan'  => 0,
+                    'pengeluaran' => 0,
+                    'audience'    => 0,
+                ];
+            }
+        };
+
+        $initBucket($costKey);
+        $initBucket($revKey);
+        if ($costKey2) {
+            $initBucket($costKey2);
         }
 
-        if (!isset($monthlyBuckets[$revKey])) {
-            $revDate = Carbon::parse($revKey . '-01');
-            $monthlyBuckets[$revKey] = [
-                'user'        => $item['user'],
-                'month'       => $revDate->format('M'),
-                'month_key'   => $revKey,
-                'pendapatan'  => 0,
-                'pengeluaran' => 0,
-                'audience'    => 0,
-            ];
+        if ($costKey2 && $costKey2 !== $costKey) {
+            $monthlyBuckets[$costKey]['pengeluaran'] += $item['cost_month_1_total'];
+            $monthlyBuckets[$costKey2]['pengeluaran'] += $item['cost_month_2_total'];
+        } else {
+            $monthlyBuckets[$costKey]['pengeluaran'] += $item['pengeluaran'];
         }
 
-        $monthlyBuckets[$costKey]['pengeluaran'] += $item['pengeluaran'];
         $monthlyBuckets[$revKey]['pendapatan']   += $item['pendapatan'];
         $monthlyBuckets[$revKey]['audience']     += $item['audience'];
     }

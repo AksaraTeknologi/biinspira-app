@@ -293,3 +293,190 @@ test('dashboard monthly graphic allocates cross-month ad spend and revenue into 
     expect($sepBucket['pengeluaran'])->toBeGreaterThanOrEqual(1200000);
     expect($sepBucket['pendapatan'])->toBeGreaterThanOrEqual(15000000);
 });
+
+test('ad plan can be created and updated with dual reporting cost months', function () {
+    $response = $this->actingAs($this->admin)->post(route('admin.marketing.store'), [
+        'mode' => 'draft',
+        'ad_schedule_time' => '10:00:00',
+        'batch' => 'Dual Month Plan',
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+        'platforms' => [
+            [
+                'platform_id' => $this->platform->id,
+                'event_id' => $this->event->id,
+                'goals_id' => $this->goal->id,
+                'user_id' => $this->admin->id,
+                'start_date' => '2026-08-25',
+                'end_date' => '2026-09-05',
+                'daily_budget' => 50000,
+                'audience_target' => 1000,
+                'audience_type' => 'targeted',
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(route('admin.marketing.index'));
+
+    $this->assertDatabaseHas('ad_plans', [
+        'batch' => 'Dual Month Plan',
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+    ]);
+});
+
+test('ad result can be saved per setting with individual metrics and dual month spend amounts', function () {
+    $plan = AdPlan::create([
+        'event_id' => $this->event->id,
+        'user_id' => $this->admin->id,
+        'batch' => 'Multi Setting Plan',
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+        'ad_schedule_time' => '10:00:00',
+        'status' => 'draft',
+    ]);
+
+    $setting1 = AdPlanPlatform::create([
+        'ad_plan_id' => $plan->id,
+        'platform_id' => $this->platform->id,
+        'goals_id' => $this->goal->id,
+        'start_date' => '2026-08-25',
+        'end_date' => '2026-09-05',
+        'daily_budget' => 50000,
+        'audience_target' => 1000,
+        'audience_type' => 'targeted',
+    ]);
+
+    $setting2 = AdPlanPlatform::create([
+        'ad_plan_id' => $plan->id,
+        'platform_id' => $this->platform->id,
+        'goals_id' => $this->goal->id,
+        'start_date' => '2026-08-28',
+        'end_date' => '2026-09-05',
+        'daily_budget' => 40000,
+        'audience_target' => 800,
+        'audience_type' => 'broad',
+    ]);
+
+    $response = $this->actingAs($this->admin)->post(route('admin.marketing.result.store'), [
+        'ad_plan_id' => $plan->id,
+        'checkout_count' => 20,
+        'revenue' => 18000000,
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+        'platforms' => [
+            [
+                'platform_id' => $this->platform->id,
+                'ad_plan_platform_id' => $setting1->id,
+                'total_cost' => 500000,
+                'cost_month_1_amount' => 200000,
+                'cost_month_2_amount' => 300000,
+                'reach' => 6000,
+                'impressions' => 11000,
+                'cost_per_result' => 25000,
+            ],
+            [
+                'platform_id' => $this->platform->id,
+                'ad_plan_platform_id' => $setting2->id,
+                'total_cost' => 350000,
+                'cost_month_1_amount' => 150000,
+                'cost_month_2_amount' => 200000,
+                'reach' => 4500,
+                'impressions' => 8500,
+                'cost_per_result' => 30000,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('ad_results', [
+        'ad_plan_id' => $plan->id,
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+    ]);
+
+    $this->assertDatabaseHas('ad_result_platforms', [
+        'ad_plan_platform_id' => $setting1->id,
+        'total_cost' => 500000,
+        'cost_month_1_amount' => 200000,
+        'cost_month_2_amount' => 300000,
+    ]);
+
+    $this->assertDatabaseHas('ad_result_platforms', [
+        'ad_plan_platform_id' => $setting2->id,
+        'total_cost' => 350000,
+        'cost_month_1_amount' => 150000,
+        'cost_month_2_amount' => 200000,
+    ]);
+});
+
+test('dashboard monthly graphic splits dual-month spend across cost_month and cost_month_2', function () {
+    $plan = AdPlan::create([
+        'event_id' => $this->event->id,
+        'user_id' => $this->admin->id,
+        'batch' => 'Split Month Campaign',
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+        'ad_schedule_time' => '09:00:00',
+        'status' => 'completed',
+    ]);
+
+    $setting1 = AdPlanPlatform::create([
+        'ad_plan_id' => $plan->id,
+        'platform_id' => $this->platform->id,
+        'goals_id' => $this->goal->id,
+        'start_date' => '2026-08-25',
+        'end_date' => '2026-09-05',
+        'daily_budget' => 50000,
+        'audience_target' => 500,
+        'audience_type' => 'broad',
+    ]);
+
+    $result = AdResult::create([
+        'ad_plan_id' => $plan->id,
+        'checkout_count' => 10,
+        'revenue' => 10000000,
+        'cost_month' => '2026-08',
+        'cost_month_2' => '2026-09',
+        'revenue_month' => '2026-09',
+    ]);
+
+    $resultPlatform = AdResultPlatform::create([
+        'ad_result_id' => $result->id,
+        'platform_id' => $this->platform->id,
+        'ad_plan_platform_id' => $setting1->id,
+        'total_cost' => 700000,
+        'cost_month_1_amount' => 300000,
+        'cost_month_2_amount' => 400000,
+    ]);
+
+    AdMetric::create([
+        'ad_result_platform_id' => $resultPlatform->id,
+        'reach' => 5000,
+        'impressions' => 10000,
+        'cost_per_result' => 70000,
+    ]);
+
+    $response = $this->actingAs($this->admin)->get(route('admin.marketing.dashboard'));
+    $response->assertOk();
+
+    $pageData = $response->viewData('page');
+    $bulanan = collect($pageData['props']['rawDataGraphic']['bulanan'] ?? []);
+
+    $augBucket = $bulanan->firstWhere('month_key', '2026-08');
+    $sepBucket = $bulanan->firstWhere('month_key', '2026-09');
+
+    expect($augBucket)->not->toBeNull();
+    expect($augBucket['pengeluaran'])->toBeGreaterThanOrEqual(300000);
+
+    expect($sepBucket)->not->toBeNull();
+    expect($sepBucket['pengeluaran'])->toBeGreaterThanOrEqual(400000);
+    expect($sepBucket['pendapatan'])->toBeGreaterThanOrEqual(10000000);
+});
+

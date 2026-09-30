@@ -71,6 +71,7 @@ class FormController extends Controller
             'planPlatforms.platform',
             'planPlatforms.goal',
             'results.resultPlatforms.platform',
+            'results.resultPlatforms.planPlatform.goal',
             'results.resultPlatforms.metrics',
             'evaluations'
         ])->findOrFail($id);
@@ -136,11 +137,10 @@ class FormController extends Controller
                 'status'       => $plan->status ?? null,
                 'ad_schedule_time' => $plan->ad_schedule_time ?? null,
                 'cost_month'   => $plan->cost_month ?? null,
+                'cost_month_2' => $plan->cost_month_2 ?? null,
                 'revenue_month'=> $plan->revenue_month ?? null,
                 'title_flayer' => $plan->title_flayer ?? null,
                 'image_flayer' => $plan->image_flayer ? asset('storage/' . $plan->image_flayer) : null,
-
-
 
                 'platforms'    => $plan->planPlatforms->map(function ($pp) {
                     return [
@@ -168,11 +168,15 @@ class FormController extends Controller
                         'checkout_weekend' => $r->checkout_weekend !== null ? number_format((float)$r->checkout_weekend, 0, ',', '.') : null,
                         'checkout_weekday' => $r->checkout_weekday !== null ? number_format((float)$r->checkout_weekday, 0, ',', '.') : null,
                         'cost_month'       => $r->cost_month,
+                        'cost_month_2'     => $r->cost_month_2,
                         'revenue_month'    => $r->revenue_month,
                         'revenue'          => $r->revenue !== null ? number_format((float)$r->revenue, 0, ',', '.') : null,
 
                         'result_platforms' => $r->resultPlatforms->map(function ($rp) {
                             return [
+                                'id'                  => $rp->id,
+                                'ad_plan_platform_id' => $rp->ad_plan_platform_id,
+                                'setting_name'        => $rp->planPlatform ? ('Setting (' . ($rp->planPlatform->goal?->name ?? 'Tujuan') . ')') : null,
                                 'result' => is_numeric($rp->result)
                                     ? number_format((float)$rp->result, 0, ',', '.')
                                     : null,
@@ -180,7 +184,13 @@ class FormController extends Controller
                                 'total_cost' => is_numeric($rp->total_cost)
                                     ? number_format((float)$rp->total_cost, 0, ',', '.')
                                     : null,
-                               'platform_name' => optional($rp->platform)->name,
+                                'cost_month_1_amount' => is_numeric($rp->cost_month_1_amount)
+                                    ? number_format((float)$rp->cost_month_1_amount, 0, ',', '.')
+                                    : null,
+                                'cost_month_2_amount' => is_numeric($rp->cost_month_2_amount)
+                                    ? number_format((float)$rp->cost_month_2_amount, 0, ',', '.')
+                                    : null,
+                                'platform_name' => optional($rp->platform)->name,
 
                                 'metrics' => $rp->metrics->map(function ($m) {
                                     return [

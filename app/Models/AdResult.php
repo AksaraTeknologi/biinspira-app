@@ -25,9 +25,7 @@ class AdResult extends Model
 
     public function resultPlatforms()
     {
-        return $this->hasMany(AdResultPlatform::class)
-            ->select('id','ad_result_id', 'platform_id','total_cost')
-            ->distinct();
+        return $this->hasMany(AdResultPlatform::class);
     }
 
     

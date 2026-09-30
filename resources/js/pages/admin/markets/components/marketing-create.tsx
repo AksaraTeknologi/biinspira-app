@@ -95,6 +95,8 @@ export default function PerencanaanIklan() {
     const [tab, setTab] = useState<number>(() => platforms[0]?.id ?? 0);
     const [range, setRange] = useState<DateRange | undefined>(undefined);
     const [costMonth, setCostMonth] = useState('');
+    const [costMonth2, setCostMonth2] = useState('');
+    const [showSecondCostMonth, setShowSecondCostMonth] = useState(false);
     const [revenueMonth, setRevenueMonth] = useState('');
     const { processing } = useForm({});
 
@@ -170,6 +172,15 @@ export default function PerencanaanIklan() {
             const defaultM = format(rangeValue.from, 'yyyy-MM');
             if (!costMonth) setCostMonth(defaultM);
             if (!revenueMonth) setRevenueMonth(defaultM);
+
+            if (rangeValue.to) {
+                const endM = format(rangeValue.to, 'yyyy-MM');
+                if (endM !== defaultM && !costMonth2) {
+                    setCostMonth(costMonth || defaultM);
+                    setCostMonth2(endM);
+                    setShowSecondCostMonth(true);
+                }
+            }
         }
         if (rangeValue?.to) handleInputChange('end_date', format(rangeValue.to, 'yyyy-MM-dd'));
     };
@@ -298,6 +309,7 @@ export default function PerencanaanIklan() {
                 ad_schedule_time: adScheduleTime,
                 batch: batchValue,
                 cost_month: costMonth,
+                cost_month_2: costMonth2 || null,
                 revenue_month: revenueMonth,
                 image_flayer: imageFlayer,
                 mode,
@@ -548,14 +560,32 @@ export default function PerencanaanIklan() {
 
                         {/* ALOKASI BULAN PELAPORAN */}
                         <div className="rounded-lg border p-4 space-y-3 bg-card">
-                            <div className="flex items-center gap-2 font-medium text-sm">
-                                <CalendarIcon className="h-4 w-4 text-primary" />
-                                <span>Alokasi bulan pelaporan</span>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 font-medium text-sm">
+                                    <CalendarIcon className="h-4 w-4 text-primary" />
+                                    <span>Alokasi bulan pelaporan</span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                    onClick={() => {
+                                        if (showSecondCostMonth) {
+                                            setCostMonth2('');
+                                            setShowSecondCostMonth(false);
+                                        } else {
+                                            setShowSecondCostMonth(true);
+                                        }
+                                    }}
+                                >
+                                    {showSecondCostMonth ? '- Hapus Bulan Biaya ke-2' : '+ Tambah Bulan Biaya Iklan (Spend 2 Bulan)'}
+                                </Button>
                             </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className={cn('grid grid-cols-1 gap-4', showSecondCostMonth ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
                                 <div>
                                     <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                                        <span>Biaya iklan masuk bulan</span>
+                                        <span>Biaya iklan masuk bulan {showSecondCostMonth ? '(Bulan 1)' : ''}</span>
                                     </Label>
                                     <Select value={costMonth} onValueChange={setCostMonth}>
                                         <SelectTrigger>
@@ -570,6 +600,25 @@ export default function PerencanaanIklan() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                {showSecondCostMonth && (
+                                    <div>
+                                        <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                                            <span>Biaya iklan masuk bulan (Bulan 2)</span>
+                                        </Label>
+                                        <Select value={costMonth2} onValueChange={setCostMonth2}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih bulan biaya iklan ke-2" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {monthOptions.map((opt: MonthOption) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                                 <div>
                                     <Label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
                                         <span>Omset masuk bulan</span>
@@ -588,7 +637,11 @@ export default function PerencanaanIklan() {
                                     </Select>
                                 </div>
                             </div>
-                            {costMonth && revenueMonth && costMonth === revenueMonth ? (
+                            {showSecondCostMonth && costMonth && costMonth2 ? (
+                                <p className="text-xs text-blue-500 flex items-center gap-1 font-medium">
+                                    <span>ℹ</span> Biaya iklan dialokasikan ke 2 bulan: {monthOptions.find(o => o.value === costMonth)?.label || costMonth} & {monthOptions.find(o => o.value === costMonth2)?.label || costMonth2}.
+                                </p>
+                            ) : costMonth && revenueMonth && costMonth === revenueMonth ? (
                                 <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
                                     <span>✓</span> Biaya iklan dan omset sinkron di bulan yang sama.
                                 </p>

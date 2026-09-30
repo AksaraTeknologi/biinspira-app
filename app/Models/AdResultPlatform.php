@@ -14,7 +14,14 @@ class AdResultPlatform extends Model
 
     protected $casts = [
         'total_cost' => 'decimal:2',
+        'cost_month_1_amount' => 'decimal:2',
+        'cost_month_2_amount' => 'decimal:2',
     ];
+
+    public function planPlatform()
+    {
+        return $this->belongsTo(AdPlanPlatform::class, 'ad_plan_platform_id');
+    }
 
     public function result()
     {
