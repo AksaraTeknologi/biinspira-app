@@ -155,7 +155,7 @@ class RevisionRequestController extends Controller
         $validated = $request->validate([
             'title'          => 'required|string|max:255',
             'description'    => 'required|string',
-            'related_url'    => 'required|string',
+            'related_url'    => 'nullable|string',
             'urgency'        => 'required|in:high,medium,low',
             'target_role'    => 'required|in:technician,technician-intern',
             'deadline'       => 'required|date',
@@ -301,14 +301,14 @@ class RevisionRequestController extends Controller
         $validated = $request->validate([
             'title'          => 'required|string|max:255',
             'description'    => 'required|string',
-            'related_url'    => 'required|string',
+            'related_url'    => 'nullable|string',
             'urgency'        => 'required|in:high,medium,low',
             'target_role'    => 'required|in:technician,technician-intern',
             'deadline'       => 'required|date',
             'assignees'      => 'nullable|array',
             'assignees.*'    => 'exists:users,id',
             'attachments'    => 'nullable|array',
-            'attachments.*'  => 'file|mimes:jpg,png,jpeg,pdf',
+            'attachments.*'  => 'nullable|file|mimes:jpg,png,jpeg,pdf',
             'application_id' => 'nullable|exists:applications,id',
             'work_type'      => 'nullable|in:pengerjaan,penambahan_fitur,maintenance',
         ]);

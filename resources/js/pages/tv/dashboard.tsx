@@ -300,6 +300,28 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                                 onOpenDetail={handleOpenDrilldown}
                                             />
                                         ))}
+
+                                        {stats.length > 0 && stats.length % 2 === 1 && (
+                                            <div className="flex min-h-30 md:h-full flex-col justify-between overflow-hidden rounded-2xl border border-white/55 bg-white/88 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.18)] backdrop-blur xl:p-3">
+                                                <div className="flex shrink-0 items-center justify-between gap-2">
+                                                    <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase xl:text-xs">
+                                                        Daily Message ✨
+                                                    </p>
+                                                    <span className="text-lg xl:text-xl">{cornerMessage.emoji}</span>
+                                                </div>
+                                                <div className="my-auto py-1">
+                                                    <h3 className="text-sm font-bold text-slate-800 sm:text-base xl:text-lg">
+                                                        {cornerMessage.title}
+                                                    </h3>
+                                                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-600 xl:text-sm">
+                                                        {cornerMessage.message}
+                                                    </p>
+                                                </div>
+                                                <div className="border-t border-slate-200/60 pt-1 text-[10px] text-slate-400">
+                                                    <span>✨ Biinspira Group Live Monitoring</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Bottom Group Summary Bar */}

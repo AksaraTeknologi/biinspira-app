@@ -181,6 +181,46 @@ test('ticket can be created and updated without attachments', function () {
     ]);
 });
 
+test('ticket can be created and updated without related_url and without attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $response = $this->actingAs($user)->post(route('requests.store'), [
+        'title'       => 'Tiket Tanpa Link dan Lampiran',
+        'description' => 'Deskripsi tiket tanpa URL dan lampiran',
+        'related_url' => null,
+        'urgency'     => 'low',
+        'target_role' => 'technician',
+        'deadline'    => now()->addDays(2)->toDateString(),
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    $response->assertRedirect(route('requests.index'));
+
+    $this->assertDatabaseHas('revision_requests', [
+        'title'       => 'Tiket Tanpa Link dan Lampiran',
+        'related_url' => null,
+    ]);
+
+    $ticket = RevisionRequest::where('title', 'Tiket Tanpa Link dan Lampiran')->first();
+
+    $updateResponse = $this->actingAs($user)->put(route('requests.update', $ticket->id), [
+        'title'       => 'Tiket Tanpa Link Diperbarui',
+        'description' => 'Deskripsi update',
+        'related_url' => '',
+        'urgency'     => 'medium',
+        'target_role' => 'technician',
+        'deadline'    => now()->addDays(3)->toDateString(),
+    ]);
+
+    $updateResponse->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('revision_requests', [
+        'id'          => $ticket->id,
+        'title'       => 'Tiket Tanpa Link Diperbarui',
+        'related_url' => null,
+    ]);
+});
+
 test('role-based access control for technician and intern in index', function () {
     $techUser = User::factory()->create();
     $techUser->assignRole('technician');

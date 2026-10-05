@@ -19,12 +19,11 @@ use Inertia\Response;
 
 class TvDashboardController extends Controller
 {
-    private const PLATFORM_STATS_CACHE_KEY = 'tv_dashboard.platform_stats';
-    private const BIINSPIRA_RATE_LIMIT_UNTIL_KEY = 'tv_dashboard.biinspira_rate_limit_until';
+    private const PLATFORM_STATS_CACHE_KEY = 'tv_dashboard.platform_stats.v4';
+    private const BIINSPIRA_RATE_LIMIT_UNTIL_KEY = 'tv_dashboard.biinspira_rate_limit_until.v4';
 
     private array $platformLabels = [
         'biinspira' => 'Biinspira',
-        'smartcounting' => 'Smartcounting',
         'smartcountingacademy' => 'Smartcounting Academy',
         'kompeten' => 'Kompeten',
         'sekolahpajak' => 'Sekolah Pajak',
@@ -319,14 +318,43 @@ class TvDashboardController extends Controller
                 Cache::put(self::BIINSPIRA_RATE_LIMIT_UNTIL_KEY, now()->addMinutes(5)->toIso8601String(), now()->addMinutes(10));
             }
 
-            if ($result['failed']) {
+            $statistics = $result['statistics'];
+            $statFailed = $result['failed'];
+
+            if ($platformKey === 'smartcountingacademy') {
+                if (isset($platforms['smartcountingacademy_new']) && $this->hasPlatformCredentials($platforms['smartcountingacademy_new'])) {
+                    $newResult = $this->fetchStatisticsForPlatform(
+                        'smartcountingacademy_new',
+                        (string) ($platforms['smartcountingacademy_new']['base_url'] ?? ''),
+                        (string) ($platforms['smartcountingacademy_new']['token'] ?? '')
+                    );
+                    if (! $newResult['failed'] && ! empty($newResult['statistics'])) {
+                        $statistics = $this->mergeStatistics($statistics, $newResult['statistics']);
+                        $statFailed = false;
+                    }
+                }
+
+                if (isset($platforms['smartcounting']) && $this->hasPlatformCredentials($platforms['smartcounting'])) {
+                    $oldScResult = $this->fetchStatisticsForPlatform(
+                        'smartcounting',
+                        (string) ($platforms['smartcounting']['base_url'] ?? ''),
+                        (string) ($platforms['smartcounting']['token'] ?? '')
+                    );
+                    if (! $oldScResult['failed'] && ! empty($oldScResult['statistics'])) {
+                        $statistics = $this->mergeStatistics($statistics, $oldScResult['statistics']);
+                        $statFailed = false;
+                    }
+                }
+            }
+
+            if ($statFailed) {
                 continue;
             }
 
             $stat = $this->buildPlatformStatFromStatistics(
                 $platformKey,
                 $this->platformLabels[$platformKey] ?? $platformKey,
-                $result['statistics'],
+                $statistics,
                 $logoMap[$platformKey] ?? null
             );
 
@@ -336,6 +364,69 @@ class TvDashboardController extends Controller
         Cache::put(self::PLATFORM_STATS_CACHE_KEY, $cachedStats, now()->addHours(12));
 
         return $cachedStats;
+    }
+
+    private function mergeStatistics(array $statsA, array $statsB): array
+    {
+        if (empty($statsA)) {
+            return $statsB;
+        }
+        if (empty($statsB)) {
+            return $statsA;
+        }
+
+        $merged = $statsA;
+        $numericKeys = [
+            'total_nominal_this_year',
+            'this_year_revenue',
+            'revenue_this_year',
+            'total_revenue_this_year',
+            'year_to_date_revenue',
+            'total_revenue',
+            'revenue_total',
+            'total_nominal',
+            'gross_revenue',
+            'this_month_revenue',
+            'total_nominal_this_month',
+            'monthly_revenue',
+            'revenue_this_month',
+            'total_nominal_last_month',
+            'last_month_revenue',
+            'total_nominal_previous_month',
+            'previous_month_revenue',
+            'revenue_last_month',
+            'total_nominal_today',
+            'today_revenue',
+            'revenue_today',
+            'total_today',
+            'nominal_today',
+            'total_nominal_yesterday',
+            'yesterday_revenue',
+            'revenue_yesterday',
+            'total_yesterday',
+            'nominal_yesterday',
+        ];
+
+        foreach ($numericKeys as $key) {
+            $hasA = array_key_exists($key, $statsA);
+            $hasB = array_key_exists($key, $statsB);
+            if ($hasA || $hasB) {
+                $merged[$key] = $this->resolveStatisticNumber($statsA[$key] ?? 0) + $this->resolveStatisticNumber($statsB[$key] ?? 0);
+            }
+        }
+
+        if (isset($statsA['monthly_nominal_this_year']) || isset($statsB['monthly_nominal_this_year'])) {
+            $monthsA = (array) ($statsA['monthly_nominal_this_year'] ?? []);
+            $monthsB = (array) ($statsB['monthly_nominal_this_year'] ?? []);
+            $mergedMonths = [];
+            $allMonths = array_unique(array_merge(array_keys($monthsA), array_keys($monthsB)));
+            foreach ($allMonths as $m) {
+                $mergedMonths[$m] = $this->resolveStatisticNumber($monthsA[$m] ?? 0) + $this->resolveStatisticNumber($monthsB[$m] ?? 0);
+            }
+            $merged['monthly_nominal_this_year'] = $mergedMonths;
+        }
+
+        return $merged;
     }
 
     private function buildPlatformStatFromStatistics(string $key, string $label, array $statistics, ?string $logo): array
@@ -466,6 +557,20 @@ class TvDashboardController extends Controller
                 ];
             }
 
+            $currentYear = (int) now()->year;
+            $yearlyCurrent = $statistics['yearly_nominal'][$currentYear]
+                ?? $statistics['yearly_nominal'][(string) $currentYear]
+                ?? null;
+
+            if (is_array($yearlyCurrent)) {
+                if (empty($statistics['monthly_nominal_this_year']) && isset($yearlyCurrent['monthly'])) {
+                    $statistics['monthly_nominal_this_year'] = $yearlyCurrent['monthly'];
+                }
+                if (! isset($statistics['total_nominal_this_year']) && isset($yearlyCurrent['total'])) {
+                    $statistics['total_nominal_this_year'] = $yearlyCurrent['total'];
+                }
+            }
+
             if ($platformKey === 'biinspira') {
                 Log::info('TV dashboard Biinspira statistics payload sample', [
                     'keys' => array_keys($statistics),
@@ -523,6 +628,30 @@ class TvDashboardController extends Controller
                 $range['start']->toDateString(),
                 $range['end']->toDateString()
             );
+
+            if ($platformKey === 'smartcountingacademy') {
+                $platforms = config('services.platforms', []);
+                if (isset($platforms['smartcountingacademy_new']) && $this->hasPlatformCredentials($platforms['smartcountingacademy_new'])) {
+                    $newInvoices = $this->fetchPaidInvoicesForRange(
+                        'smartcountingacademy_new',
+                        (string) ($platforms['smartcountingacademy_new']['base_url'] ?? ''),
+                        (string) ($platforms['smartcountingacademy_new']['token'] ?? ''),
+                        $range['start']->toDateString(),
+                        $range['end']->toDateString()
+                    );
+                    $invoices = array_merge($invoices, $newInvoices);
+                }
+                if (isset($platforms['smartcounting']) && $this->hasPlatformCredentials($platforms['smartcounting'])) {
+                    $oldScInvoices = $this->fetchPaidInvoicesForRange(
+                        'smartcounting',
+                        (string) ($platforms['smartcounting']['base_url'] ?? ''),
+                        (string) ($platforms['smartcounting']['token'] ?? ''),
+                        $range['start']->toDateString(),
+                        $range['end']->toDateString()
+                    );
+                    $invoices = array_merge($invoices, $oldScInvoices);
+                }
+            }
 
             return $metric === 'month'
                 ? $this->buildMonthDetailPayload($platformKey, $invoices, $now)
@@ -849,7 +978,6 @@ class TvDashboardController extends Controller
 
         $platformAliases = [
             'biinspira' => ['biinspira'],
-            'smartcounting' => ['smartcounting'],
             'smartcountingacademy' => ['smartcountingacademy', 'smartcounting'],
             'kompeten' => ['kompeten', 'kompetenidn'],
             'sekolahpajak' => ['sekolahpajak'],

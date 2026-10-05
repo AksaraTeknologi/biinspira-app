@@ -20,7 +20,6 @@ type GroupDrilldownDialogProps = {
 // Platform color mapping for distinct visual presentation
 const PLATFORM_COLORS: Record<string, { bg: string; border: string }> = {
     biinspira: { bg: '#6366f1', border: '#4f46e5' }, // Indigo
-    smartcounting: { bg: '#0284c7', border: '#0369a1' }, // Sky
     smartcountingacademy: { bg: '#0d9488', border: '#0f766e' }, // Teal
     kompeten: { bg: '#16a34a', border: '#15803d' }, // Green
     sekolahpajak: { bg: '#eab308', border: '#ca8a04' }, // Yellow/Amber

@@ -15,7 +15,6 @@ class TransactionController extends Controller
 {
     private array $platformLabels = [
         'biinspira' => 'Biinspira',
-        'smartcounting' => 'Smartcounting',
         'smartcountingacademy' => 'Smartcounting Academy',
         'kompeten' => 'Kompeten',
         'sekolahpajak' => 'Sekolah Pajak',
@@ -105,8 +104,17 @@ class TransactionController extends Controller
         $requestEndDate = Carbon::parse($endDate)->addDay()->toDateString();
 
         $targetPlatforms = $selectedPlatform === 'all'
-            ? $platforms
+            ? array_intersect_key($platforms, $this->platformLabels)
             : array_intersect_key($platforms, array_flip([$selectedPlatform]));
+
+        if ($selectedPlatform === 'all' || $selectedPlatform === 'smartcountingacademy') {
+            if (isset($platforms['smartcountingacademy_new']) && $this->hasPlatformCredentials($platforms['smartcountingacademy_new'])) {
+                $targetPlatforms['smartcountingacademy_new'] = $platforms['smartcountingacademy_new'];
+            }
+            if (isset($platforms['smartcounting']) && $this->hasPlatformCredentials($platforms['smartcounting'])) {
+                $targetPlatforms['smartcounting'] = $platforms['smartcounting'];
+            }
+        }
 
         foreach ($targetPlatforms as $key => $platform) {
             $baseUrl = $platform['base_url'] ?? null;
@@ -207,7 +215,7 @@ class TransactionController extends Controller
                     }));
 
                     foreach ($data as &$item) {
-                        $item['source_platform'] = $key;
+                        $item['source_platform'] = in_array($key, ['smartcountingacademy_new', 'smartcounting'], true) ? 'smartcountingacademy' : $key;
 
                         // Normalize payment fields: prioritize payment_channel across all platforms.
                         $normalizedPayment = $item['payment_channel'] ?? $item['payment_method'] ?? null;

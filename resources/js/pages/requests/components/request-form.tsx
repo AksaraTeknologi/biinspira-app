@@ -117,7 +117,6 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
     }, [newFilePreviews]);
 
     const existingAttachments = useMemo(() => task?.attachments ?? [], [task]);
-    const hasAttachmentValue = data.attachments.length > 0 || existingAttachments.length > 0;
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files) return;
@@ -148,18 +147,17 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
         if (
             !data.title.trim() ||
             !data.description.trim() ||
-            !data.related_url.trim() ||
             !data.urgency ||
             !data.target_role ||
-            !data.deadline ||
-            !hasAttachmentValue
+            !data.deadline
         ) {
-            toast.error('Semua input wajib diisi.');
+            toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
             return;
         }
 
         transform((current) => ({
             ...current,
+            related_url: current.related_url && current.related_url.trim() ? current.related_url.trim() : null,
             application_id: current.application_id && current.application_id !== 'none' ? current.application_id : null,
             work_type: current.work_type && current.work_type !== 'none' ? current.work_type : null,
             ...(mode === 'edit' ? { _method: 'PUT' as const } : {}),
@@ -214,14 +212,13 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
                     </div>
 
                     <div className="space-y-3">
-                        <Label htmlFor="related-url">Link Website Terkait</Label>
+                        <Label htmlFor="related-url">Link Website Terkait (Opsional)</Label>
                         <Input
                             id="related-url"
                             type="text"
-                            required
                             value={data.related_url}
                             onChange={(event) => setData('related_url', event.target.value)}
-                            placeholder="Masukan link website yang perlu diperbaiki"
+                            placeholder="Masukan link website yang perlu diperbaiki (opsional)"
                         />
                         {errors.related_url && <p className="text-sm text-red-500">{errors.related_url}</p>}
                     </div>
