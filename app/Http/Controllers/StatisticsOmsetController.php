@@ -15,13 +15,12 @@ use Inertia\Response;
 
 class StatisticsOmsetController extends Controller
 {
-    private const CACHE_KEY_2026 = 'statistics_omset.data.2026';
-    private const CACHE_KEY_2025 = 'statistics_omset.data.2025';
-    private const CACHE_KEY_FULL = 'statistics_omset.data.full';
+    private const CACHE_KEY_2026 = 'statistics_omset.data.2026.v5';
+    private const CACHE_KEY_2025 = 'statistics_omset.data.2025.v5';
+    private const CACHE_KEY_FULL = 'statistics_omset.data.full.v5';
 
     private array $platformLabels = [
         'biinspira' => 'Biinspira',
-        'smartcounting' => 'Smartcounting',
         'smartcountingacademy' => 'Smartcounting Academy',
         'kompeten' => 'Kompeten',
         'sekolahpajak' => 'Sekolah Pajak',
@@ -53,27 +52,26 @@ class StatisticsOmsetController extends Controller
 
     /**
      * Verified historical baseline for 2025 across all platforms.
-     * Prevents expensive live scans of thousands of historical transactions over HTTP during web requests.
+     * Used as resilient fallback if external platform APIs are unavailable or do not return 2025 data.
      */
     private const HISTORICAL_2025_DATA = [
         'monthly_totals' => [
-            'january' => 367510200.0,
-            'february' => 106764000.0,
-            'march' => 253225100.0,
-            'april' => 243037200.0,
-            'may' => 186921000.0,
+            'january' => 367218200.0,
+            'february' => 221594650.0,
+            'march' => 253324100.0,
+            'april' => 242087200.0,
+            'may' => 187871000.0,
             'june' => 332417000.0,
-            'july' => 142558002.0,
-            'august' => 350169000.0,
+            'july' => 141608002.0,
+            'august' => 351119000.0,
             'september' => 311158100.0,
-            'october' => 325288600.0,
-            'november' => 324272800.0,
-            'december' => 235035600.0,
+            'october' => 325178600.0,
+            'november' => 323432800.0,
+            'december' => 235985600.0,
         ],
         'platform_totals' => [
             'biinspira' => 1761902700.0,
-            'smartcounting' => 1410402202.0,
-            'smartcountingacademy' => 0.0,
+            'smartcountingacademy' => 1525039852.0,
             'kompeten' => 0.0,
             'sekolahpajak' => 0.0,
             'talenta' => 0.0,
@@ -95,24 +93,19 @@ class StatisticsOmsetController extends Controller
                 'november' => 198030000.0,
                 'december' => 111204100.0,
             ],
-            'smartcounting' => [
-                'january' => 161541000.0,
-                'february' => 0.0,
-                'march' => 110911000.0,
-                'april' => 114831000.0,
-                'may' => 118548000.0,
-                'june' => 147025000.0,
-                'july' => 142558002.0,
-                'august' => 141386000.0,
-                'september' => 98461000.0,
-                'october' => 130825600.0,
-                'november' => 124758800.0,
-                'december' => 119556800.0,
-            ],
             'smartcountingacademy' => [
-                'january' => 0.0, 'february' => 0.0, 'march' => 0.0, 'april' => 0.0,
-                'may' => 0.0, 'june' => 0.0, 'july' => 0.0, 'august' => 0.0,
-                'september' => 0.0, 'october' => 0.0, 'november' => 0.0, 'december' => 0.0,
+                'january' => 161249000.0,
+                'february' => 114830650.0,
+                'march' => 111010000.0,
+                'april' => 113881000.0,
+                'may' => 119498000.0,
+                'june' => 147025000.0,
+                'july' => 141608002.0,
+                'august' => 142336000.0,
+                'september' => 98461000.0,
+                'october' => 130715600.0,
+                'november' => 123918800.0,
+                'december' => 120506800.0,
             ],
             'kompeten' => [
                 'january' => 0.0, 'february' => 0.0, 'march' => 0.0, 'april' => 0.0,
@@ -157,6 +150,7 @@ class StatisticsOmsetController extends Controller
         @set_time_limit(60);
 
         Cache::forget(self::CACHE_KEY_2026);
+        Cache::forget(self::CACHE_KEY_2025);
         Cache::forget(self::CACHE_KEY_FULL);
 
         $data = $this->buildComparisonData(true);
@@ -183,8 +177,7 @@ class StatisticsOmsetController extends Controller
         $platformsConfig = config('services.platforms', []);
         $logos = $this->buildPlatformLogoMap();
 
-        $data2026 = $this->get2026Data($platformsConfig, $forceRefresh);
-        $data2025 = $this->get2025Data($platformsConfig, $forceRefresh);
+        [$data2025, $data2026] = $this->fetchComparisonData($platformsConfig, $forceRefresh);
 
         $currentMonth = (int) now()->month; // 1-12
 
@@ -311,27 +304,47 @@ class StatisticsOmsetController extends Controller
         return $payload;
     }
 
-    private function get2026Data(array $platformsConfig, bool $forceRefresh = false): array
+    private function fetchComparisonData(array $platformsConfig, bool $forceRefresh = false): array
     {
-        if (! $forceRefresh && Cache::has(self::CACHE_KEY_2026)) {
-            return Cache::get(self::CACHE_KEY_2026);
+        if (! $forceRefresh && Cache::has(self::CACHE_KEY_2025) && Cache::has(self::CACHE_KEY_2026)) {
+            return [
+                Cache::get(self::CACHE_KEY_2025),
+                Cache::get(self::CACHE_KEY_2026),
+            ];
         }
 
         $monthKeys = array_column($this->monthMap, 'key');
-        $monthlyTotals = array_fill_keys($monthKeys, 0.0);
-        $platformTotals = [];
-        $platformMonthly = [];
+
+        $monthlyTotals2026 = array_fill_keys($monthKeys, 0.0);
+        $platformTotals2026 = [];
+        $platformMonthly2026 = [];
+
+        $monthlyTotals2025 = array_fill_keys($monthKeys, 0.0);
+        $platformTotals2025 = [];
+        $platformMonthly2025 = [];
 
         foreach ($this->platformLabels as $key => $_label) {
-            $platformTotals[$key] = 0.0;
-            $platformMonthly[$key] = array_fill_keys($monthKeys, 0.0);
+            $platformTotals2026[$key] = 0.0;
+            $platformMonthly2026[$key] = array_fill_keys($monthKeys, 0.0);
+
+            $platformTotals2025[$key] = 0.0;
+            $platformMonthly2025[$key] = array_fill_keys($monthKeys, 0.0);
         }
 
-        // Concurrent parallel request using Http::pool for lightning-fast 2026 data fetching
+        $hasApiData2025 = [];
+
         try {
             $responses = Http::pool(function ($pool) use ($platformsConfig) {
                 $requests = [];
-                foreach ($this->platformLabels as $key => $_label) {
+                $keysToFetch = array_keys($this->platformLabels);
+                if (isset($platformsConfig['smartcountingacademy_new']) && is_array($platformsConfig['smartcountingacademy_new'])) {
+                    $keysToFetch[] = 'smartcountingacademy_new';
+                }
+                if (isset($platformsConfig['smartcounting']) && is_array($platformsConfig['smartcounting'])) {
+                    $keysToFetch[] = 'smartcounting';
+                }
+
+                foreach ($keysToFetch as $key) {
                     $platform = $platformsConfig[$key] ?? null;
                     if (! is_array($platform) || empty($platform['base_url']) || empty($platform['token'])) {
                         continue;
@@ -353,6 +366,7 @@ class StatisticsOmsetController extends Controller
                 return $requests;
             });
 
+            // 1. Process standard platforms
             foreach ($this->platformLabels as $key => $_label) {
                 $response = $responses[$key] ?? null;
                 if (! $response || ! $response->successful()) {
@@ -360,41 +374,132 @@ class StatisticsOmsetController extends Controller
                 }
 
                 $statsData = $response->json('data') ?? [];
-                $monthly = $statsData['monthly_nominal_this_year'] ?? [];
+                $yearlyNominal = $statsData['yearly_nominal'] ?? [];
 
-                foreach ($monthKeys as $mKey) {
-                    $val = (float) ($monthly[$mKey] ?? 0.0);
-                    $monthlyTotals[$mKey] += $val;
-                    $platformTotals[$key] += $val;
-                    $platformMonthly[$key][$mKey] = $val;
+                // 2026 data
+                $monthly2026 = $this->extractYearlyMonthly($yearlyNominal, 2026)
+                    ?? $statsData['monthly_nominal_this_year']
+                    ?? [];
+                if (is_array($monthly2026)) {
+                    $monthly2026 = array_change_key_case($monthly2026, CASE_LOWER);
+                    foreach ($monthKeys as $mKey) {
+                        $val = (float) ($monthly2026[$mKey] ?? 0.0);
+                        $monthlyTotals2026[$mKey] += $val;
+                        $platformTotals2026[$key] += $val;
+                        $platformMonthly2026[$key][$mKey] = $val;
+                    }
+                }
+
+                // 2025 data
+                $monthly2025 = $this->extractYearlyMonthly($yearlyNominal, 2025);
+                if (is_array($monthly2025) && ! empty($monthly2025)) {
+                    $monthly2025 = array_change_key_case($monthly2025, CASE_LOWER);
+                    $hasApiData2025[$key] = true;
+                    foreach ($monthKeys as $mKey) {
+                        $val = (float) ($monthly2025[$mKey] ?? 0.0);
+                        $monthlyTotals2025[$mKey] += $val;
+                        $platformTotals2025[$key] += $val;
+                        $platformMonthly2025[$key][$mKey] = $val;
+                    }
+                }
+            }
+
+            // 2. Merge smartcounting extra platforms (smartcountingacademy_new, smartcounting) into smartcountingacademy
+            foreach (['smartcountingacademy_new', 'smartcounting'] as $extraKey) {
+                $response = $responses[$extraKey] ?? null;
+                if (! $response || ! $response->successful()) {
+                    continue;
+                }
+
+                $extraStatsData = $response->json('data') ?? [];
+                $extraYearly = $extraStatsData['yearly_nominal'] ?? [];
+
+                // 2026
+                $extraMonthly2026 = $this->extractYearlyMonthly($extraYearly, 2026)
+                    ?? $extraStatsData['monthly_nominal_this_year']
+                    ?? [];
+                if (is_array($extraMonthly2026)) {
+                    $extraMonthly2026 = array_change_key_case($extraMonthly2026, CASE_LOWER);
+                    foreach ($monthKeys as $mKey) {
+                        $val = (float) ($extraMonthly2026[$mKey] ?? 0.0);
+                        $monthlyTotals2026[$mKey] += $val;
+                        $platformTotals2026['smartcountingacademy'] += $val;
+                        $platformMonthly2026['smartcountingacademy'][$mKey] += $val;
+                    }
+                }
+
+                // 2025
+                $extraMonthly2025 = $this->extractYearlyMonthly($extraYearly, 2025);
+                if (is_array($extraMonthly2025) && ! empty($extraMonthly2025)) {
+                    $extraMonthly2025 = array_change_key_case($extraMonthly2025, CASE_LOWER);
+                    $hasApiData2025['smartcountingacademy'] = true;
+                    foreach ($monthKeys as $mKey) {
+                        $val = (float) ($extraMonthly2025[$mKey] ?? 0.0);
+                        $monthlyTotals2025[$mKey] += $val;
+                        $platformTotals2025['smartcountingacademy'] += $val;
+                        $platformMonthly2025['smartcountingacademy'][$mKey] += $val;
+                    }
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning("StatisticsOmset 2026 pool fetch exception: {$e->getMessage()}");
+            Log::warning("StatisticsOmset fetchComparisonData exception: {$e->getMessage()}");
         }
 
-        $result = [
-            'monthly_totals' => $monthlyTotals,
-            'platform_totals' => $platformTotals,
-            'platform_monthly' => $platformMonthly,
+        // 3. Fallback for 2025: apply historical baseline for any platforms that did not receive 2025 data from API
+        foreach ($this->platformLabels as $key => $_label) {
+            if (! ($hasApiData2025[$key] ?? false)) {
+                $fallbackMonthly = self::HISTORICAL_2025_DATA['platform_monthly'][$key] ?? [];
+                foreach ($monthKeys as $mKey) {
+                    $val = (float) ($fallbackMonthly[$mKey] ?? 0.0);
+                    $monthlyTotals2025[$mKey] += $val;
+                    $platformTotals2025[$key] += $val;
+                    $platformMonthly2025[$key][$mKey] = $val;
+                }
+            }
+        }
+
+        $result2025 = [
+            'monthly_totals' => $monthlyTotals2025,
+            'platform_totals' => $platformTotals2025,
+            'platform_monthly' => $platformMonthly2025,
         ];
 
-        Cache::put(self::CACHE_KEY_2026, $result, now()->addMinutes(5));
+        $result2026 = [
+            'monthly_totals' => $monthlyTotals2026,
+            'platform_totals' => $platformTotals2026,
+            'platform_monthly' => $platformMonthly2026,
+        ];
 
-        return $result;
+        Cache::put(self::CACHE_KEY_2025, $result2025, now()->addMinutes(5));
+        Cache::put(self::CACHE_KEY_2026, $result2026, now()->addMinutes(5));
+
+        return [$result2025, $result2026];
+    }
+
+    private function extractYearlyMonthly(mixed $yearlyNominal, int|string $year): ?array
+    {
+        if (! is_array($yearlyNominal)) {
+            return null;
+        }
+
+        $target = $yearlyNominal[(string) $year] ?? $yearlyNominal[(int) $year] ?? null;
+        if (! is_array($target)) {
+            return null;
+        }
+
+        $monthly = $target['monthly'] ?? null;
+
+        return is_array($monthly) ? $monthly : null;
+    }
+
+    private function get2026Data(array $platformsConfig, bool $forceRefresh = false): array
+    {
+        return $this->fetchComparisonData($platformsConfig, $forceRefresh)[1];
     }
 
     private function get2025Data(array $platformsConfig, bool $forceRefresh = false): array
     {
-        if (! $forceRefresh && Cache::has(self::CACHE_KEY_2025)) {
-            return Cache::get(self::CACHE_KEY_2025);
-        }
-
-        // Return verified historical baseline immediately
-        $result = self::HISTORICAL_2025_DATA;
-        Cache::put(self::CACHE_KEY_2025, $result, now()->addDays(365));
-
-        return $result;
+        return $this->fetchComparisonData($platformsConfig, $forceRefresh)[0];
     }
 
     private function calculateChange(float $current, float $previous): array
@@ -426,7 +531,6 @@ class StatisticsOmsetController extends Controller
 
         $platformAliases = [
             'biinspira' => ['biinspira'],
-            'smartcounting' => ['smartcounting'],
             'smartcountingacademy' => ['smartcountingacademy', 'smartcounting'],
             'kompeten' => ['kompeten', 'kompetenidn'],
             'sekolahpajak' => ['sekolahpajak'],

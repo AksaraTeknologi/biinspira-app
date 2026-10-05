@@ -64,10 +64,6 @@ const platformConfig: Record<string, { label: string; className: string }> = {
         label: 'Biinspira',
         className: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-300',
     },
-    smartcounting: {
-        label: 'Smartcounting',
-        className: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300',
-    },
     smartcountingacademy: {
         label: 'Smartcounting Academy',
         className: 'border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-300',

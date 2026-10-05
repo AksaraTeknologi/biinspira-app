@@ -331,7 +331,7 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                             <span>Grafik Omset 2025 vs 2026 (TV)</span>
                         </a>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                         <div className="flex items-center gap-2">
                             <Label htmlFor="date-range" className="text-sm font-medium whitespace-nowrap">
                                 Rentang Tanggal
@@ -410,12 +410,14 @@ export default function Transactions({ invoices, availablePlatforms, routeName, 
                                 <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button onClick={applyFilter} disabled={!date?.from || !date?.to}>
-                            Terapkan Filter
-                        </Button>
-                        <Button variant="outline" onClick={resetFilter}>
-                            Reset
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button onClick={applyFilter} disabled={!date?.from || !date?.to}>
+                                Terapkan Filter
+                            </Button>
+                            <Button variant="outline" onClick={resetFilter}>
+                                Reset
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

@@ -64,6 +64,10 @@ return [
             'base_url' => env('SMARTCOUNTING_ACADEMY_API_BASE_URL'),
             'token' => env('SMARTCOUNTING_ACADEMY_API_TOKEN'),
         ],
+        'smartcountingacademy_new' => [
+            'base_url' => env('SMARTCOUNTING_ACADEMY_NEW_API_BASE_URL'),
+            'token' => env('SMARTCOUNTING_ACADEMY_NEW_API_TOKEN'),
+        ],
         'biinspira' => [
             'base_url' => env('BIINSPIRA_API_BASE_URL'),
             'token' => env('BIINSPIRA_API_TOKEN'),

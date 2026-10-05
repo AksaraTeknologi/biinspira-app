@@ -44,7 +44,6 @@ function getPlatformInitials(label?: string) {
 // Platform color mapping for distinct visual presentation
 const PLATFORM_COLORS: Record<string, string> = {
     biinspira: 'var(--primary)',
-    smartcounting: '#0284c7', // Sky
     smartcountingacademy: '#0d9488', // Teal
     kompeten: '#16a34a', // Green
     sekolahpajak: '#eab308', // Amber
@@ -223,7 +222,12 @@ export default function StatisticsOmset({ comparisonData, generatedAt }: Statist
                             </div>
                         }
                     >
-                        <ComparisonView data={comparisonData!} activeTab={activeTab} setActiveTab={setActiveTab} />
+                        <ComparisonView
+                            data={comparisonData!}
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                            cornerMessage={cornerMessage}
+                        />
                     </Deferred>
                 </div>
 
@@ -275,10 +279,12 @@ function ComparisonView({
     data,
     activeTab,
     setActiveTab,
+    cornerMessage,
 }: {
     data: ComparisonData;
     activeTab: ActiveTab;
     setActiveTab: (tab: ActiveTab) => void;
+    cornerMessage: ReturnType<typeof getTimeBasedMessage>;
 }) {
     const summary = data.summary;
     const [selectedPlatform, setSelectedPlatform] = useState<PlatformComparisonItem | null>(null);
@@ -875,6 +881,31 @@ function ComparisonView({
                                     </div>
                                 );
                             })}
+
+                            {data.platform_comparison.length > 0 && data.platform_comparison.length % 2 === 1 && (
+                                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm transition hover:scale-[1.01] hover:shadow-md">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                                            Daily Message ✨
+                                        </p>
+                                        <span className="text-xl">{cornerMessage.emoji}</span>
+                                    </div>
+
+                                    <div className="my-auto py-2">
+                                        <h3 className="text-base font-bold text-slate-800">
+                                            {cornerMessage.title}
+                                        </h3>
+                                        <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-600">
+                                            {cornerMessage.message}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center justify-between border-t border-slate-100 pt-1 text-[10px] text-slate-400">
+                                        <span>✨ Live Monitoring</span>
+                                        <span className="font-semibold text-primary">Biinspira Group</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
