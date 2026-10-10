@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class RevisionLog extends Model
 {
-       public $timestamps = false;
+    use HasUuids;
+
+    public $timestamps = false;
     protected $fillable = [
         'revision_id',
         'from_status',
@@ -14,6 +17,4 @@ class RevisionLog extends Model
         'changed_by',
         'changed_at'
     ];
-
-    
 }

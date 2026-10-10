@@ -12,14 +12,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { AppWindow, Building2, CalendarIcon, Hammer, Link2, MessageSquare, Send, ShieldAlert, Sparkles, Trash2, Wrench, X } from 'lucide-react';
+import { AppWindow, Building2, CalendarIcon, Check, CheckSquare, Hammer, Link2, MessageSquare, Pencil, Plus, Send, ShieldAlert, Sparkles, Trash2, Wrench, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
 import { getCsrfToken, getEcho } from '@/echo';
 
 type User = {
-    id: number;
+    id: number | string;
     name: string;
     role: string;
 };
@@ -57,8 +57,16 @@ type Comment = {
     created_at: string;
 };
 
-type Task = {
-    id: number;
+export type Subtask = {
+    id: number | string;
+    title: string;
+    is_completed: boolean;
+    completed_at?: string | null;
+    order?: number;
+};
+
+export type Task = {
+    id: number | string;
     title: string;
     description?: string;
     related_url?: string | null;
@@ -81,14 +89,16 @@ type Task = {
     application_id?: number | string | null;
     application?: Application | null;
     comments?: Comment[];
+    subtasks?: Subtask[];
 };
 
 type TaskModalProps = {
     task: Task | null;
     onClose: () => void;
     users?: User[];
-    currentUserId?: number | null;
+    currentUserId?: number | string | null;
     initialOpenChat?: boolean;
+    onSubtasksChange?: (taskId: number | string, subtasks: Subtask[]) => void;
 };
 
 type UpdatePayload = {
@@ -161,7 +171,7 @@ function buildUpdatePayload(task: Task | null): UpdatePayload {
 }
 
 // In-memory cache komentar per tiket agar riwayat chat tidak flicker/hilang saat modal ditutup & dibuka lagi tanpa reload
-export const ticketCommentsCache = new Map<number, Comment[]>();
+export const ticketCommentsCache = new Map<number | string, Comment[]>();
 
 function getInitialComments(currentTask: Task | null): Comment[] {
     if (!currentTask?.id) return [];
@@ -173,7 +183,14 @@ function getInitialComments(currentTask: Task | null): Comment[] {
     return propComments;
 }
 
-export default function TaskModal({ task, onClose, users = [], currentUserId = null, initialOpenChat = false }: TaskModalProps) {
+export default function TaskModal({
+    task,
+    onClose,
+    users = [],
+    currentUserId = null,
+    initialOpenChat = false,
+    onSubtasksChange,
+}: TaskModalProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const [expandedDesc, setExpandedDesc] = useState(false);
     const [commentBody, setCommentBody] = useState('');
@@ -187,6 +204,24 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const commentsEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
+    // Subtasks State
+    const [subtasks, setSubtasks] = useState<Subtask[]>(() => task?.subtasks ?? []);
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+    const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+    const [editingSubtaskId, setEditingSubtaskId] = useState<number | string | null>(null);
+    const [editingSubtaskTitle, setEditingSubtaskTitle] = useState('');
+    const [savingSubtaskId, setSavingSubtaskId] = useState<number | string | null>(null);
+    const [autoSaveNotification, setAutoSaveNotification] = useState<string | null>(null);
+
+    const completedSubtasksCount = useMemo(() => {
+        return subtasks.filter((s) => s.is_completed).length;
+    }, [subtasks]);
+
+    const subtaskProgressPercent = useMemo(() => {
+        if (subtasks.length === 0) return 0;
+        return Math.round((completedSubtasksCount / subtasks.length) * 100);
+    }, [subtasks.length, completedSubtasksCount]);
+
     const sortedComments = useMemo(() => {
         return [...liveComments];
     }, [liveComments]);
@@ -194,7 +229,19 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
     const { auth } = usePage<PageProps>().props;
     const userRoles = (auth?.user?.roles ?? []).map((role) => (typeof role === 'string' ? role.toLowerCase() : role.name.toLowerCase()));
     const isAdmin = userRoles.includes('admin');
+    const isTechnician = userRoles.includes('technician') || userRoles.includes('technician-intern');
     const effectiveUserId = currentUserId ?? auth?.user?.id;
+    const isCreator = Boolean(
+        (task?.created_by != null && effectiveUserId != null && String(task.created_by) === String(effectiveUserId)) ||
+        (task?.created_by_name && auth?.user?.name && task.created_by_name.trim().toLowerCase() === auth.user.name.trim().toLowerCase()),
+    );
+    // Hanya admin dan user pembuatnya yang bisa tambah, edit, dan hapus subtask
+    const canManageSubtasks = isAdmin || isCreator;
+    // Teknisi, pembuat tiket, dan admin bisa ceklis
+    const canChecklist = isAdmin || isCreator || isTechnician;
+    const isTicketInProgress = task?.status === 'in_progress';
+    // Syarat melakukan ceklis: status tiket harus 'in_progress' untuk semua user (termasuk admin)
+    const isToggleAllowed = canChecklist && isTicketInProgress;
 
     // Catat ID tiket yang sedang aktif dibuka di layar
     useEffect(() => {
@@ -213,17 +260,246 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
             const initial = getInitialComments(task);
             setLiveComments(initial);
             ticketCommentsCache.set(task.id, initial);
-            // Otomatis terbuka jika tiket memiliki riwayat chat (>0) atau dibuka lewat notifikasi
-            // Default tertutup jika tiket belum memiliki chat sama sekali (=== 0)
             const shouldOpen = initialOpenChat || initial.length > 0;
             setIsDiscussionOpen(shouldOpen);
+
+            // Inisialisasi subtasks dari props task
+            setSubtasks(task.subtasks ?? []);
+
+            // Ambil subtasks terbaru dari backend
+            fetch(`/requests/${task.id}/subtasks`, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+            })
+                .then((res) => res.json())
+                .then((resData) => {
+                    if (resData?.success && Array.isArray(resData.subtasks)) {
+                        setSubtasks(resData.subtasks);
+                        onSubtasksChange?.(task.id, resData.subtasks);
+                    }
+                })
+                .catch(() => {});
         } else {
             setLiveComments([]);
             setIsDiscussionOpen(false);
+            setSubtasks([]);
         }
         setExpandedDesc(false);
         setCommentBody('');
+        setEditingSubtaskId(null);
+        setNewSubtaskTitle('');
     }, [task?.id, initialOpenChat]);
+
+    const handleToggleSubtask = async (subtaskId: number | string, currentCompleted: boolean) => {
+        if (!task) return;
+
+        // Pengecekan izin akses di sisi klien
+        if (!isAdmin && !isCreator && !isTechnician) {
+            toast.error('Anda tidak memiliki hak akses untuk mengubah status subtask ini.');
+            return;
+        }
+
+        // Syarat ceklis: tiket harus dalam status 'in_progress' (termasuk untuk admin)
+        if (task.status !== 'in_progress') {
+            toast.error('Subtask hanya dapat diceklis jika status tiket sedang dikerjakan.');
+            return;
+        }
+
+        const nextCompleted = !currentCompleted;
+        setSavingSubtaskId(subtaskId);
+
+        // Optimistic update
+        const previousSubtasks = [...subtasks];
+        const updated = subtasks.map((st) =>
+            st.id === subtaskId
+                ? { ...st, is_completed: nextCompleted, completed_at: nextCompleted ? new Date().toISOString() : null }
+                : st,
+        );
+        setSubtasks(updated);
+        onSubtasksChange?.(task.id, updated);
+
+        setAutoSaveNotification(nextCompleted ? 'Tersimpan (Selesai)' : 'Tersimpan (Aktif)');
+        setTimeout(() => setAutoSaveNotification(null), 2500);
+
+        try {
+            const response = await fetch(`/requests/${task.id}/subtasks/${subtaskId}/toggle`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ is_completed: nextCompleted }),
+            });
+
+            if (response.status === 419) {
+                throw new Error('Sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Gagal memperbarui status subtask.');
+            }
+
+            if (data?.subtask) {
+                setSubtasks((prev) => {
+                    const refreshed = prev.map((s) => (s.id === subtaskId ? { ...s, ...data.subtask } : s));
+                    onSubtasksChange?.(task.id, refreshed);
+                    return refreshed;
+                });
+            }
+        } catch (err: any) {
+            setSubtasks(previousSubtasks);
+            onSubtasksChange?.(task.id, previousSubtasks);
+            toast.error(err?.message || 'Gagal memperbarui status subtask.');
+        } finally {
+            setSavingSubtaskId(null);
+        }
+    };
+
+    const handleAddSubtask = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!task || !newSubtaskTitle.trim() || isAddingSubtask) return;
+
+        if (!canManageSubtasks) {
+            toast.error('Hanya admin dan pembuat tiket yang dapat menambahkan subtask.');
+            return;
+        }
+
+        const titleToAdd = newSubtaskTitle.trim();
+        setIsAddingSubtask(true);
+
+        try {
+            const response = await fetch(`/requests/${task.id}/subtasks`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ title: titleToAdd }),
+            });
+
+            if (response.status === 419) {
+                throw new Error('Sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Gagal menambahkan subtask');
+            }
+
+            if (data?.subtask) {
+                const nextList = [...subtasks, data.subtask];
+                setSubtasks(nextList);
+                onSubtasksChange?.(task.id, nextList);
+                setNewSubtaskTitle('');
+                toast.success(data?.message || 'Subtask berhasil ditambahkan');
+            }
+        } catch (err: any) {
+            toast.error(err?.message || 'Gagal menambahkan subtask');
+        } finally {
+            setIsAddingSubtask(false);
+        }
+    };
+
+    const handleUpdateSubtask = async (subtaskId: number | string) => {
+        if (!task || !editingSubtaskTitle.trim()) return;
+
+        if (!canManageSubtasks) {
+            toast.error('Hanya admin dan pembuat tiket yang dapat merubah subtask.');
+            return;
+        }
+
+        const updatedTitle = editingSubtaskTitle.trim();
+        setSavingSubtaskId(subtaskId);
+
+        try {
+            const response = await fetch(`/requests/${task.id}/subtasks/${subtaskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ title: updatedTitle }),
+            });
+
+            if (response.status === 419) {
+                throw new Error('Sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Gagal memperbarui subtask');
+            }
+
+            const nextList = subtasks.map((s) => (s.id === subtaskId ? { ...s, title: updatedTitle } : s));
+            setSubtasks(nextList);
+            onSubtasksChange?.(task.id, nextList);
+            setEditingSubtaskId(null);
+            toast.success(data?.message || 'Judul subtask diperbarui');
+        } catch (err: any) {
+            toast.error(err?.message || 'Gagal memperbarui subtask');
+        } finally {
+            setSavingSubtaskId(null);
+        }
+    };
+
+    const handleDeleteSubtask = async (subtaskId: number | string) => {
+        if (!task) return;
+
+        if (!canManageSubtasks) {
+            toast.error('Hanya admin dan pembuat tiket yang dapat menghapus subtask.');
+            return;
+        }
+
+        setSavingSubtaskId(subtaskId);
+
+        try {
+            const response = await fetch(`/requests/${task.id}/subtasks/${subtaskId}`, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+            });
+
+            if (response.status === 419) {
+                throw new Error('Sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Gagal menghapus subtask');
+            }
+
+            const nextList = subtasks.filter((s) => s.id !== subtaskId);
+            setSubtasks(nextList);
+            onSubtasksChange?.(task.id, nextList);
+            toast.success(data?.message || 'Subtask dihapus');
+        } catch (err: any) {
+            toast.error(err?.message || 'Gagal menghapus subtask');
+        } finally {
+            setSavingSubtaskId(null);
+        }
+    };
 
     // Otomatis scroll ke pesan paling bawah setiap kali ada pesan baru atau diskusi dibuka
     useEffect(() => {
@@ -692,6 +968,232 @@ export default function TaskModal({ task, onClose, users = [], currentUserId = n
                                 </div>
                             </div>
                         )}
+
+                        {/* Subtasks Section */}
+                        <div className="rounded-xl border border-gray-200/90 bg-white p-4.5 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/90">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                        Daftar Tugas
+                                    </h3>
+                                    {subtasks.length > 0 && (
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                                                completedSubtasksCount === subtasks.length
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                    : 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+                                            )}
+                                        >
+                                            {completedSubtasksCount} / {subtasks.length} Selesai ({subtaskProgressPercent}%)
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {!isTicketInProgress && (
+                                        <span className="rounded-full border border-amber-200/60 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-400">
+                                            Ceklis aktif saat tiket Sedang Dikerjakan
+                                        </span>
+                                    )}
+                                    {autoSaveNotification && (
+                                        <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+                                            <Check className="h-3 w-3" />
+                                            {autoSaveNotification}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Subtask Progress Bar */}
+                            {subtasks.length > 0 && (
+                                <div className="mb-3.5">
+                                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
+                                        <div
+                                            className={cn(
+                                                'h-full transition-all duration-300',
+                                                completedSubtasksCount === subtasks.length
+                                                    ? 'bg-emerald-500'
+                                                    : 'bg-primary',
+                                            )}
+                                            style={{ width: `${subtaskProgressPercent}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Subtasks List */}
+                            <div className="space-y-2 mb-3.5">
+                                {subtasks.length === 0 ? (
+                                    <div className="rounded-lg border border-dashed border-gray-200 py-6 text-center dark:border-zinc-800">
+                                        <CheckSquare className="mx-auto mb-1.5 h-6 w-6 text-gray-300 dark:text-zinc-600" />
+                                        <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">
+                                            Belum ada subtask untuk tiket ini.
+                                        </p>
+                                        {canManageSubtasks ? (
+                                            <p className="text-[11px] text-gray-400 dark:text-zinc-500">
+                                                Pecah tiket ini menjadi beberapa langkah pengerjaan di bawah.
+                                            </p>
+                                        ) : (
+                                            <p className="text-[11px] text-gray-400 dark:text-zinc-500">
+                                                Pembuat tiket atau admin belum menambahkan subtask.
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    subtasks.map((st) => (
+                                        <div
+                                            key={st.id}
+                                            onClick={() => {
+                                                if (editingSubtaskId === st.id) return;
+                                                if (!isToggleAllowed) {
+                                                    if (task.status !== 'in_progress') {
+                                                        toast.error('Subtask hanya dapat diceklis jika status tiket sedang dikerjakan.');
+                                                    } else {
+                                                        toast.error('Anda tidak memiliki hak akses untuk mengubah status subtask ini.');
+                                                    }
+                                                    return;
+                                                }
+                                                handleToggleSubtask(st.id, st.is_completed);
+                                            }}
+                                            className={cn(
+                                                'group flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-all select-none',
+                                                isToggleAllowed ? 'cursor-pointer' : 'cursor-not-allowed',
+                                                st.is_completed
+                                                    ? 'border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-950/50 dark:bg-emerald-950/20'
+                                                    : 'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/50',
+                                            )}
+                                        >
+                                            <div
+                                                className="flex shrink-0 items-center"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    id={`subtask-${st.id}`}
+                                                    checked={st.is_completed}
+                                                    disabled={savingSubtaskId === st.id || !isToggleAllowed}
+                                                    onCheckedChange={() => {
+                                                        if (isToggleAllowed) {
+                                                            handleToggleSubtask(st.id, st.is_completed);
+                                                        }
+                                                    }}
+                                                    className={cn(
+                                                        'h-4 w-4 rounded-md border border-zinc-300 dark:border-zinc-400 transition-colors',
+                                                        st.is_completed && 'border-emerald-600 bg-emerald-600 data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600',
+                                                        !isToggleAllowed && 'cursor-not-allowed opacity-60',
+                                                    )}
+                                                    title={!isToggleAllowed ? (task.status !== 'in_progress' ? 'Subtask hanya dapat diceklis jika tiket dalam status Sedang Dikerjakan' : 'Anda tidak memiliki hak akses untuk mengubah status subtask ini') : undefined}
+                                                />
+                                            </div>
+
+                                            {editingSubtaskId === st.id ? (
+                                                <div className="flex min-w-0 flex-1 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                    <Input
+                                                        value={editingSubtaskTitle}
+                                                        onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleUpdateSubtask(st.id);
+                                                            if (e.key === 'Escape') setEditingSubtaskId(null);
+                                                        }}
+                                                        autoFocus
+                                                        className="h-8 text-xs"
+                                                    />
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleUpdateSubtask(st.id)}
+                                                        className="h-8 px-2.5 text-xs"
+                                                    >
+                                                        Simpan
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => setEditingSubtaskId(null)}
+                                                        className="h-8 px-2 text-xs"
+                                                    >
+                                                        Batal
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="min-w-0 flex-1">
+                                                    <span
+                                                        className={cn(
+                                                            'block text-xs font-medium transition-all leading-normal truncate',
+                                                            st.is_completed
+                                                                ? 'line-through text-zinc-400 dark:text-zinc-500 font-normal'
+                                                                : 'text-zinc-800 dark:text-zinc-200',
+                                                        )}
+                                                        title={st.title}
+                                                    >
+                                                        {st.title}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Actions (Edit / Delete) - HANYA ADMIN & PEMBUAT TIKET */}
+                                            {canManageSubtasks && editingSubtaskId !== st.id && (
+                                                <div
+                                                    className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingSubtaskId(st.id);
+                                                            setEditingSubtaskTitle(st.title);
+                                                        }}
+                                                        className="h-6 w-6 text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200"
+                                                        title="Edit subtask"
+                                                    >
+                                                        <Pencil className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteSubtask(st.id);
+                                                        }}
+                                                        className="h-6 w-6 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                                                        title="Hapus subtask"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Form Tambah Subtask - HANYA ADMIN & PEMBUAT TIKET */}
+                            {canManageSubtasks && (
+                                <form onSubmit={handleAddSubtask} className="flex items-center gap-2">
+                                    <Input
+                                        placeholder="Tambah subtask baru... (tekan Enter)"
+                                        value={newSubtaskTitle}
+                                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                        disabled={isAddingSubtask}
+                                        className="h-9 text-xs"
+                                    />
+                                    <Button
+                                        type="submit"
+                                        size="sm"
+                                        disabled={!newSubtaskTitle.trim() || isAddingSubtask}
+                                        className="h-9 gap-1.5 px-3 text-xs shrink-0"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Tambah
+                                    </Button>
+                                </form>
+                            )}
+                        </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">

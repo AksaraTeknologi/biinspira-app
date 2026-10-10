@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('revision_logs', function (Blueprint $table) {
 
-            $table->id();
+            $table->uuid('id')->primary();
 
             // ✅ FK ke revision_requests (UUID)
-            $table->foreignId('revision_id')
+            $table->foreignUuid('revision_id')
                 ->constrained('revision_requests')
                 ->cascadeOnDelete();
 

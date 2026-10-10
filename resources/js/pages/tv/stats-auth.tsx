@@ -26,7 +26,7 @@ export default function TvStatsAuth() {
 
     return (
         <>
-            <Head title="Akses Statistik - Biinspira Monitoring App" />
+            <Head title="Akses Statistik - Biinsight" />
 
             <div className="relative flex min-h-screen w-full items-center justify-center bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center p-4 sm:p-8">
                 {/* Centered glassmorphic card */}

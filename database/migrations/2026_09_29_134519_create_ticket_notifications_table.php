@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
-            $table->foreignId('revision_request_id')
+            $table->foreignUuid('revision_request_id')
                 ->constrained('revision_requests')
                 ->cascadeOnDelete();
             $table->foreignUuid('revision_comment_id')

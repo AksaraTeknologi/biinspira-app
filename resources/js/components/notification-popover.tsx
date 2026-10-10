@@ -8,8 +8,8 @@ import { CheckCheck, MessageSquare, MessageSquareDot } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type NotificationItem = {
-    id: number;
-    revision_request_id: number;
+    id: string | number;
+    revision_request_id: string | number;
     ticket_title: string;
     sender_name: string;
     comment_body: string;

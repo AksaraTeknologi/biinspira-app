@@ -12,9 +12,9 @@ type Application = {
 };
 
 type RequestTask = {
-    id: number;
+    id: number | string;
     title: string;
-    description: string;
+    description?: string | null;
     related_url?: string | null;
     urgency: 'high' | 'medium' | 'low';
     target_role?: 'technician' | 'technician-intern';

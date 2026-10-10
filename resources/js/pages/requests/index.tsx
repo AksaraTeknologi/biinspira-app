@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import KanbanBoard from '../../components/KanbanBoard';
 
 type User = {
-    id: number;
+    id: number | string;
     name: string;
     role: string;
 };
@@ -21,10 +21,11 @@ type Application = {
 };
 
 type Task = {
-    id: number;
+    id: number | string;
     title: string;
     description: string;
     status: string;
+    [key: string]: any;
 };
 
 type Props = {
@@ -40,7 +41,7 @@ type RoleItem = {
 type PageProps = {
     auth?: {
         user?: {
-            id?: number;
+            id?: number | string;
             roles?: Array<RoleItem | string>;
         };
     };
