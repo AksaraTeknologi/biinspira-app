@@ -14,11 +14,11 @@ let echoInstance: Echo<'reverb'> | null = null;
 
 export function getCsrfToken(): string {
     if (typeof document === 'undefined') return '';
-    const meta = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-    if (meta?.content) return meta.content;
-
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
     if (match) return decodeURIComponent(match[1]);
+
+    const meta = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
+    if (meta?.content) return meta.content;
 
     return '';
 }

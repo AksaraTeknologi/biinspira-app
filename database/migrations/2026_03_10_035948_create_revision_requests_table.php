@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('revision_requests', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
             $table->string('title');
-            $table->text('description');
+            $table->text('description')->nullable();
 
             $table->string('related_url')->nullable();
             $table->foreignUuid('application_id')->nullable()->constrained('applications')->nullOnDelete();

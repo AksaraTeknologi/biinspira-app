@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,9 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
         password_confirmation: '',
     });
 
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('password.store'), {
@@ -36,8 +39,8 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     };
 
     return (
-        <AuthLayout title="Reset password" description="Please enter your new password below">
-            <Head title="Reset password" />
+        <AuthLayout title="Reset Kata Sandi" description="Masukkan kata sandi baru untuk akun Anda">
+            <Head title="Reset Kata Sandi" />
 
             <form onSubmit={submit}>
                 <div className="grid gap-6">
@@ -49,47 +52,72 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             name="email"
                             autoComplete="email"
                             value={data.email}
-                            className="mt-1 block w-full"
+                            className="border-secondary-foreground bg-muted/30"
                             readOnly
-                            onChange={(e) => setData('email', e.target.value)}
                         />
-                        <InputError message={errors.email} className="mt-2" />
+                        <InputError message={errors.email} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            name="password"
-                            autoComplete="new-password"
-                            value={data.password}
-                            className="mt-1 block w-full"
-                            autoFocus
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
+                        <Label htmlFor="password">Kata Sandi Baru</Label>
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                autoComplete="new-password"
+                                value={data.password}
+                                autoFocus
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Minimal 8 karakter"
+                                className="border-secondary-foreground focus-visible:border-secondary-foreground focus-visible:ring-[1.5px] focus-visible:ring-secondary-foreground"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-5 w-5 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-5 w-5 text-muted-foreground" />
+                                )}
+                            </button>
+                        </div>
                         <InputError message={errors.password} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            name="password_confirmation"
-                            autoComplete="new-password"
-                            value={data.password_confirmation}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            placeholder="Confirm password"
-                        />
-                        <InputError message={errors.password_confirmation} className="mt-2" />
+                        <Label htmlFor="password_confirmation">Konfirmasi Kata Sandi Baru</Label>
+                        <div className="relative">
+                            <Input
+                                id="password_confirmation"
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                name="password_confirmation"
+                                autoComplete="new-password"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                placeholder="Ulangi kata sandi baru"
+                                className="border-secondary-foreground focus-visible:border-secondary-foreground focus-visible:ring-[1.5px] focus-visible:ring-secondary-foreground"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                                {showConfirmPassword ? (
+                                    <EyeOff className="h-5 w-5 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-5 w-5 text-muted-foreground" />
+                                )}
+                            </button>
+                        </div>
+                        <InputError message={errors.password_confirmation} />
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full" disabled={processing}>
+                    <Button type="submit" className="mt-4 w-full transition" disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Reset password
+                        Simpan Kata Sandi Baru
                     </Button>
                 </div>
             </form>

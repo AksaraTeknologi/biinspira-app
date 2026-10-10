@@ -1,4 +1,5 @@
-import TaskModal, { ticketCommentsCache } from '@/components/TaskModal';
+import TaskModal, { ticketCommentsCache, type Subtask } from '@/components/TaskModal';
+import { cn } from '@/lib/utils';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,6 +21,7 @@ import {
     AlertCircle,
     Calendar,
     Check,
+    CheckSquare,
     ChevronLeft,
     ChevronRight,
     Hammer,
@@ -36,7 +38,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 type User = {
-    id: number;
+    id: number | string;
     name: string;
     role: string;
 };
@@ -56,7 +58,7 @@ type Comment = {
 };
 
 type Task = {
-    id: number;
+    id: number | string;
     title: string;
     description?: string;
     status: 'request' | 'todo' | 'in_progress' | 'in_review' | 'complete';
@@ -77,6 +79,7 @@ type Task = {
     application_id?: number | string | null;
     application?: Application | null;
     comments?: Comment[];
+    subtasks?: Subtask[];
 };
 
 type Board = {
@@ -188,7 +191,7 @@ export default function KanbanBoard({
     tasks: Partial<Board>;
     users: User[];
     user_role: unknown;
-    user_id?: number;
+    user_id?: number | string;
     user_name?: string;
     applications?: Application[];
 }) {
@@ -295,6 +298,17 @@ export default function KanbanBoard({
             url.searchParams.delete('open_chat');
             window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
         }
+    };
+
+    const handleSubtasksChange = (taskId: number | string, updatedSubtasks: Subtask[]) => {
+        setBoard((prev) => {
+            const next = { ...prev };
+            (Object.keys(next) as Array<keyof Board>).forEach((col) => {
+                next[col] = next[col].map((t) => (t.id === taskId ? { ...t, subtasks: updatedSubtasks } : t));
+            });
+            return next;
+        });
+        setSelectedTask((prev) => (prev && prev.id === taskId ? { ...prev, subtasks: updatedSubtasks } : prev));
     };
 
     const normalizeRole = (role: unknown) => {
@@ -459,16 +473,18 @@ export default function KanbanBoard({
             return true;
         }
 
+        // Teknisi tidak bisa edit atau hapus tiket
         if (role === 'technician' || role === 'technician-intern') {
-            return user_id != null ? Boolean(task.assignees?.some((id) => Number(id) === Number(user_id))) : false;
+            return false;
         }
 
-        if (role === 'user') {
-            if (user_id == null || task.created_by == null) {
-                return true;
-            }
+        // Hanya admin dan user pembuatnya saja
+        if (user_id != null && task.created_by != null) {
+            return String(task.created_by) === String(user_id);
+        }
 
-            return Number(task.created_by) === Number(user_id);
+        if (user_name && task.created_by_name) {
+            return task.created_by_name.trim().toLowerCase() === user_name.trim().toLowerCase();
         }
 
         return false;
@@ -480,17 +496,17 @@ export default function KanbanBoard({
         }
 
         if (user_id != null && task.created_by != null) {
-            if (Number(task.created_by) === Number(user_id)) return true;
+            if (String(task.created_by) === String(user_id)) return true;
         }
 
         if (user_name != null && task.created_by_name != null) {
-            if (task.created_by_name === user_name) return true;
+            if (task.created_by_name.trim().toLowerCase() === user_name.trim().toLowerCase()) return true;
         }
 
         return false;
     };
 
-    const removeTaskFromBoard = (taskId: number) => {
+    const removeTaskFromBoard = (taskId: number | string) => {
         setBoard((prev) => ({
             request: prev.request.filter((item) => item.id !== taskId),
             todo: prev.todo.filter((item) => item.id !== taskId),
@@ -704,6 +720,37 @@ export default function KanbanBoard({
                                 </Tooltip>
                             </TooltipProvider>
                         )}
+
+                        {/* Subtask Mini Indicator */}
+                        {task.subtasks && task.subtasks.length > 0 && (() => {
+                            const total = task.subtasks.length;
+                            const completed = task.subtasks.filter((s) => s.is_completed).length;
+                            const isAllDone = total > 0 && completed === total;
+                            const pct = Math.round((completed / total) * 100);
+
+                            return (
+                                <div className="mb-2 rounded-lg border border-gray-100 bg-gray-50/80 px-2 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
+                                    <div className="mb-1 flex items-center justify-between text-[10.5px]">
+                                        <div className="flex items-center gap-1 font-semibold text-gray-700 dark:text-zinc-200">
+                                            <CheckSquare className={cn('h-3 w-3 shrink-0', isAllDone ? 'text-emerald-500' : 'text-blue-500')} />
+                                            <span>Subtask</span>
+                                        </div>
+                                        <span className={cn('font-bold', isAllDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-zinc-400')}>
+                                            {completed}/{total} ({pct}%)
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-zinc-700">
+                                        <div
+                                            className={cn(
+                                                'h-full transition-all duration-300',
+                                                isAllDone ? 'bg-emerald-500' : 'bg-primary',
+                                            )}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Baris 5: Footer Pembuat Tiket (Kiri) dan Deadline (Kanan) */}
                         <div className="border-t border-gray-100 dark:border-zinc-800/80 pt-2 flex items-center justify-between gap-1.5 text-xs">
@@ -1123,6 +1170,7 @@ export default function KanbanBoard({
                 currentUserId={user_id ?? null}
                 onClose={closeTask}
                 initialOpenChat={openChatInitially}
+                onSubtasksChange={handleSubtasksChange}
             />
 
             {/* Delete Confirmation */}

@@ -311,6 +311,18 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/requests/{id}/comments/{commentId}', [RevisionRequestController::class, 'deleteComment'])
         ->name('requests.comment.destroy');
 
+    // Subtask tiket
+    Route::get('/requests/{id}/subtasks', [RevisionRequestController::class, 'getSubtasks'])
+        ->name('requests.subtasks.index');
+    Route::post('/requests/{id}/subtasks', [RevisionRequestController::class, 'addSubtask'])
+        ->name('requests.subtasks.store');
+    Route::patch('/requests/{id}/subtasks/{subtaskId}/toggle', [RevisionRequestController::class, 'toggleSubtask'])
+        ->name('requests.subtasks.toggle');
+    Route::put('/requests/{id}/subtasks/{subtaskId}', [RevisionRequestController::class, 'updateSubtask'])
+        ->name('requests.subtasks.update');
+    Route::delete('/requests/{id}/subtasks/{subtaskId}', [RevisionRequestController::class, 'deleteSubtask'])
+        ->name('requests.subtasks.destroy');
+
     // Notifikasi tiket
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');

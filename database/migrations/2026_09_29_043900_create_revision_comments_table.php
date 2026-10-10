@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('revision_comments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('revision_request_id')
+            $table->foreignUuid('revision_request_id')
                 ->constrained('revision_requests')
                 ->cascadeOnDelete();
             $table->foreignUuid('user_id')

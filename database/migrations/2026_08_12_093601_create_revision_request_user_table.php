@@ -13,25 +13,35 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('revision_request_user', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('revision_request_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('revision_request_id')->constrained('revision_requests')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
 
         // Migrate existing assigned_to data to the pivot table
-        DB::statement('
-            INSERT INTO revision_request_user (revision_request_id, user_id, created_at, updated_at)
-            SELECT id, assigned_to, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            FROM revision_requests
-            WHERE assigned_to IS NOT NULL
-        ');
+        if (Schema::hasColumn('revision_requests', 'assigned_to')) {
+            $existing = DB::table('revision_requests')
+                ->whereNotNull('assigned_to')
+                ->select('id', 'assigned_to')
+                ->get();
 
-        // Drop the old assigned_to column
-        Schema::table('revision_requests', function (Blueprint $table) {
-            $table->dropForeign(['assigned_to']);
-            $table->dropColumn('assigned_to');
-        });
+            foreach ($existing as $row) {
+                DB::table('revision_request_user')->insert([
+                    'id'                  => (string) \Illuminate\Support\Str::uuid(),
+                    'revision_request_id' => $row->id,
+                    'user_id'             => $row->assigned_to,
+                    'created_at'          => now(),
+                    'updated_at'          => now(),
+                ]);
+            }
+
+            // Drop the old assigned_to column
+            Schema::table('revision_requests', function (Blueprint $table) {
+                $table->dropForeign(['assigned_to']);
+                $table->dropColumn('assigned_to');
+            });
+        }
     }
 
     /**
@@ -44,11 +54,12 @@ return new class extends Migration
         });
 
         // Migrate data back
-        DB::statement('
-            UPDATE revision_requests r
-            JOIN revision_request_user ru ON r.id = ru.revision_request_id
-            SET r.assigned_to = ru.user_id
-        ');
+        $pivots = DB::table('revision_request_user')->get();
+        foreach ($pivots as $pivot) {
+            DB::table('revision_requests')
+                ->where('id', $pivot->revision_request_id)
+                ->update(['assigned_to' => $pivot->user_id]);
+        }
 
         Schema::dropIfExists('revision_request_user');
     }

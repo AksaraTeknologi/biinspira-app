@@ -9,9 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, Hammer, Sparkles, Trash2, Wrench } from 'lucide-react';
+import { CalendarIcon, Check, Hammer, Pencil, Plus, Sparkles, Trash2, Wrench, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -21,10 +21,17 @@ type Application = {
     color?: string | null;
 };
 
-type RequestTask = {
-    id: number;
+type SubtaskItem = {
+    id?: number | string;
     title: string;
-    description: string;
+};
+
+type RequestTask = {
+    id: number | string;
+    title: string;
+    description?: string | null;
+    created_by?: number | string;
+    created_by_name?: string | null;
     related_url?: string | null;
     urgency: 'high' | 'medium' | 'low';
     target_role?: 'technician' | 'technician-intern';
@@ -32,6 +39,7 @@ type RequestTask = {
     attachments?: Array<{ file_path: string }>;
     application_id?: number | string | null;
     work_type?: 'pengerjaan' | 'penambahan_fitur' | 'maintenance' | null;
+    subtasks?: Array<{ id?: number | string; title: string; is_completed?: boolean }>;
 };
 
 type RequestFormProps = {
@@ -50,6 +58,7 @@ type RequestPayload = {
     attachments: File[];
     application_id: string;
     work_type: string;
+    subtasks: SubtaskItem[];
     _method?: 'PUT';
 };
 
@@ -74,8 +83,22 @@ function isImageFile(filePath: string) {
 }
 
 export default function RequestForm({ mode, task, applications = [] }: RequestFormProps) {
+    const { auth } = usePage<any>().props;
+    const userRoles = (auth?.user?.roles ?? []).map((role: any) => (typeof role === 'string' ? role.toLowerCase() : role.name?.toLowerCase() ?? ''));
+    const isAdmin = userRoles.includes('admin');
+    const isCreator =
+        mode === 'create' ||
+        Boolean(
+            (task?.created_by != null && auth?.user?.id != null && String(task.created_by) === String(auth.user.id)) ||
+            (task?.created_by_name && auth?.user?.name && task.created_by_name.trim().toLowerCase() === auth.user.name.trim().toLowerCase()),
+        );
+    const canManageSubtasks = isAdmin || isCreator;
+
     const [date, setDate] = useState<Date | undefined>(parseDeadline(task?.deadline));
     const [newFilePreviews, setNewFilePreviews] = useState<Array<string | null>>([]);
+    const [subtaskInput, setSubtaskInput] = useState('');
+    const [editingSubtaskIndex, setEditingSubtaskIndex] = useState<number | null>(null);
+    const [editingSubtaskValue, setEditingSubtaskValue] = useState('');
 
     const { data, setData, post, processing, errors, reset, transform } = useForm<RequestPayload>({
         title: task?.title ?? '',
@@ -87,6 +110,10 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
         attachments: [],
         application_id: task?.application_id ? String(task.application_id) : '',
         work_type: task?.work_type ?? '',
+        subtasks: (task?.subtasks ?? []).map((s) => ({
+            id: s.id,
+            title: s.title,
+        })),
     });
 
     useEffect(() => {
@@ -105,8 +132,50 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
             attachments: [],
             application_id: task.application_id ? String(task.application_id) : '',
             work_type: task.work_type ?? '',
+            subtasks: (task.subtasks ?? []).map((s) => ({
+                id: s.id,
+                title: s.title,
+            })),
         });
     }, [task, setData]);
+
+    const addSubtaskItem = () => {
+        if (!subtaskInput.trim()) return;
+        setData('subtasks', [...(data.subtasks || []), { title: subtaskInput.trim() }]);
+        setSubtaskInput('');
+    };
+
+    const startEditSubtask = (index: number, currentTitle: string) => {
+        setEditingSubtaskIndex(index);
+        setEditingSubtaskValue(currentTitle);
+    };
+
+    const saveEditSubtask = (index: number) => {
+        if (!editingSubtaskValue.trim()) return;
+        const nextList = [...(data.subtasks || [])];
+        nextList[index] = {
+            ...nextList[index],
+            title: editingSubtaskValue.trim(),
+        };
+        setData('subtasks', nextList);
+        setEditingSubtaskIndex(null);
+        setEditingSubtaskValue('');
+    };
+
+    const cancelEditSubtask = () => {
+        setEditingSubtaskIndex(null);
+        setEditingSubtaskValue('');
+    };
+
+    const removeSubtaskItem = (index: number) => {
+        if (editingSubtaskIndex === index) {
+            cancelEditSubtask();
+        }
+        setData(
+            'subtasks',
+            (data.subtasks || []).filter((_, i) => i !== index),
+        );
+    };
 
     useEffect(() => {
         return () => {
@@ -144,19 +213,14 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (
-            !data.title.trim() ||
-            !data.description.trim() ||
-            !data.urgency ||
-            !data.target_role ||
-            !data.deadline
-        ) {
+        if (!data.title.trim() || !data.urgency || !data.target_role || !data.deadline) {
             toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
             return;
         }
 
         transform((current) => ({
             ...current,
+            description: current.description ? current.description.trim() : '',
             related_url: current.related_url && current.related_url.trim() ? current.related_url.trim() : null,
             application_id: current.application_id && current.application_id !== 'none' ? current.application_id : null,
             work_type: current.work_type && current.work_type !== 'none' ? current.work_type : null,
@@ -199,16 +263,148 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
                     </div>
 
                     <div className="space-y-3">
-                        <Label htmlFor="description">Deskripsi</Label>
+                        <Label htmlFor="description">Deskripsi (Opsional)</Label>
                         <Textarea
                             id="description"
-                            required
                             value={data.description}
                             onChange={(event) => setData('description', event.target.value)}
-                            placeholder="Jelaskan detail tiket"
+                            placeholder="Jelaskan detail tiket (opsional jika sudah dipecah ke subtask)"
                             className="min-h-32"
                         />
                         {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+                    </div>
+
+                    {/* Subtask Section */}
+                    <div className="space-y-3">
+                        <Label className="font-semibold text-zinc-900 dark:text-zinc-100">Subtask / Rincian Pekerjaan (Opsional)</Label>
+                        <p className="mb-2 text-xs text-muted-foreground">
+                            Pecah tiket ini menjadi beberapa langkah pekerjaan yang harus diselesaikan oleh tim.
+                        </p>
+
+                        {canManageSubtasks && (
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Contoh: Buat endpoint API, Desain form input..."
+                                    value={subtaskInput}
+                                    onChange={(e) => setSubtaskInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            addSubtaskItem();
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={addSubtaskItem}
+                                    disabled={!subtaskInput.trim()}
+                                    className="shrink-0 gap-1.5 text-xs"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Tambah
+                                </Button>
+                            </div>
+                        )}
+
+                        {data.subtasks && data.subtasks.length > 0 ? (
+                            <div className="space-y-2 pt-1">
+                                {data.subtasks.map((stItem, idx) =>
+                                    editingSubtaskIndex === idx ? (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-2 rounded-lg border border-primary/50 bg-blue-50/30 p-1.5 text-xs dark:border-blue-700 dark:bg-blue-950/20"
+                                        >
+                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10.5px] font-bold text-primary dark:bg-blue-900/60 dark:text-blue-300">
+                                                {idx + 1}
+                                            </span>
+                                            <Input
+                                                value={editingSubtaskValue}
+                                                onChange={(e) => setEditingSubtaskValue(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        saveEditSubtask(idx);
+                                                    }
+                                                    if (e.key === 'Escape') {
+                                                        e.preventDefault();
+                                                        cancelEditSubtask();
+                                                    }
+                                                }}
+                                                autoFocus
+                                                placeholder="Nama subtask..."
+                                                className="h-8 flex-1 text-xs bg-white dark:bg-zinc-900"
+                                            />
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() => saveEditSubtask(idx)}
+                                                className="h-8 gap-1 px-3 text-xs"
+                                            >
+                                                <Check className="h-3.5 w-3.5" />
+                                                Simpan
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={cancelEditSubtask}
+                                                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                                            >
+                                                Batal
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            key={idx}
+                                            className="group flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-zinc-800 transition-colors hover:border-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                                        >
+                                            <div
+                                                className={cn(
+                                                    'flex min-w-0 flex-1 items-center gap-2',
+                                                    canManageSubtasks && 'cursor-pointer hover:text-primary transition-colors',
+                                                )}
+                                                onClick={() => {
+                                                    if (canManageSubtasks) {
+                                                        startEditSubtask(idx, stItem.title);
+                                                    }
+                                                }}
+                                                title={canManageSubtasks ? 'Klik untuk mengedit subtask' : undefined}
+                                            >
+                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10.5px] font-bold text-primary dark:bg-blue-900/60 dark:text-blue-300">
+                                                    {idx + 1}
+                                                </span>
+                                                <span className="truncate">{stItem.title}</span>
+                                            </div>
+                                            {canManageSubtasks && (
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => startEditSubtask(idx, stItem.title)}
+                                                        className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+                                                        title="Edit subtask"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeSubtaskItem(idx)}
+                                                        className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-zinc-800"
+                                                        title="Hapus subtask"
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        ) : (
+                            !canManageSubtasks && (
+                                <p className="text-xs text-muted-foreground italic">Tidak ada subtask yang ditambahkan oleh pembuat tiket.</p>
+                            )
+                        )}
                     </div>
 
                     <div className="space-y-3">
@@ -259,7 +455,9 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
                         {/* Aplikasi (opsional) */}
                         {applications.length > 0 && (
                             <div className="space-y-3">
-                                <Label>Aplikasi <span className="text-gray-400 text-xs">(opsional)</span></Label>
+                                <Label>
+                                    Aplikasi <span className="text-xs text-gray-400">(opsional)</span>
+                                </Label>
                                 <Select
                                     value={data.application_id ? data.application_id : 'none'}
                                     onValueChange={(value) => setData('application_id', value === 'none' ? '' : value)}
@@ -282,7 +480,9 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
 
                         {/* Work Type (opsional) */}
                         <div className="space-y-3">
-                            <Label>Jenis Pekerjaan <span className="text-gray-400 text-xs">(opsional)</span></Label>
+                            <Label>
+                                Jenis Pekerjaan <span className="text-xs text-gray-400">(opsional)</span>
+                            </Label>
                             <Select
                                 value={data.work_type ? data.work_type : 'none'}
                                 onValueChange={(value) => setData('work_type', value === 'none' ? '' : value)}
@@ -346,12 +546,7 @@ export default function RequestForm({ mode, task, applications = [] }: RequestFo
 
                         <div className="space-y-3">
                             <Label htmlFor="attachments">Lampiran (Opsional)</Label>
-                            <Input
-                                id="attachments"
-                                type="file"
-                                multiple
-                                onChange={handleFileChange}
-                            />
+                            <Input id="attachments" type="file" multiple onChange={handleFileChange} />
                             {errors.attachments && <p className="text-sm text-red-500">{errors.attachments}</p>}
                         </div>
                     </div>

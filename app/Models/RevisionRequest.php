@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RevisionRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     // Field yang bisa diisi mass assignment
     protected $fillable = [
@@ -61,11 +63,17 @@ class RevisionRequest extends Model
     // Relasi ke user yang ditugaskan (assignees)
     public function assignees()
     {
-        return $this->belongsToMany(User::class, 'revision_request_user');
+        return $this->belongsToMany(User::class, 'revision_request_user')
+            ->using(RevisionRequestUser::class);
     }
 
     public function attachments()
     {
         return $this->hasMany(RevisionAttachment::class);
+    }
+
+    public function subtasks(): HasMany
+    {
+        return $this->hasMany(RevisionSubtask::class)->orderBy('order')->orderBy('id');
     }
 }

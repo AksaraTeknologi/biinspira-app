@@ -30,12 +30,27 @@ class PasswordResetLinkController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
         ]);
 
-        Password::sendResetLink(
+        $status = Password::sendResetLink(
             $request->only('email')
         );
 
-        return back()->with('status', __('A reset link will be sent if the account exists.'));
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with('status', 'Tautan reset kata sandi telah berhasil dikirim ke email Anda. Silakan cek kotak masuk atau folder spam.');
+        }
+
+        if ($status === Password::RESET_THROTTLED) {
+            return back()->withErrors([
+                'email' => 'Terlalu banyak permintaan. Harap tunggu beberapa saat sebelum mencoba kembali.',
+            ]);
+        }
+
+        return back()->withErrors([
+            'email' => 'Email tidak terdaftar di sistem kami.',
+        ]);
     }
 }

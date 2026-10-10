@@ -3,7 +3,9 @@ import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
@@ -16,10 +18,10 @@ type LoginForm = {
 
 interface LoginProps {
     status?: string;
-    canResetPassword: boolean;
+    canResetPassword?: boolean;
 }
 
-export default function Login({ status }: LoginProps) {
+export default function Login({ status, canResetPassword = true }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
         password: '',
@@ -59,14 +61,7 @@ export default function Login({ status }: LoginProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {/* {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    Lupa password?
-                                </TextLink>
-                            )} */}
-                        </div>
+                        <Label htmlFor="password">Password</Label>
                         <div className="relative">
                             <Input
                                 id="password"
@@ -94,7 +89,32 @@ export default function Login({ status }: LoginProps) {
                         <InputError message={errors.password} />
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full transition" tabIndex={4} disabled={processing}>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="remember" className="flex items-center gap-2 cursor-pointer select-none">
+                            <Checkbox
+                                id="remember"
+                                checked={data.remember}
+                                onCheckedChange={(checked) => setData('remember', !!checked)}
+                                tabIndex={3}
+                                className="border-muted-foreground/60 data-[state=checked]:border-primary"
+                            />
+                            <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Ingat di perangkat ini
+                            </span>
+                        </label>
+
+                        {canResetPassword && (
+                            <TextLink
+                                href={route('password.request')}
+                                className="text-sm font-medium text-primary hover:underline transition-colors"
+                                tabIndex={5}
+                            >
+                                Lupa password?
+                            </TextLink>
+                        )}
+                    </div>
+
+                    <Button type="submit" className="mt-2 w-full transition" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Login
                     </Button>

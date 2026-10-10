@@ -22,40 +22,47 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Forgot password" description="Enter your email to receive a password reset link">
-            <Head title="Forgot password" />
+        <AuthLayout title="Lupa Kata Sandi" description="Masukkan email akun Anda untuk menerima tautan pengaturan ulang kata sandi">
+            <Head title="Lupa Kata Sandi" />
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+            {status && (
+                <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3.5 text-center text-sm font-medium text-green-700 dark:text-green-400">
+                    {status}
+                </div>
+            )}
 
             <div className="space-y-6">
                 <form onSubmit={submit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
                             id="email"
                             type="email"
                             name="email"
-                            autoComplete="off"
+                            autoComplete="email"
                             value={data.email}
                             autoFocus
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
+                            placeholder="Masukkan email Anda"
+                            className="border-secondary-foreground focus-visible:border-secondary-foreground focus-visible:ring-[1.5px] focus-visible:ring-secondary-foreground"
                         />
 
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="my-6 flex items-center justify-start">
-                        <Button className="w-full" disabled={processing}>
+                        <Button className="w-full transition" disabled={processing}>
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Email password reset link
+                            Kirim Tautan Reset Password
                         </Button>
                     </div>
                 </form>
 
                 <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={route('login')}>log in</TextLink>
+                    <span>Kembali ke halaman</span>
+                    <TextLink href={route('login')} className="font-medium text-primary hover:underline">
+                        Login
+                    </TextLink>
                 </div>
             </div>
         </AuthLayout>

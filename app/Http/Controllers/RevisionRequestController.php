@@ -6,10 +6,12 @@ use App\Models\Application;
 use App\Models\RevisionComment;
 use App\Models\RevisionRequest;
 use App\Models\RevisionLog;
+use App\Models\RevisionSubtask;
 use App\Models\TicketNotification;
 use App\Models\User;
 use App\Events\CommentPosted;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use App\Notifications\TaskStatusUpdated;
 use App\Traits\WablasTrait;
@@ -25,7 +27,9 @@ class RevisionRequestController extends Controller
     {
         $user = Auth::user();
 
-        $query = RevisionRequest::with([
+        $hasSubtasksTable = Schema::hasTable('revision_subtasks');
+
+        $withRelations = [
             'creator' => function ($q) {
                 $q->select('id', 'name')->with('roles');
             },
@@ -35,7 +39,15 @@ class RevisionRequestController extends Controller
             'comments' => function ($q) {
                 $q->with('author:id,name')->oldest();
             },
-        ]);
+        ];
+
+        if ($hasSubtasksTable) {
+            $withRelations['subtasks'] = function ($q) {
+                $q->orderBy('order')->orderBy('id');
+            };
+        }
+
+        $query = RevisionRequest::with($withRelations);
 
         if ($user->hasRole('admin')) {
             // admin lihat semua
@@ -58,7 +70,7 @@ class RevisionRequestController extends Controller
         $tasks = $query
             ->latest()
             ->get()
-            ->map(function ($task) {
+            ->map(function ($task) use ($hasSubtasksTable) {
                 return [
                     'id'               => $task->id,
                     'title'            => $task->title,
@@ -99,6 +111,16 @@ class RevisionRequestController extends Controller
                         'user_name'  => $c->author?->name ?? '-',
                         'created_at' => $c->created_at->diffForHumans(),
                     ]),
+
+                    'subtasks' => ($hasSubtasksTable && $task->relationLoaded('subtasks'))
+                        ? $task->subtasks->map(fn ($s) => [
+                            'id'           => $s->id,
+                            'title'        => $s->title,
+                            'is_completed' => (bool) $s->is_completed,
+                            'completed_at' => $s->completed_at?->toISOString(),
+                            'order'        => $s->order,
+                        ])
+                        : [],
                 ];
             })
             ->groupBy('status');
@@ -154,7 +176,7 @@ class RevisionRequestController extends Controller
 
         $validated = $request->validate([
             'title'          => 'required|string|max:255',
-            'description'    => 'required|string',
+            'description'    => 'nullable|string',
             'related_url'    => 'nullable|string',
             'urgency'        => 'required|in:high,medium,low',
             'target_role'    => 'required|in:technician,technician-intern',
@@ -165,11 +187,13 @@ class RevisionRequestController extends Controller
             'attachments.*'  => 'nullable|file|mimes:jpg,png,jpeg,pdf',
             'application_id' => 'nullable|exists:applications,id',
             'work_type'      => 'nullable|in:pengerjaan,penambahan_fitur,maintenance',
+            'subtasks'        => 'nullable|array',
+            'subtasks.*'      => 'nullable',
         ]);
 
         $task = RevisionRequest::create([
             'title'          => $validated['title'],
-            'description'    => $validated['description'],
+            'description'    => $validated['description'] ?? '',
             'related_url'    => $validated['related_url'] ?? null,
             'urgency'        => $validated['urgency'],
             'target_role'    => $validated['target_role'],
@@ -182,6 +206,20 @@ class RevisionRequestController extends Controller
 
         if (!empty($validated['assignees'])) {
             $task->assignees()->attach($validated['assignees']);
+        }
+
+        if (!empty($validated['subtasks']) && Schema::hasTable('revision_subtasks')) {
+            foreach ($validated['subtasks'] as $index => $item) {
+                $trimmed = trim(is_array($item) ? ($item['title'] ?? '') : (string) $item);
+                if ($trimmed !== '') {
+                    $task->subtasks()->create([
+                        'title'        => $trimmed,
+                        'is_completed' => false,
+                        'order'        => $index + 1,
+                        'created_by'   => Auth::id(),
+                    ]);
+                }
+            }
         }
 
         if ($request->hasFile('attachments')) {
@@ -225,9 +263,13 @@ class RevisionRequestController extends Controller
     {
         $task = RevisionRequest::with('attachments')->findOrFail($id);
         $user = Auth::user();
+        $isAdmin = $user->hasRole('admin');
+        $isCreator = (string) $task->created_by === (string) $user->id;
 
-        if ($user->hasAnyRole(['technician', 'technician-intern']) && !$task->assignees->contains('id', $user->id)) abort(403);
-        if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
+        // Hanya admin dan user pembuat tiket yang dapat mengedit tiket
+        if (!$isAdmin && !$isCreator) {
+            abort(403, 'Hanya admin dan pembuat tiket yang dapat mengedit tiket.');
+        }
 
         $applications = Application::where('is_active', true)
             ->select('id', 'name', 'color')
@@ -243,12 +285,20 @@ class RevisionRequestController extends Controller
                 'urgency'        => $task->urgency,
                 'target_role'    => $task->target_role,
                 'deadline'       => $task->deadline,
+                'created_by'     => $task->created_by,
                 'assignees'      => $task->assignees->pluck('id'),
                 'application_id' => $task->application_id,
                 'work_type'      => $task->work_type,
                 'attachments'    => $task->attachments->map(fn ($a) => [
                     'file_path' => $a->file_path,
                 ]),
+                'subtasks'       => Schema::hasTable('revision_subtasks')
+                    ? $task->subtasks()->orderBy('order')->orderBy('id')->get()->map(fn ($s) => [
+                        'id'           => $s->id,
+                        'title'        => $s->title,
+                        'is_completed' => (bool) $s->is_completed,
+                    ])
+                    : [],
             ],
             'applications' => $applications,
         ]);
@@ -258,18 +308,12 @@ class RevisionRequestController extends Controller
     {
         $task = RevisionRequest::findOrFail($id);
         $user = Auth::user();
+        $isAdmin = $user->hasRole('admin');
+        $isCreator = (string) $task->created_by === (string) $user->id;
 
-        // Admin bisa hapus semua
-        if ($user->hasRole('admin')) {
-            // allowed
-        }
-        // Technician/Intern hanya bisa hapus tiket yang dia assignee-nya
-        elseif ($user->hasAnyRole(['technician', 'technician-intern'])) {
-            if (!$task->assignees->contains('id', $user->id)) abort(403);
-        }
-        // User biasa hanya bisa hapus tiket miliknya sendiri ← FIX IDOR
-        else {
-            if ((string) $task->created_by !== (string) $user->id) abort(403);
+        // Hanya admin dan user pembuat tiket yang dapat menghapus tiket
+        if (!$isAdmin && !$isCreator) {
+            abort(403, 'Hanya admin dan pembuat tiket yang dapat menghapus tiket.');
         }
 
         foreach ($task->attachments as $file) {
@@ -285,22 +329,18 @@ class RevisionRequestController extends Controller
     {
         $task = RevisionRequest::findOrFail($id);
         $user = Auth::user();
+        $isAdmin = $user->hasRole('admin');
+        $isCreator = (string) $task->created_by === (string) $user->id;
 
-        // 🔐 AUTH
-        if ($user->hasAnyRole(['technician', 'technician-intern'])) {
-            $isAssignedToSelf = $task->assignees->contains('id', $user->id);
-
-            // Jika dia bukan assignee, dia tidak bisa edit detail (kecuali di updateStatus untuk claim)
-            if (! $isAssignedToSelf) {
-                abort(403);
-            }
+        // 🔐 AUTH: Hanya admin dan pembuat tiket yang dapat memperbarui tiket
+        if (!$isAdmin && !$isCreator) {
+            abort(403, 'Hanya admin dan pembuat tiket yang dapat memperbarui tiket.');
         }
-        if ($user->hasRole('user') && $task->created_by !== $user->id) abort(403);
 
         // ✅ VALIDASI
         $validated = $request->validate([
             'title'          => 'required|string|max:255',
-            'description'    => 'required|string',
+            'description'    => 'nullable|string',
             'related_url'    => 'nullable|string',
             'urgency'        => 'required|in:high,medium,low',
             'target_role'    => 'required|in:technician,technician-intern',
@@ -311,12 +351,14 @@ class RevisionRequestController extends Controller
             'attachments.*'  => 'nullable|file|mimes:jpg,png,jpeg,pdf',
             'application_id' => 'nullable|exists:applications,id',
             'work_type'      => 'nullable|in:pengerjaan,penambahan_fitur,maintenance',
+            'subtasks'       => 'nullable|array',
+            'subtasks.*'     => 'nullable',
         ]);
 
         // ✅ UPDATE DATA
         $task->update([
             'title'          => $validated['title'],
-            'description'    => $validated['description'],
+            'description'    => $validated['description'] ?? '',
             'related_url'    => $validated['related_url'] ?? null,
             'urgency'        => $validated['urgency'],
             'target_role'    => $validated['target_role'],
@@ -324,6 +366,51 @@ class RevisionRequestController extends Controller
             'application_id' => $validated['application_id'] ?? null,
             'work_type'      => $validated['work_type'] ?? null,
         ]);
+
+        // ✅ SINKRONISASI SUBTASKS (jika dikirim dari form)
+        if ($request->has('subtasks') && Schema::hasTable('revision_subtasks')) {
+            $submittedSubtasks = $request->input('subtasks') ?? [];
+            $existingSubtasks = $task->subtasks()->get()->keyBy(fn ($s) => (string) $s->id);
+            $usedIds = [];
+
+            foreach ($submittedSubtasks as $index => $item) {
+                $id = is_array($item) ? ($item['id'] ?? null) : null;
+                $title = trim(is_array($item) ? ($item['title'] ?? '') : (string) $item);
+
+                if ($title === '') continue;
+
+                if ($id && $existingSubtasks->has((string) $id)) {
+                    $existing = $existingSubtasks->get((string) $id);
+                    $existing->update([
+                        'title' => $title,
+                        'order' => $index + 1,
+                    ]);
+                    $usedIds[] = (string) $id;
+                } else {
+                    // Cek berdasarkan judul jika ID tidak disertakan
+                    $match = $existingSubtasks->first(function ($s) use ($title, $usedIds) {
+                        return !in_array((string) $s->id, $usedIds) && $s->title === $title;
+                    });
+
+                    if ($match) {
+                        $match->update([
+                            'order' => $index + 1,
+                        ]);
+                        $usedIds[] = (string) $match->id;
+                    } else {
+                        $created = $task->subtasks()->create([
+                            'title'        => $title,
+                            'is_completed' => false,
+                            'order'        => $index + 1,
+                            'created_by'   => $user->id,
+                        ]);
+                        $usedIds[] = (string) $created->id;
+                    }
+                }
+            }
+
+            $task->subtasks()->whereNotIn('id', $usedIds)->delete();
+        }
 
         // ✅ HANDLE FILE BARU (optional, gak hapus lama)
         if ($request->hasFile('attachments')) {
@@ -633,6 +720,198 @@ class RevisionRequestController extends Controller
         $comment->delete();
 
         return back();
+    }
+
+    /**
+     * Dapatkan subtask untuk tiket
+     */
+    public function getSubtasks($id)
+    {
+        $task = RevisionRequest::findOrFail($id);
+        
+        if (!Schema::hasTable('revision_subtasks')) {
+            return response()->json(['success' => true, 'subtasks' => []]);
+        }
+
+        $subtasks = $task->subtasks()->orderBy('order')->orderBy('id')->get()->map(fn ($s) => [
+            'id'           => $s->id,
+            'title'        => $s->title,
+            'is_completed' => (bool) $s->is_completed,
+            'completed_at' => $s->completed_at?->toISOString(),
+            'order'        => $s->order,
+        ]);
+
+        return response()->json([
+            'success'  => true,
+            'subtasks' => $subtasks,
+        ]);
+    }
+
+    /**
+     * Tambah subtask baru ke tiket
+     */
+    public function addSubtask(Request $request, $id)
+    {
+        $task = RevisionRequest::findOrFail($id);
+        $user = Auth::user();
+
+        $isCreator = (string) $task->created_by === (string) $user->id;
+        $isAdmin   = $user->hasRole('admin');
+
+        // Hanya admin dan user pembuat tiket yang dapat menambah subtask
+        if (!$isAdmin && !$isCreator) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin dan pembuat tiket yang dapat menambahkan subtask.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $maxOrder = $task->subtasks()->max('order') ?? 0;
+
+        $subtask = $task->subtasks()->create([
+            'title'        => trim($validated['title']),
+            'is_completed' => false,
+            'order'        => $maxOrder + 1,
+            'created_by'   => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Subtask berhasil ditambahkan',
+            'subtask' => [
+                'id'           => $subtask->id,
+                'title'        => $subtask->title,
+                'is_completed' => false,
+                'completed_at' => null,
+                'order'        => $subtask->order,
+            ],
+        ]);
+    }
+
+    /**
+     * Toggle status ceklis subtask (otomatis tersimpan)
+     */
+    public function toggleSubtask(Request $request, $id, $subtaskId)
+    {
+        $task = RevisionRequest::findOrFail($id);
+        $user = Auth::user();
+
+        $isCreator    = (string) $task->created_by === (string) $user->id;
+        $isAdmin      = $user->hasRole('admin');
+        $isTechnician = $user->hasAnyRole(['technician', 'technician-intern']);
+
+        // Hanya admin, pembuat tiket, atau teknisi yang boleh melakukan ceklis
+        if (!$isAdmin && !$isCreator && !$isTechnician) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah status subtask ini.',
+            ], 403);
+        }
+
+        // Syarat melakukan ceklis: status tiket harus "in_progress" (sedang dikerjakan), termasuk untuk admin
+        if ($task->status !== 'in_progress') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subtask hanya dapat diceklis jika status tiket sedang dikerjakan.',
+            ], 403);
+        }
+
+        $subtask = $task->subtasks()->findOrFail($subtaskId);
+
+        $newCompleted = $request->has('is_completed')
+            ? (bool) $request->input('is_completed')
+            : !$subtask->is_completed;
+
+        $subtask->update([
+            'is_completed' => $newCompleted,
+            'completed_at' => $newCompleted ? now() : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $newCompleted ? 'Subtask ditandai selesai' : 'Subtask diaktifkan kembali',
+            'subtask' => [
+                'id'           => $subtask->id,
+                'title'        => $subtask->title,
+                'is_completed' => (bool) $subtask->is_completed,
+                'completed_at' => $subtask->completed_at?->toISOString(),
+                'order'        => $subtask->order,
+            ],
+        ]);
+    }
+
+    /**
+     * Update judul subtask
+     */
+    public function updateSubtask(Request $request, $id, $subtaskId)
+    {
+        $task = RevisionRequest::findOrFail($id);
+        $user = Auth::user();
+
+        $isCreator = (string) $task->created_by === (string) $user->id;
+        $isAdmin   = $user->hasRole('admin');
+
+        // Hanya admin dan user pembuat tiket yang dapat merubah subtask
+        if (!$isAdmin && !$isCreator) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin dan pembuat tiket yang dapat merubah subtask.',
+            ], 403);
+        }
+
+        $subtask = $task->subtasks()->findOrFail($subtaskId);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $subtask->update([
+            'title' => trim($validated['title']),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Subtask berhasil diperbarui',
+            'subtask' => [
+                'id'           => $subtask->id,
+                'title'        => $subtask->title,
+                'is_completed' => (bool) $subtask->is_completed,
+                'completed_at' => $subtask->completed_at?->toISOString(),
+                'order'        => $subtask->order,
+            ],
+        ]);
+    }
+
+    /**
+     * Hapus subtask
+     */
+    public function deleteSubtask($id, $subtaskId)
+    {
+        $task = RevisionRequest::findOrFail($id);
+        $user = Auth::user();
+
+        $isCreator = (string) $task->created_by === (string) $user->id;
+        $isAdmin   = $user->hasRole('admin');
+
+        // Hanya admin dan user pembuat tiket yang dapat menghapus subtask
+        if (!$isAdmin && !$isCreator) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin dan pembuat tiket yang dapat menghapus subtask.',
+            ], 403);
+        }
+
+        $subtask = $task->subtasks()->findOrFail($subtaskId);
+        $subtask->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Subtask berhasil dihapus',
+        ]);
     }
 
     /**

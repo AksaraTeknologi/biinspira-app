@@ -41,6 +41,10 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        if (method_exists(Auth::guard('web'), 'setRememberDuration')) {
+            Auth::guard('web')->setRememberDuration((int) config('auth.guards.web.remember', 43200));
+        }
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 

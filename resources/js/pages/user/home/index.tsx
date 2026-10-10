@@ -8,7 +8,7 @@ interface HomeProps {
 export default function Home({ home_item }: HomeProps) {
     return (
         <UserLayout>
-            <Head title="Biinspira Monitoring App" />
+            <Head title="Biinsight" />
 
             <div className="mt-20 flex flex-1 flex-col items-center">
                 <div className="w-full max-w-7xl px-4 md:px-6 flex flex-col gap-6">

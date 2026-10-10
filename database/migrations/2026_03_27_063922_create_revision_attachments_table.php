@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('revision_attachments', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            $table->foreignId('revision_request_id')
-                ->constrained()
+            $table->foreignUuid('revision_request_id')
+                ->constrained('revision_requests')
                 ->cascadeOnDelete();
 
             $table->string('file_path');
