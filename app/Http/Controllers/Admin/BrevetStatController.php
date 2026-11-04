@@ -23,6 +23,9 @@ class BrevetStatController extends Controller
         $this->authorizeAccess($request);
 
         $platform = $request->query('platform', 'all');
+        if ($platform === 'valueedu') {
+            $platform = 'value_edu';
+        }
         $year = (int) ($request->query('year') ?: now()->year);
 
         $query = BrevetStat::query()->with('creator:id,name');
@@ -66,6 +69,7 @@ class BrevetStatController extends Controller
             WHEN 'levelup' THEN 6 
             WHEN 'aksademy' THEN 7 
             WHEN 'skillgrow' THEN 8 
+            WHEN 'value_edu' THEN 9 
             ELSE 99 END";
 
         $records = $query
@@ -121,6 +125,10 @@ class BrevetStatController extends Controller
     {
         $this->authorizeAccess($request);
 
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        }
+
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(BrevetStat::PLATFORMS))],
             'batch' => ['required', 'string', 'max:150'],
@@ -145,6 +153,10 @@ class BrevetStatController extends Controller
         $this->authorizeAccess($request);
 
         $record = BrevetStat::findOrFail($id);
+
+        if ($request->input('platform') === 'valueedu') {
+            $request->merge(['platform' => 'value_edu']);
+        }
 
         $validated = $request->validate([
             'platform' => ['required', 'string', 'in:' . implode(',', array_keys(BrevetStat::PLATFORMS))],

@@ -163,6 +163,18 @@ class DataStatisticsSeeder extends Seeder
                 'scholarship' => 5,
                 'other_brevet' => 0,
             ]);
+
+            // Value.Edu sample data
+            BrevetStat::create([
+                'platform' => 'value_edu',
+                'batch' => 'Batch 01 (reguler)',
+                'month' => 'September',
+                'year' => 2026,
+                'weekend' => 8,
+                'weekday' => 10,
+                'scholarship' => 7,
+                'other_brevet' => 0,
+            ]);
         }
 
         // 2. Seed Ad Spend Stats sample data for 2026
