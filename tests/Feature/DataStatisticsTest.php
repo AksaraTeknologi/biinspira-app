@@ -562,3 +562,35 @@ test('admin can store and view ad spend stats for Smartcounting and Smartcountin
     expect($smartcountingAcademy['this_year'])->toBeGreaterThanOrEqual(6500000);
 });
 
+test('admin can store and view ad spend stats for Tes Kerja platform', function () {
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.ad-spend-stats.store'), [
+            'platform' => 'teskerja',
+            'date' => '2026-11-04',
+            'amount' => 5000000,
+            'ad_channel' => 'meta',
+            'notes' => 'Campaign Tes Kerja launch',
+        ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('ad_spend_stats', [
+        'platform' => 'teskerja',
+        'amount' => 5000000,
+        'ad_channel' => 'meta',
+    ]);
+
+    // Check TV ad spend stats returns Tes Kerja
+    $tvResponse = $this->withSession(['stats_authenticated' => true])
+        ->getJson('/stats-iklan/data')
+        ->assertOk();
+
+    $platforms = collect($tvResponse->json('platforms'));
+    $tesKerja = $platforms->firstWhere('key', 'teskerja');
+
+    expect($tesKerja)->not->toBeNull();
+    expect($tesKerja['label'])->toBe('Tes Kerja');
+    expect($tesKerja['this_year'])->toBeGreaterThanOrEqual(5000000);
+});
+
+
