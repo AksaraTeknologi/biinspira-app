@@ -29,6 +29,7 @@ class AdSpendStat extends Model
         'aksademy' => 'Aksademy',
         'skillgrow' => 'Skill Grow',
         'value_edu' => 'Value.Edu',
+        'teskerja' => 'Tes Kerja',
     ];
 
     public const CHANNELS = [

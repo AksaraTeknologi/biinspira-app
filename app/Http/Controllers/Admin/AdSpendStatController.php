@@ -28,6 +28,8 @@ class AdSpendStatController extends Controller
             $platform = 'value_edu';
         } elseif ($platform === 'smartcounting_academy') {
             $platform = 'smartcountingacademy';
+        } elseif ($platform === 'tes_kerja') {
+            $platform = 'teskerja';
         }
         $channel = $request->query('channel');
         $year = (int) ($request->query('year') ?: now()->year);
@@ -128,6 +130,8 @@ class AdSpendStatController extends Controller
             $request->merge(['platform' => 'value_edu']);
         } elseif ($request->input('platform') === 'smartcounting_academy') {
             $request->merge(['platform' => 'smartcountingacademy']);
+        } elseif ($request->input('platform') === 'tes_kerja') {
+            $request->merge(['platform' => 'teskerja']);
         }
 
         $validated = $request->validate([
@@ -155,6 +159,8 @@ class AdSpendStatController extends Controller
             $request->merge(['platform' => 'value_edu']);
         } elseif ($request->input('platform') === 'smartcounting_academy') {
             $request->merge(['platform' => 'smartcountingacademy']);
+        } elseif ($request->input('platform') === 'tes_kerja') {
+            $request->merge(['platform' => 'teskerja']);
         }
 
         $validated = $request->validate([
