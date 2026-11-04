@@ -31,6 +31,7 @@ class BrevetStat extends Model
         'levelup' => 'LevelUp Accounting',
         'aksademy' => 'Aksademy',
         'skillgrow' => 'Skill Grow',
+        'value_edu' => 'Value.Edu',
     ];
 
     protected static function booted(): void

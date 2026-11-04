@@ -593,4 +593,38 @@ test('admin can store and view ad spend stats for Tes Kerja platform', function 
     expect($tesKerja['this_year'])->toBeGreaterThanOrEqual(5000000);
 });
 
+test('admin can store and view brevet stats for Value.Edu platform', function () {
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.brevet-stats.store'), [
+            'platform' => 'value_edu',
+            'batch' => 'Batch 01 (Value.Edu)',
+            'month' => 'September',
+            'year' => 2026,
+            'weekend' => 10,
+            'weekday' => 15,
+            'scholarship' => 20,
+            'other_brevet' => 5,
+            'notes' => 'Value.Edu Brevet launch',
+        ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('brevet_stats', [
+        'platform' => 'value_edu',
+        'batch' => 'Batch 01 (Value.Edu)',
+        'total' => 50,
+    ]);
+
+    // Check TV brevet stats returns Value.Edu
+    $tvResponse = $this->withSession(['stats_authenticated' => true])
+        ->getJson('/stats-brevet/data')
+        ->assertOk();
+
+    $platforms = $tvResponse->json('platforms');
+    expect($platforms)->toHaveKey('value_edu');
+    expect($platforms['value_edu']['label'])->toBe('Value.Edu');
+    expect($platforms['value_edu']['total_overall'])->toBeGreaterThanOrEqual(50);
+});
+
+
 

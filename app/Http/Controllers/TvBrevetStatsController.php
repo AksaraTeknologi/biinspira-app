@@ -49,6 +49,7 @@ class TvBrevetStatsController extends Controller
             WHEN 'levelup' THEN 6 
             WHEN 'aksademy' THEN 7 
             WHEN 'skillgrow' THEN 8 
+            WHEN 'value_edu' THEN 9 
             ELSE 99 END";
 
         $allRecords = BrevetStat::orderByDesc('year')
