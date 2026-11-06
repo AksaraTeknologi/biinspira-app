@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,7 +34,7 @@ class TvTicketStatsController extends Controller
             'assignees:id,name',
             'creator:id,name',
         ])
-        ->whereIn('status', ['todo', 'in_progress', 'in_review'])
+        ->where('status', '!=', 'complete')
         ->latest()
         ->get();
 
@@ -150,6 +151,13 @@ class TvTicketStatsController extends Controller
             ->with(['roles'])
             ->get();
 
+        // Hitung total keseluruhan tiket yang pernah ditugaskan per programmer (termasuk complete)
+        $totalTicketsPerProgrammer = DB::table('revision_request_user')
+            ->join('revision_requests', 'revision_requests.id', '=', 'revision_request_user.revision_request_id')
+            ->select('revision_request_user.user_id', DB::raw('count(*) as total'))
+            ->groupBy('revision_request_user.user_id')
+            ->pluck('total', 'revision_request_user.user_id');
+
         $programmerStats = [];
         foreach ($programmers as $prog) {
             $progTasks = $allActive->filter(fn ($t) => $t->assignees->contains('id', $prog->id));
@@ -158,7 +166,7 @@ class TvTicketStatsController extends Controller
                 'name'              => $prog->name,
                 'role'              => $prog->hasRole('technician') ? 'Programmer' : 'Programmer Magang',
                 'is_intern'         => $prog->hasRole('technician-intern'),
-                'total_assigned'    => $progTasks->count(),
+                'total_assigned'    => (int) ($totalTicketsPerProgrammer[$prog->id] ?? 0),
                 'in_progress_count' => $progTasks->where('status', 'in_progress')->count(),
                 'tasks'             => $progTasks->map($formatTask)->values(),
             ];
