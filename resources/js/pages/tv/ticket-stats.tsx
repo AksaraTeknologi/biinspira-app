@@ -35,10 +35,10 @@ import * as React from 'react';
 import { TvNavMenu } from './components/tv-nav-menu';
 
 interface TaskItem {
-    id: number;
+    id: string | number;
     title: string;
     description: string;
-    status: 'todo' | 'in_progress' | 'in_review' | 'complete';
+    status: 'request' | 'todo' | 'in_progress' | 'in_review' | 'complete';
     urgency: 'high' | 'medium' | 'low';
     target_role: 'technician' | 'technician-intern';
     work_type: 'pengerjaan' | 'penambahan_fitur' | 'maintenance' | null;
@@ -600,7 +600,7 @@ export default function TvTicketStatsPage({ ticketData, generatedAt }: PageProps
                                                                         </span>
                                                                     </div>
                                                                     <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                                                        #{task.id} {task.title}
+                                                                        {task.title}
                                                                     </h3>
                                                                     <p className="mt-1 line-clamp-2 text-xs text-slate-600">
                                                                         {task.description}
@@ -791,7 +791,7 @@ export default function TvTicketStatsPage({ ticketData, generatedAt }: PageProps
                                                         </div>
 
                                                         <h3 className="text-sm font-bold text-slate-900">
-                                                            #{task.id} {task.title}
+                                                            {task.title}
                                                         </h3>
                                                         <p className="mt-1 line-clamp-3 text-xs text-slate-600">
                                                             {task.description}
