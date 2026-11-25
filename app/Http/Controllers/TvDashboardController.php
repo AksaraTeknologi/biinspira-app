@@ -8,6 +8,7 @@ use App\Models\RevisionRequest;
 use App\Services\PlatformClientService;
 use App\Services\TvPlatformStatsService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -65,8 +66,28 @@ class TvDashboardController extends Controller
 
         return Inertia::render('tv/dashboard', [
             'platformStats' => Inertia::defer(fn () => $this->tvStatsService->getPlatformStats($platforms)),
-            'generatedAt' => now()->toIso8601String(),
+            'generatedAt' => fn () => $this->tvStatsService->getStatsGeneratedAt(),
         ]);
+    }
+
+    public function refresh(Request $request): JsonResponse|RedirectResponse
+    {
+        @set_time_limit(60);
+
+        $platforms = config('services.platforms', []);
+        $stats = $this->tvStatsService->refreshPlatformStats($platforms);
+        $generatedAt = $this->tvStatsService->getStatsGeneratedAt();
+
+        if ($request->expectsJson() || $request->isXmlHttpRequest()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data statistik platform berhasil diperbarui.',
+                'platformStats' => $stats,
+                'generatedAt' => $generatedAt,
+            ]);
+        }
+
+        return redirect()->route('tv.statistics');
     }
 
     public function detail(Request $request): JsonResponse

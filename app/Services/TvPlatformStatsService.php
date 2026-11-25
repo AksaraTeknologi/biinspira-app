@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class TvPlatformStatsService
 {
-    public const PLATFORM_STATS_CACHE_KEY = 'tv_dashboard.platform_stats.v4';
+    public const PLATFORM_STATS_CACHE_KEY = 'tv_dashboard.platform_stats.v5';
+    public const PLATFORM_STATS_UPDATED_AT_KEY = 'tv_dashboard.platform_stats_updated_at.v5';
     public const BIINSPIRA_RATE_LIMIT_UNTIL_KEY = 'tv_dashboard.biinspira_rate_limit_until.v4';
     public const CACHE_TTL_HOURS = 12;
 
@@ -32,10 +33,52 @@ class TvPlatformStatsService
             $cachedStats = $this->warmPlatformStats($platforms, $logoMap);
         }
 
+        return $this->formatCachedPlatformStats($availablePlatformKeys, is_array($cachedStats) ? $cachedStats : [], $logoMap);
+    }
+
+    /**
+     * Force-refresh platform summary statistics and clear cached drilldown details for the active period.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function refreshPlatformStats(?array $platformsConfig = null): array
+    {
+        $platforms = $platformsConfig ?? config('services.platforms', []);
+        $availablePlatformKeys = $this->client->getAvailablePlatformKeys($platforms);
+        $logoMap = $this->client->buildPlatformLogoMap();
+        $now = now();
+
+        foreach (array_merge($availablePlatformKeys, ['group']) as $key) {
+            Cache::forget($this->detailCacheKey($key, 'month', $now));
+            Cache::forget($this->detailCacheKey($key, 'day', $now));
+        }
+
+        $cachedStats = $this->warmPlatformStats($platforms, $logoMap);
+
+        return $this->formatCachedPlatformStats($availablePlatformKeys, $cachedStats, $logoMap);
+    }
+
+    public function getStatsGeneratedAt(): string
+    {
+        $updatedAt = Cache::get(self::PLATFORM_STATS_UPDATED_AT_KEY);
+
+        return is_string($updatedAt) && $updatedAt !== ''
+            ? $updatedAt
+            : now()->toIso8601String();
+    }
+
+    /**
+     * @param  list<string>  $availablePlatformKeys
+     * @param  array<string, array<string, mixed>>  $cachedStats
+     * @param  array<string, string>  $logoMap
+     * @return list<array<string, mixed>>
+     */
+    private function formatCachedPlatformStats(array $availablePlatformKeys, array $cachedStats, array $logoMap): array
+    {
         $stats = [];
         foreach ($availablePlatformKeys as $key) {
             $label = PlatformClientService::PLATFORM_LABELS[$key] ?? $key;
-            $cached = is_array($cachedStats) ? ($cachedStats[$key] ?? null) : null;
+            $cached = $cachedStats[$key] ?? null;
 
             if (is_array($cached)) {
                 $cached['label'] = $label;
@@ -129,32 +172,60 @@ class TvPlatformStatsService
             }
 
             $result = $parsedResults[$platformKey];
-            $statistics = $result['statistics'];
-            $statFailed = $result['failed'];
+            $hasData = ! $result['failed'];
+            $metrics = $hasData
+                ? $this->extractNormalizedMetrics($result['statistics'])
+                : $this->emptyMetricValues();
 
             if ($platformKey === 'smartcountingacademy') {
+                $breakdown = [
+                    $platformKey => [
+                        'failed' => $result['failed'],
+                        'keys' => array_keys($result['statistics']),
+                        'metrics' => $metrics,
+                    ],
+                ];
+
                 foreach (['smartcountingacademy_new', 'smartcounting'] as $extraKey) {
                     $extraResult = $parsedResults[$extraKey] ?? null;
                     if ($extraResult && ! $extraResult['failed'] && ! empty($extraResult['statistics'])) {
-                        $statistics = $this->mergeStatistics($statistics, $extraResult['statistics']);
-                        $statFailed = false;
+                        $extraMetrics = $this->extractNormalizedMetrics($extraResult['statistics']);
+                        foreach ($metrics as $metricKey => $metricValue) {
+                            $metrics[$metricKey] = $metricValue + $extraMetrics[$metricKey];
+                        }
+                        $hasData = true;
+                        $breakdown[$extraKey] = [
+                            'failed' => false,
+                            'keys' => array_keys($extraResult['statistics']),
+                            'metrics' => $extraMetrics,
+                        ];
+                    } else {
+                        $breakdown[$extraKey] = [
+                            'configured' => isset($parsedResults[$extraKey]),
+                            'failed' => $extraResult['failed'] ?? true,
+                            'keys' => is_array($extraResult['statistics'] ?? null) ? array_keys($extraResult['statistics']) : [],
+                        ];
                     }
                 }
+
+                Log::info('TV dashboard Smartcounting Academy breakdown', $breakdown);
             }
 
-            if ($statFailed) {
+            if (! $hasData) {
                 continue;
             }
 
-            $cachedStats[$platformKey] = $this->buildPlatformStatFromStatistics(
+            $cachedStats[$platformKey] = $this->buildPlatformStatFromMetrics(
                 $platformKey,
                 PlatformClientService::PLATFORM_LABELS[$platformKey] ?? $platformKey,
-                $statistics,
+                $metrics,
                 $logoMap[$platformKey] ?? null
             );
         }
 
-        Cache::put(self::PLATFORM_STATS_CACHE_KEY, $cachedStats, now()->addHours(self::CACHE_TTL_HOURS));
+        $ttl = now()->addHours(self::CACHE_TTL_HOURS);
+        Cache::put(self::PLATFORM_STATS_CACHE_KEY, $cachedStats, $ttl);
+        Cache::put(self::PLATFORM_STATS_UPDATED_AT_KEY, now()->toIso8601String(), $ttl);
 
         return $cachedStats;
     }
@@ -656,73 +727,38 @@ class TvPlatformStatsService
         ];
     }
 
-    private function mergeStatistics(array $statsA, array $statsB): array
+    /**
+     * @return array{total: float, this_month: float, last_month: float, today: float, yesterday: float}
+     */
+    private function emptyMetricValues(): array
     {
-        if (empty($statsA)) {
-            return $statsB;
-        }
-        if (empty($statsB)) {
-            return $statsA;
-        }
-
-        $merged = $statsA;
-        $numericKeys = [
-            'total_nominal_this_year',
-            'this_year_revenue',
-            'revenue_this_year',
-            'total_revenue_this_year',
-            'year_to_date_revenue',
-            'total_revenue',
-            'revenue_total',
-            'total_nominal',
-            'gross_revenue',
-            'this_month_revenue',
-            'total_nominal_this_month',
-            'monthly_revenue',
-            'revenue_this_month',
-            'total_nominal_last_month',
-            'last_month_revenue',
-            'total_nominal_previous_month',
-            'previous_month_revenue',
-            'revenue_last_month',
-            'total_nominal_today',
-            'today_revenue',
-            'revenue_today',
-            'total_today',
-            'nominal_today',
-            'total_nominal_yesterday',
-            'yesterday_revenue',
-            'revenue_yesterday',
-            'total_yesterday',
-            'nominal_yesterday',
+        return [
+            'total' => 0.0,
+            'this_month' => 0.0,
+            'last_month' => 0.0,
+            'today' => 0.0,
+            'yesterday' => 0.0,
         ];
-
-        foreach ($numericKeys as $key) {
-            $hasA = array_key_exists($key, $statsA);
-            $hasB = array_key_exists($key, $statsB);
-            if ($hasA || $hasB) {
-                $merged[$key] = $this->client->resolveStatisticNumber($statsA[$key] ?? 0)
-                    + $this->client->resolveStatisticNumber($statsB[$key] ?? 0);
-            }
-        }
-
-        if (isset($statsA['monthly_nominal_this_year']) || isset($statsB['monthly_nominal_this_year'])) {
-            $monthsA = (array) ($statsA['monthly_nominal_this_year'] ?? []);
-            $monthsB = (array) ($statsB['monthly_nominal_this_year'] ?? []);
-            $mergedMonths = [];
-            $allMonths = array_unique(array_merge(array_keys($monthsA), array_keys($monthsB)));
-            foreach ($allMonths as $m) {
-                $mergedMonths[$m] = $this->client->resolveStatisticNumber($monthsA[$m] ?? 0)
-                    + $this->client->resolveStatisticNumber($monthsB[$m] ?? 0);
-            }
-            $merged['monthly_nominal_this_year'] = $mergedMonths;
-        }
-
-        return $merged;
     }
 
-    private function buildPlatformStatFromStatistics(string $key, string $label, array $statistics, ?string $logo): array
+    /**
+     * Extract canonical revenue metrics from a single platform statistics payload
+     * so platforms using different field conventions (e.g. purchases vs invoices)
+     * can be summed accurately without key-name mismatches.
+     *
+     * @return array{total: float, this_month: float, last_month: float, today: float, yesterday: float}
+     */
+    private function extractNormalizedMetrics(array $statistics): array
     {
+        $monthlyNominal = is_array($statistics['monthly_nominal_this_year'] ?? null)
+            ? array_change_key_case($statistics['monthly_nominal_this_year'], CASE_LOWER)
+            : [];
+        $now = now();
+        $currentMonthKey = strtolower($now->format('F'));
+        $lastMonthFallback = (int) $now->month > 1
+            ? ($monthlyNominal[strtolower($now->copy()->subMonthNoOverflow()->format('F'))] ?? null)
+            : null;
+
         $totalRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue($statistics, [
             'total_nominal_this_year',
             'this_year_revenue',
@@ -735,20 +771,35 @@ class TvPlatformStatsService
             'gross_revenue',
         ]));
 
-        $thisMonthRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue($statistics, [
-            'this_month_revenue',
-            'total_nominal_this_month',
-            'monthly_revenue',
-            'revenue_this_month',
-        ]));
+        $thisMonthRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue(
+            $statistics,
+            [
+                'this_month_revenue',
+                'total_nominal_this_month',
+                'monthly_revenue',
+                'revenue_this_month',
+                'this_month_income',
+                'income_this_month',
+                'current_month_revenue',
+                'this_month',
+            ],
+            $monthlyNominal[$currentMonthKey] ?? 0.0
+        ));
 
-        $lastMonthRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue($statistics, [
-            'total_nominal_last_month',
-            'last_month_revenue',
-            'total_nominal_previous_month',
-            'previous_month_revenue',
-            'revenue_last_month',
-        ]));
+        $lastMonthRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue(
+            $statistics,
+            [
+                'total_nominal_last_month',
+                'last_month_revenue',
+                'total_nominal_previous_month',
+                'previous_month_revenue',
+                'revenue_last_month',
+                'last_month_income',
+                'income_last_month',
+                'last_month',
+            ],
+            $lastMonthFallback ?? 0.0
+        ));
 
         $todayRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue($statistics, [
             'total_nominal_today',
@@ -756,6 +807,12 @@ class TvPlatformStatsService
             'revenue_today',
             'total_today',
             'nominal_today',
+            'today_income',
+            'income_today',
+            'daily_revenue',
+            'revenue_daily',
+            'today_amount',
+            'today',
         ]));
 
         $yesterdayRevenue = $this->client->resolveStatisticNumber($this->client->pickStatisticValue($statistics, [
@@ -764,7 +821,32 @@ class TvPlatformStatsService
             'revenue_yesterday',
             'total_yesterday',
             'nominal_yesterday',
+            'yesterday_income',
+            'income_yesterday',
+            'yesterday_amount',
+            'yesterday',
         ]));
+
+        return [
+            'total' => $totalRevenue,
+            'this_month' => $thisMonthRevenue,
+            'last_month' => $lastMonthRevenue,
+            'today' => $todayRevenue,
+            'yesterday' => $yesterdayRevenue,
+        ];
+    }
+
+    /**
+     * @param  array{total: float, this_month: float, last_month: float, today: float, yesterday: float}  $metrics
+     * @return array<string, mixed>
+     */
+    private function buildPlatformStatFromMetrics(string $key, string $label, array $metrics, ?string $logo): array
+    {
+        $totalRevenue = $metrics['total'];
+        $thisMonthRevenue = $metrics['this_month'];
+        $lastMonthRevenue = $metrics['last_month'];
+        $todayRevenue = $metrics['today'];
+        $yesterdayRevenue = $metrics['yesterday'];
 
         $monthChange = $this->buildChange($thisMonthRevenue, $lastMonthRevenue);
         $dayChange = $this->buildChange($todayRevenue, $yesterdayRevenue);
