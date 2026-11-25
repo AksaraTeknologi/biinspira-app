@@ -1,8 +1,10 @@
+import { Toaster } from '@/components/ui/sonner';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Deferred, Head, Link, router } from '@inertiajs/react';
-import { Banknote, BarChart3, CalendarIcon, GraduationCap, KanbanSquareIcon, Lock, Sparkles, TrendingUp } from 'lucide-react';
+import { Banknote, BarChart3, CalendarIcon, GraduationCap, KanbanSquareIcon, Lock, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import GroupDrilldownDialog from './components/group-drilldown-dialog';
 import PlatformDrilldownDialog from './components/platform-drilldown-dialog';
 import { PlatformStatCardCarousel, PlatformStatCardGrid } from './components/platform-stat-cards';
@@ -25,6 +27,75 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
     const [groupDrilldownLoading, setGroupDrilldownLoading] = useState(false);
     const [groupDrilldownError, setGroupDrilldownError] = useState<string | null>(null);
     const [groupDrilldownData, setGroupDrilldownData] = useState<DrilldownData | null>(null);
+    const [livePlatformStats, setLivePlatformStats] = useState<PlatformStat[] | undefined>(platformStats);
+    const [lastGeneratedAt, setLastGeneratedAt] = useState<string>(generatedAt);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    useEffect(() => {
+        setLivePlatformStats(platformStats);
+    }, [platformStats]);
+
+    useEffect(() => {
+        setLastGeneratedAt(generatedAt);
+    }, [generatedAt]);
+
+    const handleRefresh = async () => {
+        if (isRefreshing) {
+            return;
+        }
+
+        setIsRefreshing(true);
+
+        try {
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            const response = await fetch('/stats/refresh', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.status === 401) {
+                router.visit('/stats/auth');
+                return;
+            }
+
+            if (response.status === 419) {
+                window.location.reload();
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Gagal memperbarui data statistik.');
+            }
+
+            const payload = (await response.json()) as {
+                platformStats?: PlatformStat[];
+                generatedAt?: string;
+                message?: string;
+            };
+
+            if (Array.isArray(payload.platformStats)) {
+                setLivePlatformStats(payload.platformStats);
+            }
+            if (payload.generatedAt) {
+                setLastGeneratedAt(payload.generatedAt);
+            }
+
+            toast.success(payload.message ?? 'Data statistik platform berhasil diperbarui.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui data.');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -68,7 +139,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
             down: 1,
         };
 
-        return [...(platformStats ?? [])].sort((a, b) => {
+        return [...(livePlatformStats ?? [])].sort((a, b) => {
             if (b.today !== a.today) {
                 return b.today - a.today;
             }
@@ -88,7 +159,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
             return a.label.localeCompare(b.label, 'id-ID');
         });
-    }, [platformStats]);
+    }, [livePlatformStats]);
 
     const groupStats = useMemo(() => {
         if (!stats || stats.length === 0) {
@@ -195,6 +266,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
     return (
         <>
             <Head title="Statistik TV" />
+            <Toaster position="top-center" richColors />
             <div className="flex min-h-screen w-screen flex-col bg-[url('/assets/images/auth-bg.webp')] bg-cover bg-center lg:h-screen lg:overflow-hidden">
                 <div className="flex flex-1 flex-col overflow-y-auto bg-slate-900/18 px-3 py-2.5 backdrop-blur-[1px] sm:px-6 sm:py-4 lg:px-8 lg:overflow-hidden">
                     <Tabs value={viewMode} onValueChange={handleViewModeChange} className="flex flex-1 flex-col overflow-hidden">
@@ -208,9 +280,18 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                         Pendapatan Tiap Platform
                                     </h1>
                                 </div>
-                                {/* Mobile Quick Action Link to Navigation Popup & Lock */}
+                                {/* Mobile Quick Action Link to Navigation Popup, Refresh & Lock */}
                                 <div className="flex items-center gap-1.5 sm:hidden">
                                     <TvNavMenu currentKey="platform" />
+                                    <button
+                                        type="button"
+                                        onClick={handleRefresh}
+                                        disabled={isRefreshing}
+                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-sm transition active:scale-95 hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
+                                        title="Refresh Data Statistik"
+                                    >
+                                        <RefreshCw className={`h-3.5 w-3.5 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={() => router.post('/stats/lock')}
@@ -270,6 +351,17 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
 
                                     <button
                                         type="button"
+                                        onClick={handleRefresh}
+                                        disabled={isRefreshing}
+                                        className="hidden sm:flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/30 hover:border-white/60 whitespace-nowrap active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
+                                        title="Refresh Data Statistik Sekarang"
+                                    >
+                                        <RefreshCw className={`h-3.5 w-3.5 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
+                                        <span>{isRefreshing ? 'Memperbarui...' : 'Refresh'}</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
                                         onClick={() => router.post('/stats/lock')}
                                         className="hidden sm:flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-white/45 bg-white/20 px-3 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-rose-500/30 hover:border-rose-400/60 whitespace-nowrap active:scale-95 shadow-xs"
                                         title="Kunci Tampilan Statistik"
@@ -279,7 +371,7 @@ export default function TvDashboard({ platformStats, generatedAt }: TvDashboardP
                                     </button>
 
                                     <p className="flex h-7 sm:h-9 shrink-0 items-center rounded-full border border-white/45 bg-white/20 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm whitespace-nowrap">
-                                        Update: {new Date(generatedAt).toLocaleString('id-ID')}
+                                        Update: {new Date(lastGeneratedAt).toLocaleString('id-ID')}
                                     </p>
                                 </div>
                             </div>

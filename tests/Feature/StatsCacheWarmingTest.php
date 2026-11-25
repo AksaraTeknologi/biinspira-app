@@ -234,3 +234,104 @@ test('stats:warm is scheduled every five minutes', function () {
     expect($warmEvent)->not->toBeNull();
     expect($warmEvent->expression)->toBe('*/5 * * * *');
 });
+
+test('smartcountingacademy merges heterogeneous statistics keys across purchases and invoices sources', function () {
+    config()->set('services.platforms', [
+        'smartcountingacademy' => [
+            'base_url' => 'https://sca.test/api',
+            'token' => 'token-sca',
+        ],
+        'smartcounting' => [
+            'base_url' => 'https://sc.test/api',
+            'token' => 'token-sc',
+        ],
+        'smartcountingacademy_new' => [
+            'base_url' => 'https://sca-new.test/api',
+            'token' => 'token-sca-new',
+        ],
+    ]);
+
+    resetHttpFake([
+        'https://sca.test/api/purchases/statistics*' => Http::response([
+            'data' => [
+                'total_nominal_this_year' => 1000000,
+                'this_month_revenue' => 400000,
+                'total_nominal_last_month' => 300000,
+                'total_nominal_today' => 0,
+                'total_nominal_yesterday' => 10000,
+            ],
+        ], 200),
+        'https://sc.test/api/purchases/statistics*' => Http::response([
+            'data' => [
+                'total_nominal_this_year' => 250000,
+                'this_month_revenue' => 50000,
+                'total_nominal_last_month' => 25000,
+                'total_nominal_today' => 15000,
+                'total_nominal_yesterday' => 5000,
+            ],
+        ], 200),
+        'https://sca-new.test/api/invoices/statistics*' => Http::response([
+            'data' => [
+                'this_year_revenue' => 500000,
+                'total_nominal_this_month' => 100000,
+                'last_month_revenue' => 75000,
+                'today_revenue' => 50000,
+                'yesterday_revenue' => 20000,
+            ],
+        ], 200),
+    ]);
+
+    $stats = app(TvPlatformStatsService::class)->getPlatformStats();
+
+    expect($stats)->toHaveCount(1);
+    expect($stats[0]['key'])->toBe('smartcountingacademy');
+    expect($stats[0]['total'])->toBe(1750000.0);
+    expect($stats[0]['this_month'])->toBe(550000.0);
+    expect($stats[0]['last_month'])->toBe(400000.0);
+    expect($stats[0]['today'])->toBe(65000.0);
+    expect($stats[0]['yesterday'])->toBe(35000.0);
+});
+
+test('tv dashboard refresh endpoint forces live api fetch and clears stale detail cache', function () {
+    fakeHealthyPlatformApis();
+
+    $this->artisan('stats:warm')->assertSuccessful();
+
+    $session = ['stats_authenticated' => true];
+    $now = now();
+    $detailKey = "tv_dashboard.detail.biinspira.day.{$now->year}.{$now->month}";
+    expect(Cache::has($detailKey))->toBeTrue();
+
+    resetHttpFake([
+        'https://biinspira.test/api/purchases/statistics*' => Http::response([
+            'data' => [
+                'total_nominal_this_year' => 60000000,
+                'this_month_revenue' => 15000000,
+                'total_nominal_last_month' => 10000000,
+                'total_nominal_today' => 2500000,
+                'total_nominal_yesterday' => 1000000,
+            ],
+        ], 200),
+        'https://kompeten.test/api/invoices/statistics*' => Http::response([
+            'data' => [
+                'total_nominal_this_year' => 32000000,
+                'this_month_revenue' => 9000000,
+                'total_nominal_last_month' => 6000000,
+                'total_nominal_today' => 1200000,
+                'total_nominal_yesterday' => 500000,
+            ],
+        ], 200),
+    ]);
+
+    $this->withSession($session)
+        ->postJson('/stats/refresh')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('platformStats.0.key', 'biinspira')
+        ->assertJsonPath('platformStats.0.today', 2500000)
+        ->assertJsonPath('platformStats.1.key', 'kompeten')
+        ->assertJsonPath('platformStats.1.today', 1200000);
+
+    expect(Cache::has($detailKey))->toBeFalse();
+    expect(Cache::has(TvPlatformStatsService::PLATFORM_STATS_UPDATED_AT_KEY))->toBeTrue();
+});

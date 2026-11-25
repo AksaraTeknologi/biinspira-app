@@ -64,6 +64,7 @@ Route::middleware(['stats.auth'])->group(function () {
 
     Route::get('/stats', [TvDashboardController::class, 'index'])->name('tv.statistics');
     Route::get('/stats/detail', [TvDashboardController::class, 'detail'])->name('tv.statistics.detail');
+    Route::post('/stats/refresh', [TvDashboardController::class, 'refresh'])->name('tv.statistics.refresh');
 
     // Halaman TV Statistik Grafik Omset 2025 vs 2026
     Route::get('/stats-omset', [StatisticsOmsetController::class, 'index'])->name('tv.statistics.omset');

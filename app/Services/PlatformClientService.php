@@ -186,14 +186,14 @@ class PlatformClientService
         return 0.0;
     }
 
-    public function pickStatisticValue(array $statistics, array $keys): mixed
+    public function pickStatisticValue(array $statistics, array $keys, mixed $default = 0.0): mixed
     {
         foreach ($keys as $key) {
-            if (array_key_exists($key, $statistics)) {
+            if (isset($statistics[$key]) && $statistics[$key] !== '') {
                 return $statistics[$key];
             }
         }
 
-        return 0.0;
+        return $default;
     }
 }
